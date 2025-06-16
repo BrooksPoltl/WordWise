@@ -1,5 +1,6 @@
 import { create, StateCreator } from 'zustand';
 import { User, UserCreatePayload } from '../types';
+import config from '../config';
 
 interface UserStore {
   users: User[];
@@ -14,7 +15,7 @@ const createUserStore: StateCreator<UserStore> = (set) => ({
   createUser: async (userData: UserCreatePayload): Promise<void> => {
     set({ loading: true });
     try {
-      const response: Response = await fetch('http://localhost:8000/v1/users', {
+      const response: Response = await fetch(`${config.apiUrl}/v1/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
