@@ -1,15 +1,42 @@
-import React from 'react';
-import UserForm from './components/UserForm';
+import React, { useEffect } from 'react';
+import { useAuthStore } from './store/authStore';
+import AuthWrapper from './components/AuthWrapper';
+import Dashboard from './components/Dashboard';
 
-const App: React.FC = () => (
-  <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div className="max-w-md mx-auto">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">WordWise</h1>
+const App: React.FC = () => {
+  const { user, isInitialized, initializeAuth } = useAuthStore();
+
+  useEffect(() => {
+    // Initialize authentication state listener
+    initializeAuth();
+  }, [initializeAuth]);
+
+  // Show loading spinner while initializing
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading WordWise...</p>
+        </div>
       </div>
-      <UserForm />
-    </div>
-  </div>
-);
+    );
+  }
+
+  // If user is authenticated, show dashboard
+  if (user) {
+    return <Dashboard />;
+  }
+
+  // If user is not authenticated, show auth wrapper
+  return (
+    <AuthWrapper 
+      onAuthSuccess={() => {
+        // Authentication success is handled by the auth store
+        // This callback could be used for additional logic if needed
+      }} 
+    />
+  );
+};
 
 export default App; 

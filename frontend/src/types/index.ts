@@ -1,12 +1,30 @@
+import { User as FirebaseUser } from 'firebase/auth';
+
 export interface User {
-  id?: number;
-  name: string;
+  uid: string;
   email: string;
+  displayName?: string;
+  createdAt: Date;
+  preferences: UserPreferences;
+}
+
+export interface UserPreferences {
+  language: string;
 }
 
 export interface UserCreatePayload {
-  name: string;
   email: string;
+  password: string;
+  displayName?: string;
+}
+
+export interface UserLoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface AuthUser extends FirebaseUser {
+  // Additional custom properties if needed
 }
 
 export interface ApiResponse<T> {

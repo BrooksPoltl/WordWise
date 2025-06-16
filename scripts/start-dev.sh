@@ -44,7 +44,7 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 echo "Development servers started!"
-echo "Frontend: http://localhost:3000"
+echo "Frontend: http://localhost:5002"
 echo "Backend: http://localhost:8000"
 echo "API Docs: http://localhost:8000/docs"
 echo "Press Ctrl+C to stop all servers"

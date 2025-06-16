@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 Consistent Design System:
 Create a design system with consistent colors, typography, spacing, and component styles.

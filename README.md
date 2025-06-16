@@ -1,190 +1,330 @@
-# WordWise
+# WordWise - AI-Powered Writing Assistant
 
-A minimal full-stack application with React + TypeScript frontend and Python FastAPI backend.
+A Grammarly clone built with React, TypeScript, Firebase, and FastAPI that provides AI-powered writing assistance with real-time grammar checking, style suggestions, and document management.
 
-## Tech Stack
+## 🚀 Features
+
+### Authentication & User Management
+- **Firebase Authentication** with email/password and Google OAuth
+- **Secure user profiles** stored in Firestore
+- **User preferences** for language and writing settings
+- **Protected routes** and authenticated API access
+
+### User Interface
+- **Responsive design** with Tailwind CSS (mobile-first)
+- **Modern authentication** with SignUp/Login components
+- **User dashboard** with profile management
+- **Real-time error handling** and loading states
+
+### Backend API
+- **FastAPI** with Firebase Admin SDK integration
+- **JWT authentication** using Firebase ID tokens
+- **RESTful API** with user CRUD operations
+- **Firestore security rules** for data protection
+
+### Future Features (Planned)
+- AI-powered grammar and style checking
+- Document management and collaboration
+- Real-time writing suggestions
+- Advanced analytics and insights
+
+## 🛠️ Tech Stack
 
 ### Frontend
-- React 18 with TypeScript
-- Vite (build tool)
-- Tailwind CSS (styling)
-- Zustand (state management)
-- Firebase (planned for auth/real-time features)
+- **React 18** with TypeScript
+- **Vite** for fast development and building
+- **Tailwind CSS** for responsive styling
+- **Zustand** for state management
+- **Firebase SDK** for authentication and Firestore
 
 ### Backend
-- Python 3.10+
-- FastAPI
-- Firebase (Firestore & Auth)
-- Firebase Admin SDK
+- **Python 3.13** with FastAPI
+- **Firebase Admin SDK** for authentication
+- **Firestore** for data storage
+- **Pydantic** for data validation
+- **Uvicorn** for ASGI server
 
-## Setup Instructions
+### Infrastructure
+- **Firebase Authentication** for user management
+- **Cloud Firestore** for database
+- **Firebase Security Rules** for data protection
 
-### Prerequisites
-- Node.js 18+
-- Python 3.10+
-- PostgreSQL
+## 📋 Prerequisites
+
+- Node.js 18+ and npm
+- Python 3.13+
+- Firebase project with Authentication and Firestore enabled
 - Git
 
-### Firebase Setup
+## 🚀 Quick Start
 
-1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com)
-
-2. Enable Firestore Database:
-   - Go to Firestore Database
-   - Create database in test mode (for development)
-
-3. (Optional) Generate service account key:
-   - Go to Project Settings > Service Accounts
-   - Generate new private key
-   - Save as `firebase-service-account-key.json`
-
-4. For development, you can run without the service account key (Firebase will use default credentials)
-
-### Backend Setup
-
-1. Navigate to the backend directory:
+### 1. Clone the Repository
 ```bash
-cd backend
+git clone <repository-url>
+cd WordWise
 ```
 
-2. Create a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+### 2. Firebase Setup
+1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
+2. Enable Authentication (Email/Password and Google providers)
+3. Create a Firestore database
+4. Get your Firebase configuration and service account key
 
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+See [CONFIG.md](CONFIG.md) for detailed Firebase setup instructions.
 
-4. (Optional) Create a `.env` file:
-```bash
-FIREBASE_KEY_PATH=/path/to/firebase-service-account-key.json
-```
-This is only needed if you want to use a service account key.
-
-5. Run the backend:
-```bash
-python main.py
-```
-
-The API will be available at `http://localhost:8000`
-API documentation at `http://localhost:8000/docs`
-
-### Frontend Setup
-
-1. In a new terminal, navigate to the frontend directory:
+### 3. Frontend Setup
 ```bash
 cd frontend
-```
-
-2. Install dependencies:
-```bash
 npm install
+
+# Copy environment file and configure
+cp env.example .env
+# Edit .env with your Firebase configuration
 ```
 
-3. Start the development server:
+### 4. Backend Setup
 ```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+# Copy environment file and configure
+cp env.example .env
+# Edit .env with your Firebase configuration
+```
+
+### 5. Deploy Firestore Security Rules
+```bash
+# Install Firebase CLI
+npm install -g firebase-tools
+
+# Login to Firebase
+firebase login
+
+# Initialize Firebase in your project
+firebase init firestore
+
+# Deploy security rules
+firebase deploy --only firestore:rules
+```
+
+### 6. Start Development Servers
+```bash
+# Terminal 1 - Backend
+cd backend
+python main.py
+
+# Terminal 2 - Frontend
+cd frontend
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:3000`
+Visit `http://localhost:5173` to access the application.
 
-## Usage
+## 🔧 Configuration
 
-1. Open `http://localhost:3000` in your browser
-2. Fill out the user creation form with name and email
-3. Submit to create a new user in the database
+### Environment Variables
 
-## Project Structure
-
-```
-WordWise/
-├── backend/              # Python FastAPI backend
-│   ├── main.py          # FastAPI application with Firebase
-│   ├── requirements.txt # Python dependencies
-│   └── env.example      # Environment variables template
-├── frontend/            # React frontend application
-│   ├── src/             # Frontend source code
-│   │   ├── components/  # React components
-│   │   ├── store/       # Zustand stores
-│   │   ├── types/       # TypeScript type definitions
-│   │   ├── App.tsx      # Main App component
-│   │   ├── main.tsx     # React entry point
-│   │   └── index.css    # Global styles
-│   ├── package.json     # Node.js dependencies
-│   ├── vite.config.ts   # Vite configuration
-│   ├── tailwind.config.js # Tailwind CSS config
-│   ├── tsconfig.json    # TypeScript config
-│   └── .eslintrc.json   # ESLint configuration
-├── scripts/             # Development scripts
-│   └── start-dev.sh     # Development server launcher
-├── README.md           # Project documentation
-└── .gitignore          # Git ignore rules
+#### Frontend (`.env`)
+```env
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+VITE_API_URL=http://localhost:8000
 ```
 
-## Development
+#### Backend (`.env`)
+```env
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_SERVICE_ACCOUNT_KEY_PATH=path/to/serviceAccountKey.json
+CORS_ORIGINS=http://localhost:8080,http://localhost:5002
+```
 
-### Code Quality & Standards
+See [CONFIG.md](CONFIG.md) for complete configuration details.
 
-This project enforces strict code quality standards:
+## 📚 API Documentation
 
-**TypeScript/Frontend:**
-- **Airbnb ESLint Rules**: Enforced for consistent code style
-- **Explicit Types**: All variables, functions, and parameters must have explicit types
-- **No `any` Types**: The `@typescript-eslint/no-explicit-any` rule is set to error
-- **Strict TypeScript**: Enabled in `tsconfig.json`
+### Authentication
+All API endpoints require a Firebase ID token in the Authorization header:
+```
+Authorization: Bearer <firebase_id_token>
+```
 
-**Python/Backend:**
-- **PEP8 Style Guide**: Follow Python style conventions
-- **Type Annotations**: All functions and variables should have explicit type hints
-- **Pydantic Models**: Use for request/response validation
+### Endpoints
+- `GET /health` - Health check
+- `GET /v1/users/me` - Get current user profile
+- `POST /v1/users/me` - Create user profile
+- `PUT /v1/users/me` - Update user profile
+- `DELETE /v1/users/me` - Delete user account
+- `GET /v1/users/me/preferences` - Get user preferences
+- `PUT /v1/users/me/preferences` - Update user preferences
 
-### Scripts
+Interactive API documentation available at `http://localhost:8000/docs` when running the backend.
 
-**Frontend:** *(run from `frontend/` directory)*
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint checks
-- `npm run lint:fix` - Auto-fix ESLint issues
+## 🏗️ Architecture
 
-**Backend:**
-- `python main.py` - Start FastAPI server
-- Visit `/docs` for interactive API documentation
+### Frontend Architecture
+```
+src/
+├── components/           # React components
+│   ├── AuthWrapper.tsx   # Authentication wrapper
+│   ├── Login.tsx         # Login form
+│   ├── SignUp.tsx        # Registration form
+│   ├── Dashboard.tsx     # User dashboard
+│   └── UserProfile.tsx   # Profile management
+├── store/               # Zustand stores
+│   ├── authStore.ts     # Authentication state
+│   └── userStore.ts     # User data operations
+├── types/               # TypeScript type definitions
+├── config/              # Firebase configuration
+└── App.tsx              # Main app component
+```
 
-**Development:**
-- `./scripts/start-dev.sh` - Start both frontend and backend servers
-- Automatically handles process management and cleanup
+### Backend Architecture
+```
+backend/
+├── main.py              # FastAPI application setup
+├── config.py            # Firebase & app configuration
+├── requirements.txt     # Python dependencies
+├── env.example          # Environment variables example
+├── models/              # Pydantic data models
+│   ├── __init__.py
+│   └── user.py          # User-related models
+├── routes/              # API route handlers
+│   ├── __init__.py
+│   └── users.py         # User endpoints
+└── auth/                # Authentication logic
+    ├── __init__.py
+    └── firebase.py      # Firebase auth utilities
+```
 
-## Next Steps
+### Database Schema (Firestore)
+```
+/users/{userId}
+{
+  uid: string,
+  email: string,
+  displayName?: string,
+  createdAt: timestamp,
+  preferences: {
+    language: string
+  }
+}
+```
 
-This is a minimal boilerplate. Consider adding:
-- User authentication (Firebase Auth)
-- Input validation and error handling
-- Loading states and success messages
-- User list display
-- Edit/delete user functionality
-- Environment-specific configurations
-- Tests
-- Docker containerization
+## 🔒 Security
 
-## Troubleshooting
+### Authentication
+- Firebase Authentication for secure user management
+- JWT tokens for API authentication
+- Password requirements and email verification
+
+### Data Protection
+- Firestore security rules restrict access to user's own data
+- HTTPS enforcement for all communications
+- Input validation with Pydantic models
+
+### Best Practices
+- Environment variables for sensitive configuration
+- Separate Firebase projects for development and production
+- Regular security rule audits
+
+## 🧪 Testing
+
+### Frontend Testing
+```bash
+cd frontend
+npm run test
+```
+
+### Backend Testing
+```bash
+cd backend
+python -m pytest
+```
+
+### Linting
+```bash
+# Frontend
+cd frontend
+npm run lint
+
+# Backend (using flake8)
+cd backend
+flake8 .
+```
+
+## 🚢 Deployment
+
+### Frontend (Netlify/Vercel)
+1. Build: `npm run build`
+2. Deploy `dist` folder
+3. Set environment variables
+4. Configure redirects for SPA
+
+### Backend (Railway/Heroku)
+1. Set environment variables
+2. Upload Firebase service account key
+3. Deploy with Python buildpack
+4. Update CORS origins
+
+See [CONFIG.md](CONFIG.md) for detailed deployment instructions.
+
+## 📖 User Stories
+
+### Authentication
+- ✅ As a new user, I can sign up with email/password
+- ✅ As a user, I can sign in with Google OAuth
+- ✅ As a user, I can view and edit my profile
+- ✅ As a user, I can update my language preferences
+- ✅ As a user, I can securely log out
+
+### Future Features
+- 📝 Document creation and editing
+- 🤖 AI-powered grammar checking
+- 📊 Writing analytics and insights
+- 👥 Collaboration features
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+- Follow TypeScript best practices
+- Use Airbnb ESLint configuration
+- Write tests for new features
+- Follow PEP8 for Python code
+- Keep functions under 200 lines
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Troubleshooting
 
 ### Common Issues
+1. **Firebase initialization error**: Check environment variables
+2. **CORS errors**: Verify CORS_ORIGINS configuration
+3. **Authentication errors**: Ensure Firebase ID tokens are valid
+4. **Permission denied**: Check Firestore security rules
 
-1. **Firebase connection errors**: Ensure you have a valid Firebase project and Firestore is enabled
-2. **CORS errors**: Check that backend CORS settings allow frontend origin
-3. **Module not found errors**: Run `npm install` in `frontend/` and `pip install -r requirements.txt` in `backend/`
-4. **Port conflicts**: Ensure ports 3000 and 8000 are available
-5. **TypeScript/ESLint errors**: These will resolve after running `npm install` to install dependencies
-6. **Firebase authentication errors**: Make sure your service account key path is correct (if using one)
+See [CONFIG.md](CONFIG.md) for detailed troubleshooting guide.
 
-### Development Notes
+## 📞 Support
 
-- The project uses strict TypeScript settings and Airbnb ESLint rules
-- All linting errors shown before dependency installation are expected
-- Backend uses Firebase Firestore for data storage and authentication
-- Frontend state management uses Zustand with explicit typing
-- No local database setup required - Firebase handles all data persistence
+For support and questions:
+- Create an issue in the repository
+- Check the [CONFIG.md](CONFIG.md) for detailed setup instructions
+- Review the API documentation at `/docs`
+
+---
+
+**WordWise** - Empowering writers with AI-powered assistance 🚀
