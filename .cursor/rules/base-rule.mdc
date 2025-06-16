@@ -1,0 +1,84 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Consistent Design System:
+Create a design system with consistent colors, typography, spacing, and component styles.
+Utilize Tailwind's configuration file (tailwind.config.js) to define your custom design tokens.
+
+Types:
+Types should always be explicitly defined, both in Typescript and Python. 
+
+Styling:
+For linting in typescript it should use AIRBNB linting style.
+
+Mobile-First Design:
+Always design and implement for mobile screens first, then scale up to larger screens.
+Use Tailwind's responsive prefixes (sm:, md:, lg:, xl:) to adjust layouts for different screen sizes.
+
+Performance Optimization:
+Use React.lazy() and Suspense for code-splitting and lazy-loading components.
+Implement virtualization for long lists using libraries like react-window.
+Optimize images and use next/image for automatic image optimization in Next.js.
+
+Responsive Typography:
+Use Tailwind's text utilities with responsive prefixes to adjust font sizes across different screens.
+Consider using a fluid typography system for seamless scaling.
+
+Accessibility:
+Ensure proper color contrast ratios using Tailwind's text-* and bg-* classes.
+Use semantic HTML elements and ARIA attributes where necessary.
+Implement keyboard navigation support.
+
+Touch-Friendly UI:
+Make interactive elements (buttons, links) at least 44x44 pixels for easy tapping.
+Implement touch gestures for common actions (swipe, pinch-to-zoom) where appropriate.
+
+WHEN CREATING A FILE DON'T CONFLICT IT WITH .TSX AND .JSX FILES
+
+Firebase Best Practices:
+Implement proper security rules in Firebase.
+Use Firebase SDK's offline persistence for better performance and offline support.
+Optimize queries to minimize read/write operations.
+
+Error Handling and Feedback:
+Implement proper error boundaries in React.
+Provide clear feedback for user actions (loading states, success/error messages).
+
+Animation and Transitions:
+Use subtle animations to enhance UX (e.g., page transitions, micro-interactions).
+Utilize Tailwind's transition utilities or consider libraries like Framer Motion.
+
+Form Handling:
+Use libraries like Formik or react-hook-form for efficient form management.
+Implement proper form validation with clear error messages.
+
+Code Organization:
+Follow a consistent folder structure (e.g., components, hooks, pages, services).
+Use custom hooks to encapsulate and reuse logic.
+
+Support locale’s out of the box by splitting text strings into its own file, you will only need to support en-US for now. 
+
+For the backend: 
+
+Use python 3.13, follow PEP8 style guide, try to minimize files to 200 lines of code. Use meaningful variable/function names (e.g., get_user instead of gu).
+
+Use Pydantic (for FastAPI) or similar for request body validation.
+
+Sanitize inputs to prevent injection attacks (e.g., use parameterized queries for SQL).
+
+Include version in the URL (e.g., `/v1/users`) to support future changes.
+
+Use OpenAPI/Swagger for automatic documentation (e.g., FastAPI’s `/docs`).
+
+Include clear descriptions for endpoints, parameters, and responses.
+
+Implement authentication using Firebase. 
+
+Framework: React 18 with TypeScript
+Build Tool: Vite for fast development
+Styling: Tailwind CSS for responsive design
+State Management: Zustand for lightweight state management
+Real-time Features, authentication: Firebase Realtime Database
+Backend: Python 3.13
