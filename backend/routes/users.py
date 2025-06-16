@@ -3,14 +3,15 @@ from firebase_admin import auth, firestore
 from typing import Dict, Any
 from datetime import datetime
 
-from ..models import UserCreateRequest, UserUpdateRequest, UserPreferences, ApiResponse
-from ..auth import get_current_user
-from ..config import get_firestore_client
+from models import UserCreateRequest, UserUpdateRequest, UserPreferences, ApiResponse
+from auth import get_current_user
+from config import get_firestore_client
 
 router = APIRouter(prefix="/v1/users", tags=["users"])
 
-# Get Firestore client
-db = get_firestore_client()
+def get_db():
+    """Get Firestore client instance"""
+    return get_firestore_client()
 
 @router.get("/me", response_model=ApiResponse)
 async def get_current_user_profile(current_user: Dict[str, Any] = Depends(get_current_user)):
@@ -18,6 +19,7 @@ async def get_current_user_profile(current_user: Dict[str, Any] = Depends(get_cu
     Get the current user's profile from Firestore
     """
     try:
+        db = get_db()
         user_doc = db.collection('users').document(current_user['uid']).get()
         
         if not user_doc.exists:
@@ -52,6 +54,7 @@ async def create_user_profile(
     """
     try:
         # Check if user profile already exists
+        db = get_db()
         user_doc_ref = db.collection('users').document(current_user['uid'])
         user_doc = user_doc_ref.get()
         
@@ -98,6 +101,7 @@ async def update_user_profile(
     Update the current user's profile in Firestore
     """
     try:
+        db = get_db()
         user_doc_ref = db.collection('users').document(current_user['uid'])
         user_doc = user_doc_ref.get()
         
@@ -146,6 +150,7 @@ async def delete_user_profile(current_user: Dict[str, Any] = Depends(get_current
     """
     try:
         # Delete user profile from Firestore
+        db = get_db()
         user_doc_ref = db.collection('users').document(current_user['uid'])
         user_doc = user_doc_ref.get()
         
@@ -169,6 +174,7 @@ async def get_user_preferences(current_user: Dict[str, Any] = Depends(get_curren
     Get the current user's preferences
     """
     try:
+        db = get_db()
         user_doc = db.collection('users').document(current_user['uid']).get()
         
         if not user_doc.exists:
@@ -199,6 +205,7 @@ async def update_user_preferences(
     Update the current user's preferences
     """
     try:
+        db = get_db()
         user_doc_ref = db.collection('users').document(current_user['uid'])
         user_doc = user_doc_ref.get()
         
