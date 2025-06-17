@@ -1,16 +1,40 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useDocumentStore } from '../store/documentStore';
 import UserProfile from './UserProfile';
+import DocumentList from './DocumentList';
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { user, logout, loading } = useAuthStore();
+  const { documents, createDocument } = useDocumentStore();
   const [showProfile, setShowProfile] = useState(false);
+  const [creatingDocument, setCreatingDocument] = useState(false);
 
   const handleLogout = async () => {
     try {
       await logout();
     } catch (error) {
       console.error('Logout error:', error);
+    }
+  };
+
+  const handleCreateDocument = async () => {
+    if (!user || creatingDocument) return;
+    
+    setCreatingDocument(true);
+    try {
+      const documentId = await createDocument(user.uid, {
+        title: 'Untitled Document',
+        content: '',
+      });
+      
+      navigate(`/editor/${documentId}`);
+    } catch (error) {
+      console.error('Failed to create document:', error);
+    } finally {
+      setCreatingDocument(false);
     }
   };
 
@@ -90,7 +114,7 @@ const Dashboard: React.FC = () => {
                     <div className="ml-5 w-0 flex-1">
                       <dl>
                         <dt className="text-sm font-medium text-gray-500 truncate">Documents</dt>
-                        <dd className="text-lg font-medium text-gray-900">0</dd>
+                        <dd className="text-lg font-medium text-gray-900">{documents.length}</dd>
                       </dl>
                     </div>
                   </div>
@@ -109,8 +133,10 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">Suggestions Used</dt>
-                        <dd className="text-lg font-medium text-gray-900">0</dd>
+                        <dt className="text-sm font-medium text-gray-500 truncate">Total Words</dt>
+                        <dd className="text-lg font-medium text-gray-900">
+                          {documents.reduce((total, doc) => total + doc.wordCount, 0)}
+                        </dd>
                       </dl>
                     </div>
                   </div>
@@ -146,8 +172,19 @@ const Dashboard: React.FC = () => {
                   <p className="text-gray-600 mb-4">
                     Create a new document and start writing with AI-powered assistance.
                   </p>
-                  <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
-                    New Document
+                  <button 
+                    onClick={handleCreateDocument}
+                    disabled={creatingDocument}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  >
+                    {creatingDocument ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      'New Document'
+                    )}
                   </button>
                 </div>
               </div>
@@ -158,10 +195,25 @@ const Dashboard: React.FC = () => {
                   <p className="text-gray-600 mb-4">
                     Review and edit your existing documents with improved suggestions.
                   </p>
-                  <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                  <button 
+                    onClick={() => {
+                      const documentsSection = document.getElementById('documents-section');
+                      if (documentsSection) {
+                        documentsSection.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                  >
                     View Documents
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* Documents Section */}
+            <div id="documents-section" className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <DocumentList />
               </div>
             </div>
           </div>

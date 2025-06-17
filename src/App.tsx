@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import AuthWrapper from './components/AuthWrapper';
 import Dashboard from './components/Dashboard';
+import DocumentEditor from './components/DocumentEditor';
 
 const App: React.FC = () => {
   const { user, isInitialized, initializeAuth } = useAuthStore();
@@ -23,19 +25,66 @@ const App: React.FC = () => {
     );
   }
 
-  // If user is authenticated, show dashboard
-  if (user) {
-    return <Dashboard />;
-  }
-
-  // If user is not authenticated, show auth wrapper
   return (
-    <AuthWrapper 
-      onAuthSuccess={() => {
-        // Authentication success is handled by the auth store
-        // This callback could be used for additional logic if needed
-      }} 
-    />
+    <BrowserRouter>
+      <Routes>
+        {/* Public routes */}
+        <Route 
+          path="/auth" 
+          element={
+            !user ? (
+              <AuthWrapper 
+                onAuthSuccess={() => {
+                  // Authentication success is handled by the auth store
+                  // This callback could be used for additional logic if needed
+                }} 
+              />
+            ) : (
+              <Navigate to="/dashboard" replace />
+            )
+          } 
+        />
+        
+        {/* Protected routes */}
+        <Route 
+          path="/dashboard" 
+          element={
+            user ? (
+              <Dashboard />
+            ) : (
+              <Navigate to="/auth" replace />
+            )
+          } 
+        />
+        
+        <Route 
+          path="/editor/:documentId" 
+          element={
+            user ? (
+              <DocumentEditor />
+            ) : (
+              <Navigate to="/auth" replace />
+            )
+          } 
+        />
+        
+        {/* Default redirect */}
+        <Route 
+          path="/" 
+          element={
+            <Navigate to={user ? "/dashboard" : "/auth"} replace />
+          } 
+        />
+        
+        {/* Catch all route */}
+        <Route 
+          path="*" 
+          element={
+            <Navigate to={user ? "/dashboard" : "/auth"} replace />
+          } 
+        />
+      </Routes>
+    </BrowserRouter>
   );
 };
 

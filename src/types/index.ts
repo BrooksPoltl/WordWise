@@ -31,4 +31,27 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+}
+
+// Document types
+export interface Document {
+  id: string;
+  title: string;
+  content: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  wordCount: number;
+  characterCount: number;
+}
+
+export interface DocumentCreatePayload {
+  title: string;
+  content?: string;
+}
+
+export interface DocumentUpdatePayload {
+  id: string;
+  title?: string;
+  content?: string;
 } 
