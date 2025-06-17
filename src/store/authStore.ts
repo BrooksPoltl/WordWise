@@ -12,6 +12,7 @@ import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from '../config';
 import { User, UserCreatePayload, UserLoginPayload } from '../types';
 import { logger } from '../utils/logger';
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
 
 interface AuthStore {
   user: User | null;
@@ -107,7 +108,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
       
       set({ 
         loading: false, 
-        error: error.message || 'Failed to create account',
+        error: getFriendlyErrorMessage(error, 'Failed to create account'),
       });
       throw error;
     }
@@ -161,7 +162,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
       logger.group.end();
       set({ 
         loading: false, 
-        error: error.message || 'Failed to sign in',
+        error: getFriendlyErrorMessage(error, 'Failed to sign in'),
       });
       throw error;
     }
@@ -230,7 +231,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
       logger.group.end();
       set({ 
         loading: false, 
-        error: error.message || 'Failed to sign in with Google',
+        error: getFriendlyErrorMessage(error, 'Failed to sign in with Google'),
       });
       throw error;
     }
@@ -252,7 +253,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
       logger.error('Error during sign out', error);
       set({ 
         loading: false, 
-        error: error.message || 'Failed to sign out',
+        error: getFriendlyErrorMessage(error, 'Failed to sign out'),
       });
       throw error;
     }
