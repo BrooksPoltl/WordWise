@@ -44,15 +44,18 @@ class SpellCheckerService {
   }
 
   public checkText(text: string, callback: (suggestions: SpellingSuggestion[]) => void) {
-    // Remove HTML tags for spell checking
-    const plainText = this.stripHTML(text);
-    this.debouncedCheck(plainText, callback);
+    // Since we're now working with plain text consistently, no need for complex mapping
+    this.debouncedCheck(text, callback);
   }
 
   private async performCheck(text: string, callback: (suggestions: SpellingSuggestion[]) => void) {
     try {
       const result = await this.spellCheck(text);
-      callback(result.suggestions);
+
+      // NEW: ensure every suggestion has valid offsets. If missing, derive them from the plain text.
+      const completedSuggestions = this.fillMissingOffsets(text, result.suggestions);
+
+      callback(completedSuggestions);
     } catch (error) {
       console.error('Spell check failed:', error);
       callback([]); // Return empty suggestions on error
@@ -110,19 +113,74 @@ class SpellCheckerService {
   }
 
   public calculateMetrics(text: string): WritingMetrics {
-    const plainText = this.stripHTML(text);
-    const words = plainText.split(/\s+/).filter(word => word.length > 0);
+    // text is now already plain text, no need to strip HTML
+    const words = text.split(/\s+/).filter(word => word.length > 0);
     
     return {
       wordCount: words.length,
-      characterCount: plainText.length,
+      characterCount: text.length,
       spellingErrors: 0 // Will be updated by the component
     };
   }
 
   public async getFullSpellCheck(text: string): Promise<SpellCheckResult> {
-    const plainText = this.stripHTML(text);
-    return await this.spellCheck(plainText);
+    // text is now already plain text
+    return await this.spellCheck(text);
+  }
+
+  // NEW helper – derive offsets when the API omits them.
+  private fillMissingOffsets(text: string, suggestions: SpellingSuggestion[]): SpellingSuggestion[] {
+    // Track ranges we have already assigned to avoid duplicate matches
+    const usedRanges: Array<{ start: number; end: number }> = suggestions
+      .filter(s => s.startOffset != null && !Number.isNaN(s.startOffset))
+      .map(s => ({ start: s.startOffset, end: s.endOffset }));
+
+    const isRangeFree = (start: number, end: number) => {
+      return !usedRanges.some(r => (start < r.end && end > r.start));
+    };
+
+    const result = suggestions.map((s) => {
+      if (s.startOffset != null && !Number.isNaN(s.startOffset)) {
+        // Already has offsets
+        return s;
+      }
+
+      // Attempt to locate the word in the remaining text
+      const word = s.word;
+      if (!word) return s; // give up if we don't have the word
+
+      // Search for the first free occurrence of the word
+      let searchStart = 0;
+      let foundIndex = -1;
+      while (searchStart < text.length) {
+        foundIndex = text.indexOf(word, searchStart);
+        if (foundIndex === -1) break;
+
+        const potentialStart = foundIndex;
+        const potentialEnd = foundIndex + word.length;
+
+        if (isRangeFree(potentialStart, potentialEnd)) {
+          // Ensure we're matching complete words (boundary check)
+          const beforeChar = text[potentialStart - 1];
+          const afterChar = text[potentialEnd];
+          const isBoundaryStart = potentialStart === 0 || /\W/.test(beforeChar);
+          const isBoundaryEnd = potentialEnd === text.length || /\W/.test(afterChar);
+
+          if (isBoundaryStart && isBoundaryEnd) {
+            // Accept this occurrence
+            s.startOffset = potentialStart;
+            s.endOffset = potentialEnd;
+            usedRanges.push({ start: potentialStart, end: potentialEnd });
+            break;
+          }
+        }
+        // Continue searching after this position
+        searchStart = foundIndex + 1;
+      }
+      return s;
+    });
+
+    return result;
   }
 }
 

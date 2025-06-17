@@ -89,12 +89,13 @@ export const spellCheck = onRequest(
           return;
         }
 
-        // Create a simple prompt without custom words
-        const prompt = `Find spelling errors in this text:
+        // Create a more robust prompt, demanding the required fields.
+        const prompt = `Find all spelling errors in the text below. For each error, you MUST provide the 'word', its 'startOffset' and 'endOffset' (0-indexed character offsets in the original text), and an array of 'suggestions'.
 
-"${text}"
+Text: "${text}"
 
-Return only raw JSON (no markdown formatting): {"errors":[{"word":"badword","startOffset":0,"endOffset":7,"suggestions":["goodword"]}]}`;
+Return ONLY a raw JSON object (no markdown) with an "errors" key, like this:
+{"errors": [{"word": "badword", "startOffset": 12, "endOffset": 19, "suggestions": ["good word"]}]}`;
 
         // Call OpenAI API with optimized settings
         const openaiClient = getOpenAIClient();
@@ -132,14 +133,27 @@ Return only raw JSON (no markdown formatting): {"errors":[{"word":"badword","sta
         }
 
         // Convert AI results to our expected API format
-        const suggestions = (aiResult.errors || []).map((error: any, index: number) => ({
-          id: `spell-${error.start}-${error.end}-${index}`,
-          word: error.word,
-          startOffset: error.start,          // Our API expects startOffset
-          endOffset: error.end,              // Our API expects endOffset  
-          suggestions: error.suggestions || [],
-          message: `"${error.word}" may be misspelled`
-        }));
+        const suggestions = (aiResult.errors || [])
+          .map((error: any, index: number) => {
+            const startOffset = error.startOffset ?? error.start;
+            const endOffset = error.endOffset ?? error.end;
+            
+            // If offsets are still missing (null or undefined), log it and skip this error.
+            if (startOffset == null || endOffset == null) {
+              console.error('AI response for an error is missing offset fields:', JSON.stringify(error));
+              return null;
+            }
+
+            return {
+              id: `spell-${startOffset}-${endOffset}-${index}`,
+              word: error.word,
+              startOffset: startOffset,
+              endOffset: endOffset,
+              suggestions: error.suggestions || [],
+              message: `"${error.word}" may be misspelled`
+            };
+          })
+          .filter(Boolean) as SpellCheckResponse['suggestions']; // Filter out null values and assert type
 
         // Calculate metrics
         const words = text.split(/\s+/).filter(word => word.length > 0);

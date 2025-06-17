@@ -49,16 +49,35 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
     [documentId, currentDocument?.content, updateDocument]
   );
 
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: 'Start writing your document...',
+      }),
+      CharacterCount,
+    ],
+    content: currentDocument?.content || '',
+    editorProps: {
+      attributes: {
+        class: 'prose prose-lg max-w-none focus:outline-none min-h-[500px] p-6',
+      },
+    },
+  });
+
   // Handle spell checking
   const handleTextChange = useCallback((content: string) => {
     debouncedSave(content);
     
+    // Get plain text from editor for spell checking
+    const plainTextForSpellCheck = editor ? editor.getText() : content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    
     // Update metrics
-    const newMetrics = spellChecker.calculateMetrics(content);
+    const newMetrics = spellChecker.calculateMetrics(plainTextForSpellCheck);
     setMetrics(newMetrics);
     
-    // Check for suggestions
-    spellChecker.checkText(content, (newSuggestions) => {
+    // Check for suggestions using plain text
+    spellChecker.checkText(plainTextForSpellCheck, (newSuggestions) => {
       // Filter out dismissed suggestions
       const filteredSuggestions = newSuggestions.filter(
         suggestion => !dismissedSuggestions.has(suggestion.id)
@@ -72,27 +91,23 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
         spellingErrors: filteredSuggestions.length
       }));
     });
-  }, [debouncedSave, dismissedSuggestions]);
+  }, [debouncedSave, dismissedSuggestions, editor]);
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Placeholder.configure({
-        placeholder: 'Start writing your document...',
-      }),
-      CharacterCount,
-    ],
-    content: currentDocument?.content || '',
-    onUpdate: ({ editor }) => {
-      const content = editor.getHTML();
-      handleTextChange(content);
-    },
-    editorProps: {
-      attributes: {
-        class: 'prose prose-lg max-w-none focus:outline-none min-h-[500px] p-6',
-      },
-    },
-  });
+  // Set up editor update handler
+  useEffect(() => {
+    if (editor) {
+      const handleUpdate = ({ editor }: { editor: any }) => {
+        const content = editor.getHTML();
+        handleTextChange(content);
+      };
+
+      editor.on('update', handleUpdate);
+
+      return () => {
+        editor.off('update', handleUpdate);
+      };
+    }
+  }, [editor, handleTextChange]);
 
   // Update editor content when document changes
   useEffect(() => {
@@ -109,17 +124,52 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
   const handleApplySuggestion = useCallback((suggestion: SpellingSuggestion, replacement: string) => {
     if (!editor) return;
 
-    const content = editor.getHTML();
-    const beforeText = content.substring(0, suggestion.startOffset);
-    const afterText = content.substring(suggestion.endOffset);
-    const newContent = beforeText + replacement + afterText;
-    
-    editor.commands.setContent(newContent);
-    handleTextChange(newContent);
-    
-    // Remove this suggestion from the list
-    setSuggestions(prev => prev.filter(s => s.id !== suggestion.id));
-  }, [editor, handleTextChange]);
+    // Tiptap's document positions are 1-based, whereas our offsets are 0-based.
+    const from = (suggestion.startOffset ?? NaN) + 1;
+    const to = (suggestion.endOffset ?? NaN) + 1;
+
+    if (!Number.isNaN(from) && !Number.isNaN(to) && from < to) {
+      // Use precise offsets when available
+      editor.chain().focus()
+        .setTextSelection({ from, to })
+        .insertContent(replacement)
+        .run();
+    } else {
+      // Fallback: locate and replace the first occurrence of the word in the plain text
+      const plainText = editor.getText();
+      const index = plainText.indexOf(suggestion.word);
+      if (index !== -1) {
+        const fallbackFrom = index + 1; // convert to 1-based
+        const fallbackTo = index + suggestion.word.length + 1;
+        editor.chain().focus()
+          .setTextSelection({ from: fallbackFrom, to: fallbackTo })
+          .insertContent(replacement)
+          .run();
+      } else {
+        console.warn('Could not find word in editor for replacement:', suggestion.word);
+      }
+    }
+    // Remove the applied suggestion from local state and shift offsets of the remaining ones.
+    const diff = replacement.length - suggestion.word.length;
+    setSuggestions(prev =>
+      prev
+        // discard the suggestion we just fixed
+        .filter(s => s.id !== suggestion.id)
+        // shift offsets for any that appear after the replaced range
+        .map(s => {
+          if (diff !== 0 && s.startOffset > suggestion.endOffset) {
+            return {
+              ...s,
+              startOffset: s.startOffset + diff,
+              endOffset: s.endOffset + diff,
+              // optionally update id so it reflects new offsets (keep uniqueness)
+              id: s.id.startsWith('spell-') ? `spell-${s.startOffset + diff}-${s.endOffset + diff}` : s.id
+            } as SpellingSuggestion;
+          }
+          return s;
+        })
+    );
+  }, [editor]);
 
   // Handle dismissing suggestions
   const handleDismissSuggestion = useCallback((suggestionId: string) => {
