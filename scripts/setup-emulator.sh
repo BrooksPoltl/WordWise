@@ -32,22 +32,13 @@ fi
 # Create environment files if they don't exist
 echo "📝 Setting up environment files..."
 
-# Frontend environment
-if [ ! -f "frontend/.env" ]; then
-    echo "Creating frontend/.env from example..."
-    cp frontend/env.example frontend/.env
-    echo "✅ Created frontend/.env with emulator defaults"
+# Environment file for the app
+if [ ! -f ".env" ]; then
+    echo "Creating .env from example..."
+    cp env.example .env
+    echo "✅ Created .env with emulator defaults"
 else
-    echo "⚠️  frontend/.env already exists. Make sure VITE_USE_FIREBASE_EMULATOR=true"
-fi
-
-# Backend environment
-if [ ! -f "backend/.env" ]; then
-    echo "Creating backend/.env from example..."
-    cp backend/env.example backend/.env
-    echo "✅ Created backend/.env with emulator defaults"
-else
-    echo "⚠️  backend/.env already exists. Make sure USE_FIREBASE_EMULATOR=true"
+    echo "⚠️  .env already exists. Make sure VITE_USE_FIREBASE_EMULATOR=true"
 fi
 
 echo ""
@@ -61,4 +52,5 @@ echo "  npm run dev"
 echo ""
 echo "Firebase Emulator UI will be available at: http://localhost:4000"
 echo "Auth Emulator: http://localhost:9099"
-echo "Firestore Emulator: http://localhost:8080" 
+echo "Firestore Emulator: http://localhost:8080"
+echo "Your app: http://localhost:5173" 

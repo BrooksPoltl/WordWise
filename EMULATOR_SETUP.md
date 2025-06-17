@@ -16,7 +16,6 @@ This guide will help you set up and run WordWise entirely on Firebase emulators 
 
 That's it! Your app will be running with:
 - 🔧 Frontend: http://localhost:5173
-- 🛠️ Backend API: http://localhost:8000
 - 🔥 Firebase Emulator UI: http://localhost:4000
 - 🔐 Auth Emulator: http://localhost:9099
 - 💾 Firestore Emulator: http://localhost:8080
@@ -24,7 +23,6 @@ That's it! Your app will be running with:
 ## 📋 Prerequisites
 
 - Node.js (v20 or higher)
-- Python (v3.8 or higher)
 - Firebase CLI (will be installed automatically)
 
 ## 🔧 Manual Setup
@@ -36,35 +34,19 @@ If the quick start doesn't work, follow these manual steps:
 npm install -g firebase-tools
 ```
 
-### 2. Setup Environment Files
+### 2. Setup Environment File
 
-**Frontend (.env):**
 ```bash
-cd frontend
-cp env.example .env
-```
-
-**Backend (.env):**
-```bash
-cd backend
 cp env.example .env
 ```
 
 ### 3. Install Dependencies
 ```bash
-# Root level
 npm install
-
-# Frontend
-cd frontend && npm install
-
-# Backend
-cd backend && pip install -r requirements.txt
 ```
 
 ### 4. Start Emulators
 ```bash
-# From project root
 npm run emulator
 ```
 
@@ -73,22 +55,37 @@ npm run emulator
 | Command | Description |
 |---------|-------------|
 | `npm run setup` | One-time setup for emulator environment |
-| `npm run dev` | Start full development environment |
+| `npm run dev` | Start full development environment (emulators + dev server) |
 | `npm run emulator` | Start only Firebase emulators |
 | `npm run emulator:clean` | Start emulators with fresh data |
-| `npm run dev:frontend` | Start only frontend |
-| `npm run dev:backend` | Start only backend |
-| `npm run install:all` | Install all dependencies |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
+
+## 🏗️ Architecture
+
+WordWise is now a **frontend-only** application that connects directly to Firebase services:
+
+```
+WordWise/
+├── src/                 # React application source
+│   ├── components/      # React components  
+│   ├── store/          # Zustand state management
+│   ├── config/         # Firebase configuration
+│   └── types/          # TypeScript definitions
+├── public/             # Static assets
+├── firebase.json       # Firebase configuration
+├── firestore.rules     # Firestore security rules
+└── package.json        # Dependencies and scripts
+```
 
 ## 🏗️ Emulator Configuration
 
 ### Ports Used
 - **Auth Emulator**: 9099
 - **Firestore Emulator**: 8080
-- **Hosting Emulator**: 5000
+- **Hosting Emulator**: 5002
 - **Emulator UI**: 4000
-- **Frontend Dev Server**: 5173
-- **Backend API**: 8000
+- **Dev Server**: 5173
 
 ### Data Persistence
 Emulator data is automatically saved to `./emulator-data` and restored on restart. To start fresh:
@@ -121,7 +118,7 @@ You can create test users directly in the emulator UI at http://localhost:4000
    npm run dev
    ```
 
-2. **Make changes to your code** - both frontend and backend hot-reload
+2. **Make changes to your code** - Vite hot-reloads automatically
 
 3. **Test with emulator data** - create test users, documents, etc.
 
@@ -136,23 +133,16 @@ You can create test users directly in the emulator UI at http://localhost:4000
 
 ### For Emulator (Development)
 ```bash
-# Frontend .env
+# .env
 VITE_USE_FIREBASE_EMULATOR=true
-
-# Backend .env
-USE_FIREBASE_EMULATOR=true
 ```
 
 ### For Production
 ```bash
-# Frontend .env
+# .env
 VITE_USE_FIREBASE_EMULATOR=false
 VITE_FIREBASE_API_KEY=your_real_api_key
 # ... other real Firebase config
-
-# Backend .env
-USE_FIREBASE_EMULATOR=false
-FIREBASE_SERVICE_ACCOUNT_KEY_PATH=path/to/real/serviceAccountKey.json
 ```
 
 ## 🐛 Troubleshooting
@@ -178,16 +168,8 @@ If ports are in use, modify `firebase.json`:
 }
 ```
 
-### Backend Can't Connect to Emulator
-Ensure these environment variables are set in `backend/.env`:
-```bash
-USE_FIREBASE_EMULATOR=true
-FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
-FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
-```
-
 ### Frontend Can't Connect to Emulator
-Check `frontend/.env`:
+Check `.env`:
 ```bash
 VITE_USE_FIREBASE_EMULATOR=true
 ```
@@ -214,9 +196,8 @@ VITE_USE_FIREBASE_EMULATOR=true
 
 ## 🔗 Useful Links
 
+- **Your App**: http://localhost:5173
 - **Emulator UI**: http://localhost:4000
-- **Frontend**: http://localhost:5173
-- **Backend API Docs**: http://localhost:8000/docs
 - **Auth Emulator**: http://localhost:9099
 - **Firestore Emulator**: http://localhost:8080
 
@@ -226,4 +207,5 @@ VITE_USE_FIREBASE_EMULATOR=true
 - No internet connection required for development
 - Perfect for CI/CD testing
 - Security rules are fully supported
-- All Firebase SDK features work as expected 
+- All Firebase SDK features work as expected
+- **Frontend-only architecture** - no backend server needed! 

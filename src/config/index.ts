@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getFirestore, connectFirestoreEmulator, doc, setDoc, getDoc } from 'firebase/firestore';
 
 interface Config {
   apiUrl: string;
@@ -23,6 +23,11 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789:web:abcdef",
 };
 
+console.log('🔧 Firebase Config:', {
+  projectId: firebaseConfig.projectId,
+  useEmulator: config.useEmulator
+});
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
@@ -35,8 +40,40 @@ export const db = getFirestore(app);
 // Connect to emulators if in development mode
 if (config.useEmulator) {
   console.log('🔧 Running in Firebase Emulator mode');
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099');
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  
+  try {
+    // Connect to Auth emulator
+    connectAuthEmulator(auth, 'http://127.0.0.1:9099');
+    console.log('✅ Connected to Auth emulator on port 9099');
+    
+    // Connect to Firestore emulator
+    connectFirestoreEmulator(db, '127.0.0.1', 8080);
+    console.log('✅ Connected to Firestore emulator on port 8080');
+    
+    // Test Firestore connection after a short delay
+    setTimeout(async () => {
+      try {
+        console.log('🧪 Testing Firestore emulator connection...');
+        const testDocRef = doc(db, 'test', 'connection-test');
+        await setDoc(testDocRef, { 
+          timestamp: new Date(),
+          message: 'Emulator connection test successful'
+        });
+        
+        const testDoc = await getDoc(testDocRef);
+        if (testDoc.exists()) {
+          console.log('✅ Firestore emulator test successful:', testDoc.data());
+        } else {
+          console.error('❌ Firestore emulator test failed - document not found');
+        }
+      } catch (error) {
+        console.error('❌ Firestore emulator test failed:', error);
+      }
+    }, 1000);
+    
+  } catch (error) {
+    console.error('❌ Error connecting to emulators:', error);
+  }
 } else {
   console.log('🚀 Running in production Firebase mode');
 }

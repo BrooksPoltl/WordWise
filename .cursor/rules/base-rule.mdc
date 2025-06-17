@@ -58,22 +58,6 @@ Code Organization:
 Follow a consistent folder structure (e.g., components, hooks, pages, services).
 Use custom hooks to encapsulate and reuse logic.
 
-Support locale’s out of the box by splitting text strings into its own file, you will only need to support en-US for now. 
-
-For the backend: 
-
-Use python 3.13, follow PEP8 style guide, try to minimize files to 200 lines of code. Use meaningful variable/function names (e.g., get_user instead of gu).
-
-Use Pydantic (for FastAPI) or similar for request body validation.
-
-Sanitize inputs to prevent injection attacks (e.g., use parameterized queries for SQL).
-
-Include version in the URL (e.g., `/v1/users`) to support future changes.
-
-Use OpenAPI/Swagger for automatic documentation (e.g., FastAPI’s `/docs`).
-
-Include clear descriptions for endpoints, parameters, and responses.
-
 Implement authentication using Firebase. 
 
 Framework: React 18 with TypeScript
@@ -81,4 +65,3 @@ Build Tool: Vite for fast development
 Styling: Tailwind CSS for responsive design
 State Management: Zustand for lightweight state management
 Real-time Features, authentication: Firebase Realtime Database
-Backend: Python 3.13

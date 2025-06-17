@@ -38,7 +38,12 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
   signUp: async (userData: UserCreatePayload): Promise<void> => {
     set({ loading: true, error: null });
     try {
+      console.log('🚀 Starting user registration process...');
+      console.log('📧 Email:', userData.email);
+      console.log('👤 Display Name:', userData.displayName);
+      
       // Create Firebase user
+      console.log('🔑 Creating Firebase Auth user...');
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         userData.email,
@@ -46,6 +51,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
       );
       
       const { user: firebaseUser } = userCredential;
+      console.log('✅ Firebase Auth user created:', firebaseUser.uid);
 
       // Create user profile in Firestore
       const userProfile: User = {
@@ -58,11 +64,27 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
         },
       };
 
+      console.log('💾 Creating Firestore user document...');
+      console.log('📄 User profile data:', userProfile);
+      
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      console.log('📍 Document reference:', userDocRef.path);
+      
       // Save to Firestore
-      await setDoc(doc(db, 'users', firebaseUser.uid), {
+      await setDoc(userDocRef, {
         ...userProfile,
         createdAt: Timestamp.fromDate(userProfile.createdAt),
       });
+      
+      console.log('✅ User document created successfully in Firestore!');
+      
+      // Verify the document was created
+      const verifyDoc = await getDoc(userDocRef);
+      if (verifyDoc.exists()) {
+        console.log('✅ Verification successful - document exists:', verifyDoc.data());
+      } else {
+        console.error('❌ Verification failed - document does not exist');
+      }
 
       set({ 
         user: userProfile,
@@ -70,7 +92,16 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
         loading: false,
         error: null,
       });
+      
+      console.log('🎉 User registration completed successfully!');
     } catch (error: any) {
+      console.error('❌ Error during user registration:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      
       set({ 
         loading: false, 
         error: error.message || 'Failed to create account',
@@ -82,6 +113,9 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
   signIn: async (credentials: UserLoginPayload): Promise<void> => {
     set({ loading: true, error: null });
     try {
+      console.log('🔑 Starting user sign-in process...');
+      console.log('📧 Email:', credentials.email);
+      
       const userCredential = await signInWithEmailAndPassword(
         auth,
         credentials.email,
@@ -89,11 +123,14 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
       );
       
       const { user: firebaseUser } = userCredential;
+      console.log('✅ Firebase Auth sign-in successful:', firebaseUser.uid);
 
       // Get user profile from Firestore
+      console.log('📄 Fetching user profile from Firestore...');
       const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
       
       if (userDoc.exists()) {
+        console.log('✅ User profile found:', userDoc.data());
         const userData = userDoc.data();
         const userProfile: User = {
           uid: userData.uid,
@@ -109,10 +146,13 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
           loading: false,
           error: null,
         });
+        console.log('🎉 User sign-in completed successfully!');
       } else {
+        console.error('❌ User profile not found in Firestore');
         throw new Error('User profile not found');
       }
     } catch (error: any) {
+      console.error('❌ Error during user sign-in:', error);
       set({ 
         loading: false, 
         error: error.message || 'Failed to sign in',
@@ -124,9 +164,13 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
   signInWithGoogle: async (): Promise<void> => {
     set({ loading: true, error: null });
     try {
+      console.log('🔑 Starting Google sign-in process...');
+      
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
       const { user: firebaseUser } = userCredential;
+      
+      console.log('✅ Google Auth successful:', firebaseUser.uid);
 
       // Check if user profile exists
       const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
@@ -134,6 +178,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
       let userProfile: User;
 
       if (!userDoc.exists()) {
+        console.log('📄 Creating new user profile for Google user...');
         // Create new user profile
         userProfile = {
           uid: firebaseUser.uid,
@@ -145,11 +190,15 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
           },
         };
 
-        await setDoc(doc(db, 'users', firebaseUser.uid), {
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        await setDoc(userDocRef, {
           ...userProfile,
           createdAt: Timestamp.fromDate(userProfile.createdAt),
         });
+        
+        console.log('✅ Google user profile created in Firestore');
       } else {
+        console.log('✅ Existing Google user profile found');
         // Use existing profile
         const userData = userDoc.data();
         userProfile = {
@@ -167,7 +216,10 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
         loading: false,
         error: null,
       });
+      
+      console.log('🎉 Google sign-in completed successfully!');
     } catch (error: any) {
+      console.error('❌ Error during Google sign-in:', error);
       set({ 
         loading: false, 
         error: error.message || 'Failed to sign in with Google',
@@ -179,6 +231,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
   logout: async (): Promise<void> => {
     set({ loading: true, error: null });
     try {
+      console.log('👋 Signing out user...');
       await signOut(auth);
       set({ 
         user: null,
@@ -186,7 +239,9 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
         loading: false,
         error: null,
       });
+      console.log('✅ User signed out successfully');
     } catch (error: any) {
+      console.error('❌ Error during sign out:', error);
       set({ 
         loading: false, 
         error: error.message || 'Failed to sign out',
@@ -200,13 +255,16 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
   },
 
   initializeAuth: (): void => {
+    console.log('🔧 Initializing auth state listener...');
     onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        console.log('👤 Auth state changed - user signed in:', firebaseUser.uid);
         try {
           // Get user profile from Firestore
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           
           if (userDoc.exists()) {
+            console.log('✅ User profile loaded from Firestore');
             const userData = userDoc.data();
             const userProfile: User = {
               uid: userData.uid,
@@ -222,6 +280,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
               isInitialized: true,
             });
           } else {
+            console.log('⚠️ User authenticated but no profile found in Firestore');
             set({ 
               user: null,
               firebaseUser: null,
@@ -229,7 +288,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
             });
           }
         } catch (error) {
-          console.error('Error fetching user profile:', error);
+          console.error('❌ Error fetching user profile during auth state change:', error);
           set({ 
             user: null,
             firebaseUser: null,
@@ -237,6 +296,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
           });
         }
       } else {
+        console.log('👤 Auth state changed - user signed out');
         set({ 
           user: null,
           firebaseUser: null,

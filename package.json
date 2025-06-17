@@ -1,29 +1,50 @@
 {
   "name": "wordwise",
+  "private": true,
   "version": "1.0.0",
+  "type": "module",
   "description": "AI-powered writing assistant with Firebase emulator support",
   "scripts": {
+    "dev": "concurrently \"npm run emulator\" \"vite\"",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
     "setup": "chmod +x scripts/*.sh && bash scripts/setup-emulator.sh",
     "emulator": "firebase emulators:start --import=./emulator-data --export-on-exit=./emulator-data",
     "emulator:clean": "rm -rf emulator-data && firebase emulators:start",
-    "dev": "concurrently \"npm run emulator\" \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend && python main.py",
-    "install:all": "cd frontend && npm install && cd ../backend && pip install -r requirements.txt",
-    "build": "cd frontend && npm run build",
-    "test": "concurrently \"cd frontend && npm test\" \"cd backend && python -m pytest\""
+    "test": "vitest"
+  },
+  "dependencies": {
+    "firebase": "^10.7.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@typescript-eslint/eslint-plugin": "^6.14.0",
+    "@typescript-eslint/parser": "^6.14.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.16",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.55.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.3.6",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8",
+    "vitest": "^1.0.4"
   },
   "keywords": [
     "firebase",
     "emulator",
     "react",
-    "python",
-    "fastapi",
     "writing",
-    "ai"
+    "ai",
+    "typescript",
+    "vite"
   ],
   "author": "WordWise Team",
   "license": "MIT"
