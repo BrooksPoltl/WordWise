@@ -89,64 +89,25 @@ export const spellCheck = onRequest(
           return;
         }
 
-        // Create custom words list including specialized terms
-        const defaultCustomWords = [
-          'WordWise', 'Firebase', 'TipTap', 'TypeScript', 'React', 'COVID',
-          'JavaScript', 'HTML', 'CSS', 'API', 'JSON', 'GitHub', 'README',
-          'masteron', 'mast', 'testosterone', 'steroid', 'bodybuilding', 'atm',
-          'mg', 'ml', 'cc', 'iu', 'mcg', 'pct', 'ai', 'serm', 'hcg', 'hgh',
-          'tren', 'dbol', 'var', 'winny', 'primo', 'eq', 'deca', 'sus', 'prop',
-          'enth', 'cyp', 'undec', 'phenylprop'
-        ];
+        // Create a simple prompt without custom words
+        const prompt = `Find spelling errors in this text:
 
-        const allCustomWords = [...defaultCustomWords, ...customWords];
-
-        // Create the prompt for OpenAI
-        const prompt = `You are a professional spell checker. Analyze the following text for spelling errors and provide corrections.
-
-CUSTOM WORDS TO CONSIDER CORRECT (do not flag these as misspelled):
-${allCustomWords.join(', ')}
-
-TEXT TO CHECK:
 "${text}"
 
-Please respond with a JSON object containing an array of spelling errors found. For each error, provide:
-- word: the misspelled word
-- startOffset: character position where word starts (0-based)
-- endOffset: character position where word ends
-- suggestions: array of up to 5 suggested corrections
-- message: descriptive message about the error
+Return only raw JSON (no markdown formatting): {"errors":[{"word":"badword","startOffset":0,"endOffset":7,"suggestions":["goodword"]}]}`;
 
-Only include actual spelling errors. Do not flag proper nouns, technical terms, or words that are commonly used in informal writing.
-
-Response format:
-{
-  "errors": [
-    {
-      "word": "misspelled_word",
-      "startOffset": 0,
-      "endOffset": 10,
-      "suggestions": ["suggestion1", "suggestion2"],
-      "message": "Possible misspelling of 'correct_word'"
-    }
-  ]
-}`;
-
-        // Call OpenAI API
-        const model = "gpt-4.1-nano";
-        console.log(model);
+        // Call OpenAI API with optimized settings
         const openaiClient = getOpenAIClient();
         const completion = await openaiClient.chat.completions.create({
-          model: model,
+          model: "gpt-4o-mini", // Correct model name
           messages: [
             {
               role: "user",
               content: prompt
             }
           ],
-          stream: false,
-          temperature: 0.1, // Low temperature for consistent results
-          max_tokens: 1000,
+          temperature: 0,
+          max_tokens: 300, // Reduced for faster response
         });
 
         const aiResponse = completion.choices[0]?.message?.content;
@@ -155,23 +116,29 @@ Response format:
           throw new Error('No response from OpenAI');
         }
 
-        // Parse AI response
+        // Parse AI response (handle markdown code blocks)
         let aiResult;
         try {
-          aiResult = JSON.parse(aiResponse);
+          // Remove markdown code blocks if present
+          let cleanResponse = aiResponse.trim();
+          if (cleanResponse.startsWith('```json') || cleanResponse.startsWith('```')) {
+            cleanResponse = cleanResponse.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+          }
+          
+          aiResult = JSON.parse(cleanResponse);
         } catch (parseError) {
           console.error('Failed to parse AI response:', aiResponse);
           throw new Error('Invalid response format from AI');
         }
 
-        // Convert AI results to our format
+        // Convert AI results to our expected API format
         const suggestions = (aiResult.errors || []).map((error: any, index: number) => ({
-          id: `spell-${error.startOffset}-${error.endOffset}-${index}`,
+          id: `spell-${error.start}-${error.end}-${index}`,
           word: error.word,
-          startOffset: error.startOffset,
-          endOffset: error.endOffset,
+          startOffset: error.start,          // Our API expects startOffset
+          endOffset: error.end,              // Our API expects endOffset  
           suggestions: error.suggestions || [],
-          message: error.message || `"${error.word}" may be misspelled`
+          message: `"${error.word}" may be misspelled`
         }));
 
         // Calculate metrics

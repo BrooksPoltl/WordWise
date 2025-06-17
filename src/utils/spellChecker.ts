@@ -15,31 +15,10 @@ interface SpellCheckResponse {
 class SpellCheckerService {
   private readonly debouncedCheck: (text: string, callback: (suggestions: SpellingSuggestion[]) => void) => void;
 
-  // Custom words that should be considered correct
-  private customWords = new Set([
-    'WordWise',
-    'Firebase', 
-    'TipTap',
-    'TypeScript',
-    'React',
-    'COVID',
-    'JavaScript',
-    'HTML',
-    'CSS',
-    'API',
-    'JSON',
-    'GitHub',
-    'README',
-    'masteron',
-    'mast',
-    'testosterone',
-    'steroid',
-    'bodybuilding',
-    'atm'
-  ]);
+  // Removed custom words logic as requested
 
   constructor() {
-    this.debouncedCheck = this.debounce(this.performCheck.bind(this), 300);
+    this.debouncedCheck = this.debounce(this.performCheck.bind(this), 1000); // Increased to 1 second
   }
 
   private debounce<T extends (...args: any[]) => any>(
@@ -90,8 +69,7 @@ class SpellCheckerService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          text,
-          customWords: Array.from(this.customWords)
+          text
         })
       });
 
