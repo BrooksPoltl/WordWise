@@ -9,9 +9,13 @@ interface Config {
 }
 
 const config: Config = {
-  // Default to localhost for development, can be overridden with VITE_API_URL environment variable
-  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:8000',
-  useEmulator: import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true' || import.meta.env.DEV,
+  // API URL: if explicit env var provided, use it. Otherwise, default to the
+  // local emulator only in development; in a production build fall back to the
+  // same origin (empty string) so relative fetches hit your deployed backend.
+  apiUrl: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000' : ''),
+  // Enable emulators only when explicitly requested via env flag.
+  // This avoids unintentional activation in production builds.
+  useEmulator: import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true',
 };
 
 // Firebase configuration
@@ -54,6 +58,7 @@ if (config.useEmulator) {
     // Test Firestore connection after a short delay
     setTimeout(async () => {
       try {
+        console.error('*** BUILD 2024-06-17-1700 ***');
         logger.firebase.test('Testing Firestore emulator connection...');
         const testDocRef = doc(db, 'test', 'connection-test');
         await setDoc(testDocRef, { 

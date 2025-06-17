@@ -1,25 +1,29 @@
 import { onRequest } from 'firebase-functions/v2/https';
-import { defineSecret } from 'firebase-functions/params';
 import cors from 'cors';
 import OpenAI from 'openai';
 
-// Define the OpenAI API key as a secret
-const openaiApiKey = defineSecret('OPENAI_API_KEY');
 
 // CORS middleware
-const corsHandler = cors({ origin: true });
+const allowedOrigins: string[] = (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+const corsHandler = cors({ origin: allowedOrigins });
 
 // Initialize OpenAI client (will be created when needed)
 let openai: OpenAI | null = null;
+const apiKey = process.env.OPENAI_API_KEY;
 
 function getOpenAIClient(): OpenAI {
-  if (!openai) {
-    const apiKey = openaiApiKey.value() || process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-    openai = new OpenAI({ apiKey });
+  // Lazily create a singleton client instance
+  if (openai) return openai;
+
+  if (!apiKey) {
+    throw new Error('OpenAI API key not configured');
   }
+
+  openai = new OpenAI({ apiKey });
   return openai;
 }
 
@@ -52,16 +56,19 @@ interface SpellCheckResponse {
 export const spellCheck = onRequest(
   { 
     cors: true,
-    secrets: [openaiApiKey],
     timeoutSeconds: 60 // Increased timeout for larger texts
   },
   async (request, response) => {
-    // Set CORS headers
-    response.set('Access-Control-Allow-Origin', '*');
+    // Set CORS headers based on allowed origins
+    const requestOrigin = request.headers.origin as string | undefined;
+
+    if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+      response.set('Access-Control-Allow-Origin', requestOrigin);
+    }
     response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     response.set('Access-Control-Allow-Headers', 'Content-Type');
 
-    // Handle preflight requests
+    // Handle preflight requests early
     if (request.method === 'OPTIONS') {
       response.status(204).send('');
       return;
