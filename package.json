@@ -1,0 +1,30 @@
+{
+  "name": "wordwise",
+  "version": "1.0.0",
+  "description": "AI-powered writing assistant with Firebase emulator support",
+  "scripts": {
+    "setup": "chmod +x scripts/*.sh && bash scripts/setup-emulator.sh",
+    "emulator": "firebase emulators:start --import=./emulator-data --export-on-exit=./emulator-data",
+    "emulator:clean": "rm -rf emulator-data && firebase emulators:start",
+    "dev": "concurrently \"npm run emulator\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && python main.py",
+    "install:all": "cd frontend && npm install && cd ../backend && pip install -r requirements.txt",
+    "build": "cd frontend && npm run build",
+    "test": "concurrently \"cd frontend && npm test\" \"cd backend && python -m pytest\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "firebase",
+    "emulator",
+    "react",
+    "python",
+    "fastapi",
+    "writing",
+    "ai"
+  ],
+  "author": "WordWise Team",
+  "license": "MIT"
+} 
