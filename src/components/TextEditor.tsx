@@ -65,7 +65,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
     return result;
   }, []);
 
-  const applySpellErrorMarks = useCallback((editorInstance: any, suggestionsList: SpellingSuggestion[]) => {
+  const applySpellErrorMarks = useCallback((editorInstance: any, suggestionsList: SpellingSuggestion[], plainText: string) => {
     // Compute a simple signature of suggestions to avoid redundant transactions
     const newSignature = suggestionsList
       .map(({ id, startOffset, endOffset }) => `${id}-${startOffset}-${endOffset}`)
@@ -83,9 +83,11 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
     // Clear previous error marks
     tr = tr.removeMark(0, state.doc.content.size, markType);
 
+    const adjustOffset = (offset: number) => offset - (plainText.slice(0, offset).match(/\n/g) || []).length;
+
     suggestionsList.forEach(({ id, startOffset, endOffset }) => {
-      const from = getPosFromPlainOffset(editorInstance, startOffset);
-      const to = getPosFromPlainOffset(editorInstance, endOffset);
+      const from = getPosFromPlainOffset(editorInstance, adjustOffset(startOffset));
+      const to = getPosFromPlainOffset(editorInstance, adjustOffset(endOffset));
       if (from !== null && to !== null && from < to) {
         tr = tr.addMark(from, to, markType.create({ suggestionId: id }));
       }
@@ -187,7 +189,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
       
       // Apply highlighting to the editor content
       if (editor && filteredSuggestions.length > 0) {
-        applySpellErrorMarks(editor, filteredSuggestions);
+        applySpellErrorMarks(editor, filteredSuggestions, plainTextForSpellCheck);
       } else if (editor) {
         clearSpellErrorMarks(editor);
       }
