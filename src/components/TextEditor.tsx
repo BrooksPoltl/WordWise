@@ -267,6 +267,21 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
     setTitle(currentDocument?.title || '');
   }, [currentDocument?.title]);
 
+  // Handle paste events explicitly to run spellcheck immediately after paste
+  useEffect(() => {
+    if (!editor) return;
+    const pasteHandler = () => {
+      // Wait for the paste to settle then process
+      setTimeout(() => {
+        handleTextChange(editor.getHTML());
+      }, 100);
+    };
+    editor.view.dom.addEventListener('paste', pasteHandler);
+    return () => {
+      editor.view.dom.removeEventListener('paste', pasteHandler);
+    };
+  }, [editor, handleTextChange]);
+
   if (!editor) {
     return (
       <div className="flex items-center justify-center h-64">
