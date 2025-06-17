@@ -54,4 +54,20 @@ export interface DocumentUpdatePayload {
   id: string;
   title?: string;
   content?: string;
+}
+
+// Spell checking types
+export interface SpellingSuggestion {
+  id: string;
+  word: string;
+  startOffset: number;
+  endOffset: number;
+  suggestions: string[];
+  message: string;
+}
+
+export interface WritingMetrics {
+  wordCount: number;
+  characterCount: number;
+  spellingErrors: number;
 } 

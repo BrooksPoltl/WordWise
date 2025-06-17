@@ -12,7 +12,8 @@
     "setup": "chmod +x scripts/*.sh && bash scripts/setup-emulator.sh",
     "emulator": "firebase emulators:start --import=./emulator-data --export-on-exit=./emulator-data",
     "emulator:clean": "rm -rf emulator-data && firebase emulators:start",
-    "test": "vitest"
+    "test": "vitest",
+    "kill-ports": "./scripts/kill-ports.sh"
   },
   "dependencies": {
     "@tiptap/extension-character-count": "^2.14.0",
@@ -20,6 +21,7 @@
     "@tiptap/pm": "^2.14.0",
     "@tiptap/react": "^2.14.0",
     "@tiptap/starter-kit": "^2.14.0",
+    "@types/node": "^24.0.3",
     "@types/react-router-dom": "^5.3.3",
     "firebase": "^10.7.1",
     "react": "^18.2.0",

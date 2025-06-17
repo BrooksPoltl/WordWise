@@ -117,7 +117,7 @@ const DocumentEditor: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -151,11 +151,14 @@ const DocumentEditor: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <TextEditor 
-          documentId={documentId!} 
-          onTitleChange={handleTitleChange}
-        />
+      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 h-full overflow-hidden">
+        <div className="max-w-7xl mx-auto h-full">
+          <TextEditor 
+            documentId={documentId!} 
+            onTitleChange={handleTitleChange}
+            showSidebar={true}
+          />
+        </div>
       </main>
     </div>
   );
