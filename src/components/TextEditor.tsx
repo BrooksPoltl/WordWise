@@ -327,8 +327,10 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
   };
 
   const applyRefactoredContent = () => {
-    if (editor && refactoredContent) {
+    if (editor && refactoredContent && selectedTone) {
       editor.commands.setContent(refactoredContent);
+      // Update detected tone to reflect new selection immediately
+      setDetectedTone(selectedTone);
       setIsToneModalOpen(false);
       setSelectedTone(null);
     }
