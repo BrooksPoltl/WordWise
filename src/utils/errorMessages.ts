@@ -34,6 +34,16 @@ export function getFriendlyErrorMessage(
         return 'Network error. Check your connection and try again.';
       case 'auth/operation-not-allowed':
         return 'This sign-in method is currently disabled.';
+      case 'unavailable':
+        return 'Service unavailable. Please try again later.';
+      case 'internal':
+        return 'An internal server error occurred. Please try again.';
+      case 'deadline-exceeded':
+        return 'The request timed out. Please try again.';
+      case 'not-found':
+        return 'The requested resource was not found.';
+      case 'failed-precondition':
+        return 'Operation failed due to unmet prerequisites.';
       default:
         // For any other auth error, hide the code and show generic message.
         return fallback;

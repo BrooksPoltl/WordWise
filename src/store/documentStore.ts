@@ -15,6 +15,7 @@ import {
 import { db } from '../config';
 import { Document, DocumentCreatePayload, DocumentUpdatePayload } from '../types';
 import { logger } from '../utils/logger';
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
 
 interface DocumentState {
   documents: Document[];
@@ -69,7 +70,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       logger.info('Documents fetched successfully', { count: documents.length });
     } catch (error) {
       logger.error('Error fetching documents:', error);
-      set({ error: 'Failed to fetch documents', loading: false });
+      set({ error: getFriendlyErrorMessage(error, 'Failed to fetch documents'), loading: false });
     }
   },
 
@@ -102,7 +103,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       }
     } catch (error) {
       logger.error('Error fetching document:', error);
-      set({ error: 'Failed to fetch document', loading: false });
+      set({ error: getFriendlyErrorMessage(error, 'Failed to fetch document'), loading: false });
       return null;
     }
   },
@@ -142,7 +143,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       return docRef.id;
     } catch (error) {
       logger.error('Error creating document:', error);
-      set({ error: 'Failed to create document', loading: false });
+      set({ error: getFriendlyErrorMessage(error, 'Failed to create document'), loading: false });
       throw error;
     }
   },
@@ -198,7 +199,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       logger.info('Document updated successfully', { documentId: payload.id });
     } catch (error) {
       logger.error('Error updating document:', error);
-      set({ error: 'Failed to update document', loading: false });
+      set({ error: getFriendlyErrorMessage(error, 'Failed to update document'), loading: false });
       throw error;
     }
   },
@@ -221,7 +222,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       logger.info('Document deleted successfully', { documentId });
     } catch (error) {
       logger.error('Error deleting document:', error);
-      set({ error: 'Failed to delete document', loading: false });
+      set({ error: getFriendlyErrorMessage(error, 'Failed to delete document'), loading: false });
       throw error;
     }
   },
