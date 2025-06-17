@@ -328,7 +328,17 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
 
   const applyRefactoredContent = () => {
     if (editor && refactoredContent && selectedTone) {
-      editor.commands.setContent(refactoredContent);
+      // Convert plain text with newlines to HTML preserving paragraphs and line breaks
+      const htmlContent = refactoredContent
+        .split(/\n{2,}/) // paragraphs separated by blank lines
+        .map(paragraph => {
+          // within paragraph replace single newlines with <br/>
+          const withBreaks = paragraph.replace(/\n/g, '<br />');
+          return `<p>${withBreaks}</p>`;
+        })
+        .join('');
+
+      editor.commands.setContent(htmlContent, false);
       // Update detected tone to reflect new selection immediately
       setDetectedTone(selectedTone);
       setIsToneModalOpen(false);
