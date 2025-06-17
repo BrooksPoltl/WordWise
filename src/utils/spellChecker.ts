@@ -167,16 +167,22 @@ class SpellCheckerService {
     targetSuggestion: SpellingSuggestion, 
     replacement: string
   ): SpellingSuggestion[] {
-    // Sort by position (descending) to apply from end to beginning
-    const sortedSuggestions = [...suggestions].sort((a, b) => b.startOffset - a.startOffset);
-    const targetIndex = sortedSuggestions.findIndex(s => s.id === targetSuggestion.id);
-    
-    if (targetIndex === -1) {
-      return suggestions; // Suggestion not found
-    }
-    
-    // Remove the applied suggestion and return the rest
-    return suggestions.filter(s => s.id !== targetSuggestion.id);
+    const delta = replacement.length - targetSuggestion.word.length;
+    const targetStartOffset = targetSuggestion.startOffset;
+
+    // Filter out the applied suggestion and update offsets of subsequent suggestions
+    return suggestions
+      .filter(s => s.id !== targetSuggestion.id)
+      .map(s => {
+        if (s.startOffset > targetStartOffset) {
+          return {
+            ...s,
+            startOffset: s.startOffset + delta,
+            endOffset: s.endOffset + delta,
+          };
+        }
+        return s;
+      });
   }
   
   /**

@@ -30,7 +30,6 @@ function getOpenAIClient(): OpenAI {
 interface SpellCheckRequest {
   mode?: 'spell' | 'toneDetect' | 'toneRewrite';
   text: string;
-  customWords?: string[];
   tone?: Tone; // Required if mode === 'toneRewrite'
   limitSuggestions?: boolean; // Limit to 1 suggestion per word
 }
@@ -82,7 +81,7 @@ export const spellCheck = onRequest(
           return;
         }
 
-        const { mode = 'spell', text, customWords = [], tone, limitSuggestions = false }: SpellCheckRequest = request.body;
+        const { mode = 'spell', text, tone, limitSuggestions = false }: SpellCheckRequest = request.body;
 
         if (!text || typeof text !== 'string') {
           response.status(400).json({ error: 'Text is required and must be a string' });
@@ -99,7 +98,7 @@ export const spellCheck = onRequest(
               return;
             }
 
-            const prompt = createSpellCheckPrompt(text, customWords, limitSuggestions);
+            const prompt = createSpellCheckPrompt(text, limitSuggestions);
             const suggestions = await performSpellCheck(prompt, text, limitSuggestions);
             const metrics = calculateBasicMetrics(text);
             metrics.spellingErrors = suggestions.length;
@@ -159,25 +158,20 @@ export const spellCheck = onRequest(
 /**
  * Create an improved prompt that handles edge cases better
  */
-function createSpellCheckPrompt(text: string, customWords: string[], limitSuggestions: boolean = false): string {
-  const customWordsSection = customWords.length > 0 
-    ? `\n\nThese words should NOT be flagged as errors: ${customWords.join(', ')}`
-    : '';
+function createSpellCheckPrompt(text: string, limitSuggestions: boolean = false): string {
+  const suggestionLimitRule = limitSuggestions
+    ? '\n4. **Give one practical suggestion**: Provide only the single most likely correction for each error.'
+    : '\n4. **Give practical suggestions**: Provide the most likely corrections for each error.';
 
-  const suggestionLimit = limitSuggestions 
-    ? '\n6. Provide only ONE suggestion per error for cleaner results'
-    : '';
-
-  return `You are a spell checker. Find ONLY genuine spelling errors in the text below.
+  return `You are a highly proficient English language spell checker. Your task is to identify and correct spelling errors and obvious typos in the provided text.
 
 IMPORTANT RULES:
-1. Only flag words that are clearly misspelled
-2. Do NOT flag: proper names, technical terms, abbreviations, or uncommon but valid words
-3. Provide accurate character offsets (0-indexed) in the original text
-4. Give practical suggestions for each error
-5. Return ONLY valid JSON, no markdown formatting${suggestionLimit}
+1.  **Aggressively correct typos**: Flag words that are clearly misspelled. Pay special attention to short, common words (2-3 letters) that are likely typos for other words (e.g., 'teh' for 'the', 'wa' for 'was'). A standalone word like "th" should be flagged as a typo for "the" unless it follows a number (e.g., "4th"). Do not be overly conservative with these short words.
+2.  **Be careful with proper nouns**: Do NOT flag proper names, acronyms, or technical jargon unless they are extremely common and clearly misspelled (e.g., 'Gogle' for 'Google').
+3.  **Provide accurate character offsets**: The 'startOffset' and 'endOffset' must correspond to the exact position of the misspelled word in the original text (0-indexed).${suggestionLimitRule}
+5.  **Return ONLY valid JSON**: Your entire output must be a single, valid JSON object, with no markdown formatting or other text.
 
-Text to check: "${text}"${customWordsSection}
+Text to check: "${text}"
 
 Return this exact JSON format:
 {
@@ -186,7 +180,7 @@ Return this exact JSON format:
       "word": "misspelled_word",
       "startOffset": 0,
       "endOffset": 10,
-      "suggestions": ["correct_word1"${limitSuggestions ? '' : ', "correct_word2"'}]
+      "suggestions": ["best_correction"]
     }
   ]
 }`;
@@ -199,7 +193,7 @@ async function performSpellCheck(prompt: string, originalText: string, limitSugg
   const openaiClient = getOpenAIClient();
   
   const completion = await openaiClient.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "gpt-4o",
     messages: [{ role: "user", content: prompt }],
     temperature: 0,
     max_tokens: 500,
@@ -404,9 +398,8 @@ export const toneDetect = onRequest({ cors: true, timeoutSeconds: 60 }, async (r
       const openaiClient = getOpenAIClient();
 
       const prompt = `You are a tone classifier. Given the text below, select the single most appropriate tone from this list: ${TONE_OPTIONS.join(', ')}.\n\nReturn ONLY valid JSON in the format {\n  \"tone\": \"<chosen tone>\",\n  \"confidence\": <confidence between 0 and 1>\n}. Do not output anything else.\n\nText:\n\"\n${text}\n\"`;
-
       const completion = await openaiClient.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: "gpt-4o-2024-11-20",
         messages: [{ role: 'user', content: prompt }],
         temperature: 0,
         max_tokens: 150,

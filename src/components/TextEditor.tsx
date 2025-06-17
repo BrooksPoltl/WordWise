@@ -38,6 +38,9 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
   const [isToneModalOpen, setIsToneModalOpen] = useState(false);
   const [refactoredContent, setRefactoredContent] = useState<string>('');
 
+  const contentRef = useRef(currentDocument?.content);
+  contentRef.current = currentDocument?.content;
+
   // Flag to avoid recursive updates when we dispatch transactions that only manipulate marks
   const isApplyingMarksRef = useRef(false);
   const lastSuggestionsSignatureRef = useRef('');
@@ -46,22 +49,32 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
   const getPosFromPlainOffset = useCallback((editorInstance: any, offset: number): number | null => {
     let result: number | null = null;
     let accumulated = 0;
+    let lastTextNodeEndPos: number | null = null;
+
+    if (!editorInstance) return null;
+
     editorInstance.state.doc.descendants((node: any, posHere: number) => {
       if (node.isText) {
-        const nextAccum = accumulated + node.text.length;
+        const nodeTextLength = node.text.length;
+        const nextAccum = accumulated + nodeTextLength;
+        // The position right after the current text node
+        lastTextNodeEndPos = posHere + nodeTextLength;
+
         if (offset < nextAccum) {
-          // Inside current text node
+          // The offset is inside the current text node
           result = posHere + (offset - accumulated);
-          return false;
-        } else if (offset === nextAccum) {
-          // Offset is exactly at the end of this node -> return position right after it
-          result = posHere + node.text.length;
-          return false;
+          return false; // Stop searching
         }
         accumulated = nextAccum;
       }
-      return true;
+      return true; // Continue searching
     });
+
+    // This handles the edge case where the offset is at the very end of the document
+    if (result === null && lastTextNodeEndPos !== null && offset === accumulated) {
+      result = lastTextNodeEndPos;
+    }
+
     return result;
   }, []);
 
@@ -80,8 +93,21 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
     if (!markType) return;
 
     let tr = state.tr;
-    // Clear previous error marks
-    tr = tr.removeMark(0, state.doc.content.size, markType);
+    
+    // Create a set of suggestion IDs for quick lookups
+    const suggestionIds = new Set(suggestionsList.map(s => s.id));
+
+    // Remove only the marks that are no longer in the suggestions list
+    state.doc.descendants((node: any, pos: number) => {
+      node.marks.forEach((mark: any) => {
+        if (mark.type.name === 'spellError') {
+          const suggestionId = mark.attrs.suggestionId;
+          if (!suggestionIds.has(suggestionId)) {
+            tr = tr.removeMark(pos, pos + node.nodeSize, mark);
+          }
+        }
+      });
+    });
 
     const adjustOffset = (offset: number) => offset - (plainText.slice(0, offset).match(/\n/g) || []).length;
 
@@ -89,7 +115,11 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
       const from = getPosFromPlainOffset(editorInstance, adjustOffset(startOffset));
       const to = getPosFromPlainOffset(editorInstance, adjustOffset(endOffset));
       if (from !== null && to !== null && from < to) {
-        tr = tr.addMark(from, to, markType.create({ suggestionId: id }));
+        // Check if the mark already exists to avoid adding duplicates
+        const existingMark = editorInstance.state.doc.rangeHasMark(from, to, markType, { suggestionId: id });
+        if (!existingMark) {
+          tr = tr.addMark(from, to, markType.create({ suggestionId: id }));
+        }
       }
     });
 
@@ -119,7 +149,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
       return (content: string) => {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(async () => {
-          if (documentId && content !== currentDocument?.content) {
+          if (documentId && content !== contentRef.current) {
             try {
               await updateDocument({
                 id: documentId,
@@ -132,7 +162,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
         }, 3000); // Save after 3 seconds of inactivity
       };
     })(),
-    [documentId, currentDocument?.content, updateDocument]
+    [documentId, updateDocument]
   );
 
   const editor = useEditor({
@@ -196,14 +226,22 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
 
   // Update editor content when document changes
   useEffect(() => {
-    if (editor && currentDocument?.content !== editor.getHTML()) {
-      editor.commands.setContent(currentDocument?.content || '');
-      // Trigger spell check for initial content
-      if (currentDocument?.content) {
-        handleTextChange(currentDocument.content);
+    if (editor && currentDocument) {
+      const editorContent = editor.getHTML();
+      const storeContent = currentDocument.content || '';
+      
+      const editorContentClean = removeSpellingHighlights(editorContent);
+      // The content from the store should already be clean, but we run it just in case
+      const storeContentClean = removeSpellingHighlights(storeContent);
+
+      if (storeContentClean !== editorContentClean) {
+        // Content has changed from another source, so update the editor
+        // The `false` here is `emitUpdate`, we don't want to trigger another update/save cycle
+        editor.commands.setContent(storeContent, false); 
+        handleTextChange(storeContent);
       }
     }
-  }, [editor, currentDocument?.content, handleTextChange]);
+  }, [editor, currentDocument, handleTextChange]);
 
   // Handle applying suggestions with simplified logic
   const handleApplySuggestion = useCallback((suggestion: SpellingSuggestion, replacement: string) => {
@@ -267,6 +305,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
     
     const keydownHandler = (event: KeyboardEvent) => {
       if (event.key === ' ') {
+        // Use a small timeout to let the editor state update with the space character
         setTimeout(() => {
           if (!editor.view.hasFocus()) return;
           
@@ -279,24 +318,16 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
             );
             
             if (filteredSuggestions.length > 0) {
-              setSuggestions(prev => {
-                // Avoid adding duplicate suggestions for the same word
-                const existingIds = new Set(prev.map(s => s.id));
-                const uniqueNewSuggestions = filteredSuggestions.filter(s => !existingIds.has(s.id));
-                if (uniqueNewSuggestions.length === 0) return prev;
-
-                const suggestionsForOtherWords = prev.filter(s => 
-                  s.startOffset !== uniqueNewSuggestions[0].startOffset
+              const newSuggestion = filteredSuggestions[0];
+              // Just update the state. The highlighting is handled by another useEffect.
+              setSuggestions(prevSuggestions => {
+                // Filter out any old suggestion for the same word (same start position)
+                const otherSuggestions = prevSuggestions.filter(
+                  s => s.startOffset !== newSuggestion.startOffset
                 );
-                return [...suggestionsForOtherWords, ...uniqueNewSuggestions];
+                // Add the new suggestion
+                return [...otherSuggestions, newSuggestion];
               });
-              
-              // Apply marks for the new suggestions
-              setTimeout(() => {
-                if (editor) {
-                  applySpellErrorMarks(editor, [...suggestions, ...filteredSuggestions], plainText);
-                }
-              }, 50);
             }
           });
         }, 50);
@@ -307,7 +338,20 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
     return () => {
       editor.view.dom.removeEventListener('keydown', keydownHandler);
     };
-  }, [editor, dismissedSuggestions, applySpellErrorMarks, suggestions]);
+  }, [editor, dismissedSuggestions]);
+
+  // Apply or clear spell error marks whenever the suggestions list changes
+  useEffect(() => {
+    if (!editor) return;
+
+    if (suggestions.length > 0) {
+      const plainText = editor.getText();
+      applySpellErrorMarks(editor, suggestions, plainText);
+    } else {
+      // Also clear marks if suggestions array becomes empty
+      clearSpellErrorMarks(editor);
+    }
+  }, [editor, suggestions, applySpellErrorMarks, clearSpellErrorMarks]);
 
   if (!editor) {
     return (
