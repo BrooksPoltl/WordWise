@@ -11,6 +11,7 @@
 - ⚡ **Fast Development** - Vite-powered build system with hot reload
 - 🛡️ **TypeScript** - Type-safe development experience
 - 📱 **Responsive Design** - Works perfectly on desktop and mobile
+- 🔧 **Smart Logging** - Development-only logging that's silent in production
 
 ## 🚀 Quick Start
 
@@ -52,6 +53,8 @@ src/
 │   └── userStore.ts     # User data operations
 ├── config/              # Firebase configuration
 ├── types/               # TypeScript definitions
+├── utils/               # Utility functions
+│   └── logger.ts        # Development logging utility
 └── App.tsx              # Main app component
 ```
 
@@ -77,6 +80,35 @@ The app runs entirely on Firebase emulators for development:
 - **Emulator UI**: http://localhost:4000
 
 No real Firebase project needed for development! 🎉
+
+### Development Logging
+
+WordWise includes a smart logging utility that only shows logs during development:
+
+```typescript
+import { logger } from './utils/logger';
+
+// These only show in development (VITE_USE_FIREBASE_EMULATOR=true)
+logger.debug('Debug information');
+logger.info('General information');
+logger.success('Operation completed');
+logger.warning('Warning message');
+
+// Firebase-specific logging
+logger.firebase.auth('User authenticated');
+logger.firebase.firestore('Document saved');
+
+// Grouped logging for complex operations
+logger.group.start('User Registration');
+logger.group.log('Creating auth user...');
+logger.group.log('Saving profile...');
+logger.group.end();
+
+// Errors always show (even in production)
+logger.error('Something went wrong');
+```
+
+In production builds, all development logs are automatically silenced for clean console output.
 
 ## 📦 Tech Stack
 
