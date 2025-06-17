@@ -45,10 +45,13 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
       if (node.isText) {
         const nextAccum = accumulated + node.text.length;
         if (offset < nextAccum) {
-          // Position of this character inside the document is the start of the
-          // text node (posHere) plus the character index within that node.
+          // Inside current text node
           result = posHere + (offset - accumulated);
-          return false; // stop traversal
+          return false;
+        } else if (offset === nextAccum) {
+          // Offset is exactly at the end of this node -> return position right after it
+          result = posHere + node.text.length;
+          return false;
         }
         accumulated = nextAccum;
       }
