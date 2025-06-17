@@ -5,7 +5,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import CharacterCount from '@tiptap/extension-character-count';
 import { useDocumentStore } from '../store/documentStore';
 import { useAuthStore } from '../store/authStore';
-import { SpellingSuggestion, WritingMetrics } from '../types';
+import { SpellingSuggestion, WritingMetrics, Tone } from '../types';
 import { spellChecker } from '../utils/spellChecker';
 import { 
   getSuggestionIdFromElement,
@@ -14,6 +14,7 @@ import {
 } from '../utils/textHighlighter';
 import SpellErrorMark from '../extensions/SpellErrorMark';
 import SuggestionSidebar from './SuggestionSidebar';
+import { toneAnalyzer } from '../utils/toneAnalyzer';
 
 interface TextEditorProps {
   documentId: string;
@@ -32,6 +33,10 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
   });
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
   const [title, setTitle] = useState<string>(currentDocument?.title || '');
+  const [detectedTone, setDetectedTone] = useState<Tone | null>(null);
+  const [selectedTone, setSelectedTone] = useState<Tone | null>(null);
+  const [isToneModalOpen, setIsToneModalOpen] = useState(false);
+  const [refactoredContent, setRefactoredContent] = useState<string>('');
 
   // Flag to avoid recursive updates when we dispatch transactions that only manipulate marks
   const isApplyingMarksRef = useRef(false);
@@ -158,6 +163,13 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
     const newMetrics = spellChecker.calculateMetrics(plainTextForSpellCheck);
     setMetrics(newMetrics);
     
+    // Trigger tone detection (debounced inside service)
+    toneAnalyzer.detectTone(plainTextForSpellCheck, (tone) => {
+      if (tone) {
+        setDetectedTone(tone);
+      }
+    });
+    
     // Check for suggestions using plain text
     spellChecker.checkText(plainTextForSpellCheck, (newSuggestions) => {
       // Filter out dismissed suggestions
@@ -275,6 +287,57 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
     }));
   }, [wordCount, characterCount]);
 
+  // Tone related helpers
+  const TONE_OPTIONS: Tone[] = [
+    'Formal',
+    'Informal',
+    'Friendly',
+    'Professional',
+    'Humorous',
+    'Serious',
+    'Academic',
+    'Conversational',
+    'Persuasive',
+    'Empathetic',
+  ];
+
+  const toneEmojiMap: Record<Tone, string> = {
+    Formal: '🎓',
+    Informal: '😎',
+    Friendly: '😊',
+    Professional: '💼',
+    Humorous: '😂',
+    Serious: '🧐',
+    Academic: '📚',
+    Conversational: '🗨️',
+    Persuasive: '🗣️',
+    Empathetic: '🤗',
+  } as const;
+
+  const handleToneSelection = async (tone: Tone) => {
+    if (!editor) return;
+    setSelectedTone(tone);
+    try {
+      const rewritten = await toneAnalyzer.rewriteText(editor.getText(), tone);
+      setRefactoredContent(rewritten);
+      setIsToneModalOpen(true);
+    } catch (error) {
+      console.error('Tone rewrite failed:', error);
+    }
+  };
+
+  const applyRefactoredContent = () => {
+    if (editor && refactoredContent) {
+      editor.commands.setContent(refactoredContent);
+      setIsToneModalOpen(false);
+      setSelectedTone(null);
+    }
+  };
+
+  const closeToneModal = () => {
+    setIsToneModalOpen(false);
+  };
+
   return (
     <div className="flex h-full">
       {/* Main Editor */}
@@ -306,6 +369,13 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
                   <div className="flex items-center space-x-1 text-red-600">
                     <span className="w-2 h-2 bg-red-500 rounded-full"></span>
                     <span>{suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''}</span>
+                  </div>
+                )}
+                {/* Tone indicator */}
+                {detectedTone && (
+                  <div className="flex items-center space-x-1 cursor-pointer" title="Click to change tone" onClick={() => handleToneSelection(detectedTone as Tone)}>
+                    <span>{toneEmojiMap[detectedTone]}</span>
+                    <span>{detectedTone}</span>
                   </div>
                 )}
                 <span>{wordCount} words</span>
@@ -402,6 +472,22 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
                 1. List
               </button>
             </div>
+
+            {/* Tone selection dropdown */}
+            <div className="mt-2">
+              <label htmlFor="tone-select" className="mr-2 text-sm text-gray-600">Tone:</label>
+              <select
+                id="tone-select"
+                className="border border-gray-300 rounded p-1 text-sm"
+                value={(selectedTone || detectedTone || '') as string}
+                onChange={(e) => handleToneSelection(e.target.value as Tone)}
+              >
+                <option value="" disabled>Select tone</option>
+                {TONE_OPTIONS.map((tone) => (
+                  <option key={tone} value={tone}>{tone}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Editor Content */}
@@ -438,6 +524,32 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
             onApplySuggestion={handleApplySuggestion}
             onDismissSuggestion={handleDismissSuggestion}
           />
+        </div>
+      )}
+
+      {/* Tone Modal */}
+      {isToneModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-3xl w-full">
+            <h2 className="text-lg font-semibold mb-4">Preview {selectedTone} Tone</h2>
+            <div className="h-96 overflow-y-auto border border-gray-200 rounded p-4 mb-4 whitespace-pre-wrap">
+              {refactoredContent}
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+                onClick={closeToneModal}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+                onClick={applyRefactoredContent}
+              >
+                Apply
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

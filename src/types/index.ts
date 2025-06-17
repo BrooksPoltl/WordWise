@@ -70,4 +70,27 @@ export interface WritingMetrics {
   wordCount: number;
   characterCount: number;
   spellingErrors: number;
+}
+
+// Tone analysis types
+export type Tone =
+  | 'Formal'
+  | 'Informal'
+  | 'Friendly'
+  | 'Professional'
+  | 'Humorous'
+  | 'Serious'
+  | 'Academic'
+  | 'Conversational'
+  | 'Persuasive'
+  | 'Empathetic';
+
+export interface ToneDetectResult {
+  tone: Tone;
+  confidence?: number;
+}
+
+export interface ToneRewritePayload {
+  text: string;
+  tone: Tone;
 } 

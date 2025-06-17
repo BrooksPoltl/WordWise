@@ -58,7 +58,6 @@ if (config.useEmulator) {
     // Test Firestore connection after a short delay
     setTimeout(async () => {
       try {
-        console.error('*** BUILD 2024-06-17-1700 ***');
         logger.firebase.test('Testing Firestore emulator connection...');
         const testDocRef = doc(db, 'test', 'connection-test');
         await setDoc(testDocRef, { 

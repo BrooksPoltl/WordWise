@@ -143,14 +143,6 @@ const SuggestionSidebar: React.FC<SuggestionSidebarProps> = ({
           </div>
         )}
       </div>
-
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200 bg-gray-50">
-        <div className="text-xs text-gray-500 text-center">
-          <p>Powered by Typo.js</p>
-          <p className="mt-1">Spell checking updates as you type</p>
-        </div>
-      </div>
     </div>
   );
 };
