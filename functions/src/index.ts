@@ -32,6 +32,7 @@ interface SpellCheckRequest {
   text: string;
   customWords?: string[];
   tone?: Tone; // Required if mode === 'toneRewrite'
+  limitSuggestions?: boolean; // Limit to 1 suggestion per word
 }
 
 interface SpellCheckResponse {
@@ -81,7 +82,7 @@ export const spellCheck = onRequest(
           return;
         }
 
-        const { mode = 'spell', text, customWords = [], tone }: SpellCheckRequest = request.body;
+        const { mode = 'spell', text, customWords = [], tone, limitSuggestions = false }: SpellCheckRequest = request.body;
 
         if (!text || typeof text !== 'string') {
           response.status(400).json({ error: 'Text is required and must be a string' });
@@ -98,8 +99,8 @@ export const spellCheck = onRequest(
               return;
             }
 
-            const prompt = createSpellCheckPrompt(text, customWords);
-            const suggestions = await performSpellCheck(prompt, text);
+            const prompt = createSpellCheckPrompt(text, customWords, limitSuggestions);
+            const suggestions = await performSpellCheck(prompt, text, limitSuggestions);
             const metrics = calculateBasicMetrics(text);
             metrics.spellingErrors = suggestions.length;
             response.status(200).json({ success: true, suggestions, metrics });
@@ -158,9 +159,13 @@ export const spellCheck = onRequest(
 /**
  * Create an improved prompt that handles edge cases better
  */
-function createSpellCheckPrompt(text: string, customWords: string[]): string {
+function createSpellCheckPrompt(text: string, customWords: string[], limitSuggestions: boolean = false): string {
   const customWordsSection = customWords.length > 0 
     ? `\n\nThese words should NOT be flagged as errors: ${customWords.join(', ')}`
+    : '';
+
+  const suggestionLimit = limitSuggestions 
+    ? '\n6. Provide only ONE suggestion per error for cleaner results'
     : '';
 
   return `You are a spell checker. Find ONLY genuine spelling errors in the text below.
@@ -170,7 +175,7 @@ IMPORTANT RULES:
 2. Do NOT flag: proper names, technical terms, abbreviations, or uncommon but valid words
 3. Provide accurate character offsets (0-indexed) in the original text
 4. Give practical suggestions for each error
-5. Return ONLY valid JSON, no markdown formatting
+5. Return ONLY valid JSON, no markdown formatting${suggestionLimit}
 
 Text to check: "${text}"${customWordsSection}
 
@@ -181,7 +186,7 @@ Return this exact JSON format:
       "word": "misspelled_word",
       "startOffset": 0,
       "endOffset": 10,
-      "suggestions": ["correct_word1", "correct_word2"]
+      "suggestions": ["correct_word1"${limitSuggestions ? '' : ', "correct_word2"'}]
     }
   ]
 }`;
@@ -190,7 +195,7 @@ Return this exact JSON format:
 /**
  * Perform the actual spell check with OpenAI
  */
-async function performSpellCheck(prompt: string, originalText: string): Promise<SpellCheckResponse['suggestions']> {
+async function performSpellCheck(prompt: string, originalText: string, limitSuggestions: boolean = false): Promise<SpellCheckResponse['suggestions']> {
   const openaiClient = getOpenAIClient();
   
   const completion = await openaiClient.chat.completions.create({
@@ -210,7 +215,7 @@ async function performSpellCheck(prompt: string, originalText: string): Promise<
   const parsedResult = parseAIResponse(aiResponse);
   
   // Convert to our API format with validation
-  return convertToSuggestions(parsedResult.errors || [], originalText);
+  return convertToSuggestions(parsedResult.errors || [], originalText, limitSuggestions);
 }
 
 /**
@@ -237,9 +242,11 @@ function parseAIResponse(response: string): any {
  */
 function convertToSuggestions(
   errors: any[], 
-  originalText: string
+  originalText: string,
+  limitSuggestions: boolean = false
 ): SpellCheckResponse['suggestions'] {
   return errors
+    .slice(0, limitSuggestions ? 1 : errors.length) // Limit to 1 error if requested
     .map((error: any, index: number) => {
       // Validate required fields
       if (!error.word || typeof error.word !== 'string') {
@@ -281,12 +288,16 @@ function convertToSuggestions(
         }
       }
 
+      // Limit suggestions if requested
+      const suggestions = Array.isArray(error.suggestions) ? error.suggestions : [];
+      const limitedSuggestions = limitSuggestions ? suggestions.slice(0, 1) : suggestions;
+
       return {
         id: `spell-${startOffset}-${endOffset}-${index}`,
         word: error.word,
         startOffset,
         endOffset,
-        suggestions: Array.isArray(error.suggestions) ? error.suggestions : [],
+        suggestions: limitedSuggestions,
         message: `"${error.word}" may be misspelled`
       };
     })

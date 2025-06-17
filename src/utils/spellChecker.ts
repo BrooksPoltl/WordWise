@@ -24,7 +24,8 @@ interface TextChunk {
  * - Processes text in chunks to handle large documents
  * - Uses reverse-order application to avoid offset shifts
  * - Simplified API with better error handling
- * - Proper debouncing and caching
+ * - Space-triggered spell checking for immediate feedback
+ * - Limited to 1 suggestion per word for cleaner UX
  */
 class SpellCheckerService {
   private readonly debounceMs = 1500;
@@ -62,6 +63,99 @@ class SpellCheckerService {
         callback([]);
       }
     }, this.debounceMs);
+  }
+
+  /**
+   * Check a specific word at a given position (triggered by space)
+   */
+  public checkWordAt(text: string, cursorPosition: number, callback: (suggestions: SpellingSuggestion[]) => void): void {
+    const word = this.extractWordBeforeCursor(text, cursorPosition);
+    if (!word.word || word.word.length < 2) {
+      callback([]);
+      return;
+    }
+
+    // Check if this word is likely misspelled
+    this.performWordSpellCheck(word.word, word.startOffset, word.endOffset)
+      .then(suggestions => {
+        callback(suggestions);
+      })
+      .catch(error => {
+        console.error('Word spell check failed:', error);
+        callback([]);
+      });
+  }
+
+  /**
+   * Extract the word before the cursor position
+   */
+  private extractWordBeforeCursor(text: string, cursorPosition: number): { word: string; startOffset: number; endOffset: number } {
+    // We only care about the text up to the cursor.
+    const textBeforeCursor = text.slice(0, cursorPosition);
+
+    // Find the end of the last word (by trimming trailing spaces from the text before cursor)
+    const trimmedText = textBeforeCursor.trimEnd();
+    const wordEnd = trimmedText.length;
+
+    // Find the start of the last word by finding the last space/nbsp before it
+    const lastSpace = trimmedText.lastIndexOf(' ');
+    const lastNbsp = trimmedText.lastIndexOf('\u00A0'); // Handle non-breaking space
+    const wordStart = Math.max(lastSpace, lastNbsp) + 1;
+
+    const word = trimmedText.substring(wordStart);
+    
+    if (!word) {
+        return { word: '', startOffset: 0, endOffset: 0 };
+    }
+
+    return {
+      word,
+      startOffset: wordStart,
+      endOffset: wordEnd,
+    };
+  }
+
+  /**
+   * Perform spell check on a specific word
+   */
+  private async performWordSpellCheck(word: string, startOffset: number, endOffset: number): Promise<SpellingSuggestion[]> {
+    try {
+      const response = await fetch(this.getFunctionsUrl() + '/spellCheck', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: word, limitSuggestions: true })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const result: SpellCheckResponse = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'API error');
+      }
+      
+      // Return only the first suggestion and adjust offsets
+      return result.suggestions
+        .slice(0, 1) // Limit to 1 suggestion
+        .map(suggestion => ({
+          ...suggestion,
+          startOffset,
+          endOffset,
+          word,
+          suggestions: suggestion.suggestions.slice(0, 1) // Limit to 1 fix option
+        }))
+        .filter(suggestion => 
+          suggestion.word && 
+          suggestion.word.length > 0 &&
+          suggestion.suggestions.length > 0
+        );
+        
+    } catch (error) {
+      console.error('Word spell check failed:', error);
+      return [];
+    }
   }
   
   /**
@@ -209,7 +303,7 @@ class SpellCheckerService {
       const response = await fetch(this.getFunctionsUrl() + '/spellCheck', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text, limitSuggestions: true })
       });
       
       if (!response.ok) {
@@ -222,19 +316,22 @@ class SpellCheckerService {
         throw new Error(result.error || 'API error');
       }
       
-      // Adjust offsets for global position and validate
+      // Adjust offsets for global position, limit to 1 suggestion per word, and validate
       return result.suggestions
+        .slice(0, 1) // Limit to 1 suggestion for cleaner UX
         .map(suggestion => ({
           ...suggestion,
           startOffset: suggestion.startOffset + globalOffset,
-          endOffset: suggestion.endOffset + globalOffset
+          endOffset: suggestion.endOffset + globalOffset,
+          suggestions: suggestion.suggestions.slice(0, 1) // Limit to 1 fix option
         }))
         .filter(suggestion => 
           // Validate that offsets are reasonable
           suggestion.startOffset >= 0 && 
           suggestion.endOffset > suggestion.startOffset &&
           suggestion.word && 
-          suggestion.word.length > 0
+          suggestion.word.length > 0 &&
+          suggestion.suggestions.length > 0
         );
         
     } catch (error) {

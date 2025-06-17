@@ -152,7 +152,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
     },
   });
 
-  // Handle spell checking
+    // Handle spell checking for full text (fallback - mainly for metrics and tone)
   const handleTextChange = useCallback((content: string) => {
     // Strip highlighting before saving
     const contentToSave = removeSpellingHighlights(content);
@@ -171,30 +171,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
         setDetectedTone(tone);
       }
     });
-    
-    // Check for suggestions using plain text
-    spellChecker.checkText(plainTextForSpellCheck, (newSuggestions) => {
-      // Filter out dismissed suggestions
-      const filteredSuggestions = newSuggestions.filter(
-        suggestion => !dismissedSuggestions.has(suggestion.id)
-      );
-      
-      setSuggestions(filteredSuggestions);
-      
-      // Update metrics with suggestion counts
-      setMetrics(prev => ({
-        ...prev,
-        spellingErrors: filteredSuggestions.length
-      }));
-      
-      // Apply highlighting to the editor content
-      if (editor && filteredSuggestions.length > 0) {
-        applySpellErrorMarks(editor, filteredSuggestions, plainTextForSpellCheck);
-      } else if (editor) {
-        clearSpellErrorMarks(editor);
-      }
-    });
-  }, [debouncedSave, dismissedSuggestions, editor, applySpellErrorMarks, clearSpellErrorMarks]);
+  }, [debouncedSave, editor]);
 
   // Set up editor update handler
   useEffect(() => {
@@ -283,6 +260,54 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
       editor.view.dom.removeEventListener('paste', pasteHandler);
     };
   }, [editor, handleTextChange]);
+
+  // Add DOM-level keydown listener for space-triggered spell check
+  useEffect(() => {
+    if (!editor) return;
+    
+    const keydownHandler = (event: KeyboardEvent) => {
+      if (event.key === ' ') {
+        setTimeout(() => {
+          if (!editor.view.hasFocus()) return;
+          
+          const cursorPosition = editor.state.selection.from;
+          const plainText = editor.getText();
+          
+          spellChecker.checkWordAt(plainText, cursorPosition, (newSuggestions) => {
+            const filteredSuggestions = newSuggestions.filter(
+              suggestion => !dismissedSuggestions.has(suggestion.id)
+            );
+            
+            if (filteredSuggestions.length > 0) {
+              setSuggestions(prev => {
+                // Avoid adding duplicate suggestions for the same word
+                const existingIds = new Set(prev.map(s => s.id));
+                const uniqueNewSuggestions = filteredSuggestions.filter(s => !existingIds.has(s.id));
+                if (uniqueNewSuggestions.length === 0) return prev;
+
+                const suggestionsForOtherWords = prev.filter(s => 
+                  s.startOffset !== uniqueNewSuggestions[0].startOffset
+                );
+                return [...suggestionsForOtherWords, ...uniqueNewSuggestions];
+              });
+              
+              // Apply marks for the new suggestions
+              setTimeout(() => {
+                if (editor) {
+                  applySpellErrorMarks(editor, [...suggestions, ...filteredSuggestions], plainText);
+                }
+              }, 50);
+            }
+          });
+        }, 50);
+      }
+    };
+    
+    editor.view.dom.addEventListener('keydown', keydownHandler);
+    return () => {
+      editor.view.dom.removeEventListener('keydown', keydownHandler);
+    };
+  }, [editor, dismissedSuggestions, applySpellErrorMarks, suggestions]);
 
   if (!editor) {
     return (
