@@ -52,7 +52,7 @@ const DocumentEditor: React.FC = () => {
       } catch (error) {
         console.error('Failed to update title:', error);
       }
-    }, 500);
+    }, 1500);
 
     setTitleChangeTimeout(timeout);
   };

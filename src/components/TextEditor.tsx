@@ -25,6 +25,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
     spellingErrors: 0
   });
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
+  const [title, setTitle] = useState<string>(currentDocument?.title || '');
 
   // Debounced save function
   const debouncedSave = useCallback(
@@ -43,7 +44,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
               console.error('Auto-save failed:', error);
             }
           }
-        }, 1000); // Save after 1 second of inactivity
+        }, 3000); // Save after 3 seconds of inactivity
       };
     })(),
     [documentId, currentDocument?.content, updateDocument]
@@ -177,6 +178,11 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
     setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
   }, []);
 
+  // Sync local title state when the currentDocument changes (e.g., switching files or first load)
+  useEffect(() => {
+    setTitle(currentDocument?.title || '');
+  }, [currentDocument?.title]);
+
   if (!editor) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -207,8 +213,12 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
             <div className="flex items-center justify-between mb-4">
               <input
                 type="text"
-                value={currentDocument?.title || ''}
-                onChange={(e) => onTitleChange(e.target.value)}
+                value={title}
+                onChange={(e) => {
+                  const newTitle = e.target.value;
+                  setTitle(newTitle);
+                  onTitleChange(newTitle);
+                }}
                 placeholder="Document title..."
                 className="text-2xl font-bold border-none outline-none bg-transparent flex-1 mr-4"
                 disabled={loading}
