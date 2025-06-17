@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -7,6 +7,12 @@ import { useDocumentStore } from '../store/documentStore';
 import { useAuthStore } from '../store/authStore';
 import { SpellingSuggestion, WritingMetrics } from '../types';
 import { spellChecker } from '../utils/spellChecker';
+import { 
+  getSuggestionIdFromElement,
+  highlightSpecificSuggestion,
+  removeSpellingHighlights
+} from '../utils/textHighlighter';
+import SpellErrorMark from '../extensions/SpellErrorMark';
 import SuggestionSidebar from './SuggestionSidebar';
 
 interface TextEditorProps {
@@ -26,6 +32,75 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
   });
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
   const [title, setTitle] = useState<string>(currentDocument?.title || '');
+
+  // Flag to avoid recursive updates when we dispatch transactions that only manipulate marks
+  const isApplyingMarksRef = useRef(false);
+  const lastSuggestionsSignatureRef = useRef('');
+
+  // Convert a plain-text offset to a ProseMirror position
+  const getPosFromPlainOffset = useCallback((editorInstance: any, offset: number): number | null => {
+    let result: number | null = null;
+    let accumulated = 0;
+    editorInstance.state.doc.descendants((node: any, posHere: number) => {
+      if (node.isText) {
+        const nextAccum = accumulated + node.text.length;
+        if (offset < nextAccum) {
+          // Position of this character inside the document is the start of the
+          // text node (posHere) plus the character index within that node.
+          result = posHere + (offset - accumulated);
+          return false; // stop traversal
+        }
+        accumulated = nextAccum;
+      }
+      return true;
+    });
+    return result;
+  }, []);
+
+  const applySpellErrorMarks = useCallback((editorInstance: any, suggestionsList: SpellingSuggestion[]) => {
+    // Compute a simple signature of suggestions to avoid redundant transactions
+    const newSignature = suggestionsList
+      .map(({ id, startOffset, endOffset }) => `${id}-${startOffset}-${endOffset}`)
+      .join('|');
+
+    if (newSignature === lastSuggestionsSignatureRef.current) {
+      return; // nothing changed
+    }
+
+    const { state, view } = editorInstance;
+    const markType = state.schema.marks.spellError;
+    if (!markType) return;
+
+    let tr = state.tr;
+    // Clear previous error marks
+    tr = tr.removeMark(0, state.doc.content.size, markType);
+
+    suggestionsList.forEach(({ id, startOffset, endOffset }) => {
+      const from = getPosFromPlainOffset(editorInstance, startOffset);
+      const to = getPosFromPlainOffset(editorInstance, endOffset);
+      if (from !== null && to !== null && from < to) {
+        tr = tr.addMark(from, to, markType.create({ suggestionId: id }));
+      }
+    });
+
+    if (tr.docChanged || tr.storedMarks || tr.steps.length) {
+      isApplyingMarksRef.current = true;
+      view.dispatch(tr);
+      lastSuggestionsSignatureRef.current = newSignature;
+    }
+  }, [getPosFromPlainOffset]);
+
+  const clearSpellErrorMarks = useCallback((editorInstance: any) => {
+    const { state, view } = editorInstance;
+    const markType = state.schema.marks.spellError;
+    if (!markType) return;
+    const tr = state.tr.removeMark(0, state.doc.content.size, markType);
+    if (tr.docChanged) {
+      isApplyingMarksRef.current = true;
+      view.dispatch(tr);
+    }
+    lastSuggestionsSignatureRef.current = '';
+  }, []);
 
   // Debounced save function
   const debouncedSave = useCallback(
@@ -57,6 +132,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
         placeholder: 'Start writing your document...',
       }),
       CharacterCount,
+      SpellErrorMark,
     ],
     content: currentDocument?.content || '',
     editorProps: {
@@ -68,7 +144,9 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
 
   // Handle spell checking
   const handleTextChange = useCallback((content: string) => {
-    debouncedSave(content);
+    // Strip highlighting before saving
+    const contentToSave = removeSpellingHighlights(content);
+    debouncedSave(contentToSave);
     
     // Get plain text from editor for spell checking
     const plainTextForSpellCheck = editor ? editor.getText() : content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -91,13 +169,25 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
         ...prev,
         spellingErrors: filteredSuggestions.length
       }));
+      
+      // Apply highlighting to the editor content
+      if (editor && filteredSuggestions.length > 0) {
+        applySpellErrorMarks(editor, filteredSuggestions);
+      } else if (editor) {
+        clearSpellErrorMarks(editor);
+      }
     });
-  }, [debouncedSave, dismissedSuggestions, editor]);
+  }, [debouncedSave, dismissedSuggestions, editor, applySpellErrorMarks, clearSpellErrorMarks]);
 
   // Set up editor update handler
   useEffect(() => {
     if (editor) {
       const handleUpdate = ({ editor }: { editor: any }) => {
+        if (isApplyingMarksRef.current) {
+          // Reset flag and ignore this synthetic update
+          isApplyingMarksRef.current = false;
+          return;
+        }
         const content = editor.getHTML();
         handleTextChange(content);
       };
@@ -121,56 +211,35 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
     }
   }, [editor, currentDocument?.content, handleTextChange]);
 
-  // Handle applying suggestions
+  // Handle applying suggestions with simplified logic
   const handleApplySuggestion = useCallback((suggestion: SpellingSuggestion, replacement: string) => {
     if (!editor) return;
 
-    // Tiptap's document positions are 1-based, whereas our offsets are 0-based.
-    const from = (suggestion.startOffset ?? NaN) + 1;
-    const to = (suggestion.endOffset ?? NaN) + 1;
-
-    if (!Number.isNaN(from) && !Number.isNaN(to) && from < to) {
-      // Use precise offsets when available
-      editor.chain().focus()
-        .setTextSelection({ from, to })
+    // Remove all highlighting first
+    clearSpellErrorMarks(editor);
+    
+    // Find and replace the word using plain text approach
+    const plainText = editor.getText();
+    const wordStart = plainText.indexOf(suggestion.word);
+    if (wordStart !== -1) {
+      const replacementFrom = wordStart + 1; // Tiptap is 1-based
+      const replacementTo = wordStart + suggestion.word.length + 1;
+      
+      editor.chain()
+        .setTextSelection({ from: replacementFrom, to: replacementTo })
         .insertContent(replacement)
         .run();
-    } else {
-      // Fallback: locate and replace the first occurrence of the word in the plain text
-      const plainText = editor.getText();
-      const index = plainText.indexOf(suggestion.word);
-      if (index !== -1) {
-        const fallbackFrom = index + 1; // convert to 1-based
-        const fallbackTo = index + suggestion.word.length + 1;
-        editor.chain().focus()
-          .setTextSelection({ from: fallbackFrom, to: fallbackTo })
-          .insertContent(replacement)
-          .run();
-      } else {
-        console.warn('Could not find word in editor for replacement:', suggestion.word);
-      }
     }
-    // Remove the applied suggestion from local state and shift offsets of the remaining ones.
-    const diff = replacement.length - suggestion.word.length;
-    setSuggestions(prev =>
-      prev
-        // discard the suggestion we just fixed
-        .filter(s => s.id !== suggestion.id)
-        // shift offsets for any that appear after the replaced range
-        .map(s => {
-          if (diff !== 0 && s.startOffset > suggestion.endOffset) {
-            return {
-              ...s,
-              startOffset: s.startOffset + diff,
-              endOffset: s.endOffset + diff,
-              // optionally update id so it reflects new offsets (keep uniqueness)
-              id: s.id.startsWith('spell-') ? `spell-${s.startOffset + diff}-${s.endOffset + diff}` : s.id
-            } as SpellingSuggestion;
-          }
-          return s;
-        })
-    );
-  }, [editor]);
+
+    // Use the simplified spell checker service to update suggestions
+    setSuggestions(prev => spellChecker.applySuggestion(prev, suggestion, replacement));
+    
+    // Trigger a new spell check to update highlighting
+    setTimeout(() => {
+      const content = editor.getHTML();
+      handleTextChange(content);
+    }, 100);
+  }, [editor, handleTextChange, clearSpellErrorMarks]);
 
   // Handle dismissing suggestions
   const handleDismissSuggestion = useCallback((suggestionId: string) => {
@@ -333,7 +402,25 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
           </div>
 
           {/* Editor Content */}
-          <div className="min-h-[500px] flex-1">
+          <div 
+            className="min-h-[500px] flex-1"
+            onClick={(e) => {
+              // Handle clicks on highlighted spelling errors
+              const target = e.target as HTMLElement;
+              const suggestionId = getSuggestionIdFromElement(target);
+              if (suggestionId) {
+                const suggestion = suggestions.find(s => s.id === suggestionId);
+                if (suggestion) {
+                  // Highlight the suggestion in the sidebar and scroll to it
+                  highlightSpecificSuggestion(suggestionId);
+                  const suggestionElement = document.querySelector(`[data-sidebar-suggestion="${suggestionId}"]`);
+                  if (suggestionElement) {
+                    suggestionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }
+                }
+              }
+            }}
+          >
             <EditorContent editor={editor} />
           </div>
         </div>
