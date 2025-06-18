@@ -112,27 +112,6 @@ class SpellCheckerService {
   }
 
 
-
-
-
-  /**
-   * Perform full spell check when other methods fail
-   */
-  private async performFullCheck(
-    text: string,
-    callback: (suggestions: SpellingSuggestion[]) => void
-  ): Promise<void> {
-    try {
-      const suggestions = await this.performSpellCheck(text);
-      this.lastCheckedText = text;
-      this.cachedSuggestions = suggestions;
-      callback(suggestions);
-    } catch (error) {
-      console.error('Full spell check failed:', error);
-      callback([]);
-    }
-  }
-
   /**
    * Check a specific word at a given position (triggered by space)
    */
