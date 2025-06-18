@@ -91,20 +91,20 @@ const Login: React.FC<LoginProps> = ({ onToggleMode, onSuccess }) => {
                 className="block text-sm font-medium text-gray-700"
               >
                 Email Address
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
+                    validationErrors.email ? 'border-red-300' : 'border-gray-300'
+                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
+                  placeholder="Email address"
+                />
               </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={formData.email}
-                onChange={handleInputChange}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                  validationErrors.email ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
-                placeholder="Email address"
-              />
               {validationErrors.email && (
                 <p className="mt-1 text-sm text-red-600">
                   {validationErrors.email}
@@ -118,22 +118,22 @@ const Login: React.FC<LoginProps> = ({ onToggleMode, onSuccess }) => {
                 className="block text-sm font-medium text-gray-700"
               >
                 Password
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
+                    validationErrors.password
+                      ? 'border-red-300'
+                      : 'border-gray-300'
+                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
+                  placeholder="Password"
+                />
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={formData.password}
-                onChange={handleInputChange}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                  validationErrors.password
-                    ? 'border-red-300'
-                    : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
-                placeholder="Password"
-              />
               {validationErrors.password && (
                 <p className="mt-1 text-sm text-red-600">
                   {validationErrors.password}

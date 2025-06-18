@@ -99,16 +99,16 @@ const SignUp: React.FC<SignUpProps> = ({ onToggleMode, onSuccess }) => {
                 className="block text-sm font-medium text-gray-700"
               >
                 Display Name (Optional)
+                <input
+                  id="displayName"
+                  name="displayName"
+                  type="text"
+                  value={formData.displayName}
+                  onChange={handleInputChange}
+                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  placeholder="Your name"
+                />
               </label>
-              <input
-                id="displayName"
-                name="displayName"
-                type="text"
-                value={formData.displayName}
-                onChange={handleInputChange}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Your name"
-              />
             </div>
 
             <div>
@@ -117,20 +117,20 @@ const SignUp: React.FC<SignUpProps> = ({ onToggleMode, onSuccess }) => {
                 className="block text-sm font-medium text-gray-700"
               >
                 Email Address *
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
+                    validationErrors.email ? 'border-red-300' : 'border-gray-300'
+                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
+                  placeholder="Email address"
+                />
               </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={formData.email}
-                onChange={handleInputChange}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                  validationErrors.email ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
-                placeholder="Email address"
-              />
               {validationErrors.email && (
                 <p className="mt-1 text-sm text-red-600">
                   {validationErrors.email}
@@ -144,22 +144,22 @@ const SignUp: React.FC<SignUpProps> = ({ onToggleMode, onSuccess }) => {
                 className="block text-sm font-medium text-gray-700"
               >
                 Password *
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
+                    validationErrors.password
+                      ? 'border-red-300'
+                      : 'border-gray-300'
+                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
+                  placeholder="Password (min. 6 characters)"
+                />
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={formData.password}
-                onChange={handleInputChange}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                  validationErrors.password
-                    ? 'border-red-300'
-                    : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
-                placeholder="Password (min. 6 characters)"
-              />
               {validationErrors.password && (
                 <p className="mt-1 text-sm text-red-600">
                   {validationErrors.password}
@@ -173,30 +173,30 @@ const SignUp: React.FC<SignUpProps> = ({ onToggleMode, onSuccess }) => {
                 className="block text-sm font-medium text-gray-700"
               >
                 Confirm Password *
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={confirmPassword}
+                  onChange={e => {
+                    setConfirmPassword(e.target.value);
+                    if (validationErrors.confirmPassword) {
+                      setValidationErrors(prev => ({
+                        ...prev,
+                        confirmPassword: '',
+                      }));
+                    }
+                  }}
+                  className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
+                    validationErrors.confirmPassword
+                      ? 'border-red-300'
+                      : 'border-gray-300'
+                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
+                  placeholder="Confirm password"
+                />
               </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={confirmPassword}
-                onChange={e => {
-                  setConfirmPassword(e.target.value);
-                  if (validationErrors.confirmPassword) {
-                    setValidationErrors(prev => ({
-                      ...prev,
-                      confirmPassword: '',
-                    }));
-                  }
-                }}
-                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                  validationErrors.confirmPassword
-                    ? 'border-red-300'
-                    : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
-                placeholder="Confirm password"
-              />
               {validationErrors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-600">
                   {validationErrors.confirmPassword}

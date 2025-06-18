@@ -1,6 +1,6 @@
 import CharacterCount from '@tiptap/extension-character-count';
 import Placeholder from '@tiptap/extension-placeholder';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { Editor, EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -41,35 +41,32 @@ const TextEditor: React.FC<TextEditorProps> = ({
   const [refactoredContent, setRefactoredContent] = useState<string>('');
 
   const contentRef = useRef(currentDocument?.content);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   contentRef.current = currentDocument?.content;
 
   // Debounced save function
   const debouncedSave = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout | null = null;
+    (content: string) => {
+      // Clear the previous timeout if it exists
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
       
-      return (content: string) => {
-        // Clear the previous timeout if it exists
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-        }
-        
-        // Set a new timeout
-        timeoutId = setTimeout(async () => {
-          if (documentId && content !== contentRef.current) {
-            try {
-              await updateDocument({
-                id: documentId,
-                content,
-              });
-            } catch (error) {
-              console.error('Auto-save failed:', error);
-            }
+      // Set a new timeout
+      timeoutRef.current = setTimeout(async () => {
+        if (documentId && content !== contentRef.current) {
+          try {
+            await updateDocument({
+              id: documentId,
+              content,
+            });
+          } catch (error) {
+            console.error('Auto-save failed:', error);
           }
-          timeoutId = null;
-        }, 3000); // Save after 3 seconds of inactivity
-      };
-    })(),
+        }
+        timeoutRef.current = null;
+      }, 3000); // Save after 3 seconds of inactivity
+    },
     [documentId, updateDocument]
   );
 
@@ -122,7 +119,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
     if (!editor) return undefined;
     
     const handleUpdate = ({ editor: editorInstance }: { editor: unknown }) => {
-      const content = (editorInstance as any).getHTML();
+      const content = (editorInstance as Editor).getHTML();
       handleTextChange(content);
     };
 
@@ -246,7 +243,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   // Handle spell suggestion clicks
   useEffect(() => {
-    if (!editor) return;
+    if (!editor) return undefined;
 
     const handleSpellClick = (event: CustomEvent) => {
       const { suggestionId } = event.detail;
@@ -288,16 +285,9 @@ const TextEditor: React.FC<TextEditorProps> = ({
     }
   }, [editor, suggestions, dismissedSuggestions]);
 
-  if (!editor) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-      </div>
-    );
-  }
-
-  const wordCount = editor.storage.characterCount.words();
-  const characterCount = editor.storage.characterCount.characters();
+  // Get counts safely
+  const wordCount = editor?.storage.characterCount.words() || 0;
+  const characterCount = editor?.storage.characterCount.characters() || 0;
 
   // Update metrics with real-time counts from editor
   useEffect(() => {
@@ -307,6 +297,14 @@ const TextEditor: React.FC<TextEditorProps> = ({
       characterCount,
     }));
   }, [wordCount, characterCount]);
+
+  if (!editor) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
 
   // Tone related helpers
   const TONE_OPTIONS: Tone[] = [
@@ -532,22 +530,22 @@ const TextEditor: React.FC<TextEditorProps> = ({
                 className="mr-2 text-sm text-gray-600"
               >
                 Tone:
-              </label>
-              <select
-                id="tone-select"
-                className="border border-gray-300 rounded p-1 text-sm"
-                value={(selectedTone || detectedTone || '') as string}
-                onChange={e => handleToneSelection(e.target.value as Tone)}
-              >
-                <option value="" disabled>
-                  Select tone
-                </option>
-                {TONE_OPTIONS.map(tone => (
-                  <option key={tone} value={tone}>
-                    {tone}
+                <select
+                  id="tone-select"
+                  className="ml-2 border border-gray-300 rounded p-1 text-sm"
+                  value={(selectedTone || detectedTone || '') as string}
+                  onChange={e => handleToneSelection(e.target.value as Tone)}
+                >
+                  <option value="" disabled>
+                    Select tone
                   </option>
-                ))}
-              </select>
+                  {TONE_OPTIONS.map(tone => (
+                    <option key={tone} value={tone}>
+                      {tone}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           </div>
 

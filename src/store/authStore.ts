@@ -1,18 +1,18 @@
-import { create, StateCreator } from 'zustand';
 import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut,
-  onAuthStateChanged,
-  User as FirebaseUser,
+    createUserWithEmailAndPassword,
+    User as FirebaseUser,
+    GoogleAuthProvider,
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    signInWithPopup,
+    signOut,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { create, StateCreator } from 'zustand';
 import { auth, db } from '../config';
 import { User, UserCreatePayload, UserLoginPayload } from '../types';
-import { logger } from '../utils/logger';
 import { getFriendlyErrorMessage } from '../utils/errorMessages';
+import { logger } from '../utils/logger';
 
 interface AuthStore {
   user: User | null;
@@ -58,7 +58,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
       // Create user profile in Firestore
       const userProfile: User = {
         uid: firebaseUser.uid,
-        email: firebaseUser.email!,
+        email: firebaseUser.email || '',
         displayName: userData.displayName || undefined,
         createdAt: new Date(),
         preferences: {
@@ -100,12 +100,13 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
 
       logger.success('User registration completed successfully!');
       logger.group.end();
-    } catch (error: any) {
+    } catch (error) {
+      const errorObj = error as Error & { code?: string };
       logger.error('Error during user registration', error);
       logger.group.log('Error details', {
-        message: error.message,
-        code: error.code,
-        stack: error.stack,
+        message: errorObj.message,
+        code: errorObj.code,
+        stack: errorObj.stack,
       });
       logger.group.end();
 
@@ -160,7 +161,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
         logger.group.end();
         throw new Error('User profile not found');
       }
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Error during user sign-in', error);
       logger.group.end();
       set({
@@ -194,7 +195,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
         // Create new user profile
         userProfile = {
           uid: firebaseUser.uid,
-          email: firebaseUser.email!,
+          email: firebaseUser.email || '',
           displayName: firebaseUser.displayName || undefined,
           createdAt: new Date(),
           preferences: {
@@ -231,7 +232,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
 
       logger.success('Google sign-in completed successfully!');
       logger.group.end();
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Error during Google sign-in', error);
       logger.group.end();
       set({
@@ -254,7 +255,7 @@ const createAuthStore: StateCreator<AuthStore> = (set, _get) => ({
         error: null,
       });
       logger.success('User signed out successfully');
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Error during sign out', error);
       set({
         loading: false,

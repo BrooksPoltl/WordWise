@@ -1,22 +1,22 @@
 import {
-    addDoc,
-    collection,
-    deleteDoc,
-    doc,
-    getDoc,
-    getDocs,
-    orderBy,
-    query,
-    serverTimestamp,
-    updateDoc,
-    where,
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  orderBy,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
 } from 'firebase/firestore';
 import { create } from 'zustand';
 import { db } from '../config';
 import {
-    Document,
-    DocumentCreatePayload,
-    DocumentUpdatePayload,
+  Document,
+  DocumentCreatePayload,
+  DocumentUpdatePayload,
 } from '../types';
 import { getFriendlyErrorMessage } from '../utils/errorMessages';
 import { logger } from '../utils/logger';
@@ -171,7 +171,13 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const docRef = doc(db, 'documents', payload.id);
-      const updateData: any = {
+      const updateData: {
+        updatedAt: ReturnType<typeof serverTimestamp>;
+        title?: string;
+        content?: string;
+        wordCount?: number;
+        characterCount?: number;
+      } = {
         updatedAt: serverTimestamp(),
       };
 

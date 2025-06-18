@@ -1,7 +1,7 @@
 import { create, StateCreator } from 'zustand';
+import config from '../config';
 import { User, UserPreferences } from '../types';
 import { useAuthStore } from './authStore';
-import config from '../config';
 
 interface UserStore {
   loading: boolean;
@@ -58,10 +58,11 @@ const createUserStore: StateCreator<UserStore> = (set, _get) => ({
       const result = await response.json();
       set({ loading: false });
       return result.data;
-    } catch (error: any) {
+    } catch (error) {
+      const errorObj = error as Error;
       set({
         loading: false,
-        error: error.message || 'Failed to fetch user profile',
+        error: errorObj.message || 'Failed to fetch user profile',
       });
       return null;
     }
@@ -82,7 +83,10 @@ const createUserStore: StateCreator<UserStore> = (set, _get) => ({
       const token = await firebaseUser.getIdToken();
 
       // Prepare update payload
-      const updatePayload: any = {};
+      const updatePayload: {
+        display_name?: string;
+        preferences?: UserPreferences;
+      } = {};
 
       if (userData.displayName !== undefined) {
         updatePayload.display_name = userData.displayName;
@@ -107,10 +111,11 @@ const createUserStore: StateCreator<UserStore> = (set, _get) => ({
       }
 
       set({ loading: false });
-    } catch (error: any) {
+    } catch (error) {
+      const errorObj = error as Error;
       set({
         loading: false,
-        error: error.message || 'Failed to update user profile',
+        error: errorObj.message || 'Failed to update user profile',
       });
       throw error;
     }
@@ -144,10 +149,11 @@ const createUserStore: StateCreator<UserStore> = (set, _get) => ({
       }
 
       set({ loading: false });
-    } catch (error: any) {
+    } catch (error) {
+      const errorObj = error as Error;
       set({
         loading: false,
-        error: error.message || 'Failed to delete user account',
+        error: errorObj.message || 'Failed to delete user account',
       });
       throw error;
     }
@@ -184,10 +190,11 @@ const createUserStore: StateCreator<UserStore> = (set, _get) => ({
       }
 
       set({ loading: false });
-    } catch (error: any) {
+    } catch (error) {
+      const errorObj = error as Error;
       set({
         loading: false,
-        error: error.message || 'Failed to update user preferences',
+        error: errorObj.message || 'Failed to update user preferences',
       });
       throw error;
     }
