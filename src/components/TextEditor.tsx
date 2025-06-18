@@ -158,6 +158,27 @@ const TextEditor: React.FC<TextEditorProps> = ({
     }
   }, [editor, currentDocument, handleTextChange]);
 
+  // Initial spell check when editor loads with content
+  useEffect(() => {
+    if (editor && currentDocument?.content) {
+      const plainText = editor.getText();
+      
+      // Only run initial check if there's meaningful content
+      if (plainText.trim().length > 0) {
+        spellChecker.checkText(
+          plainText,
+          (initialSuggestions) => {
+            const filteredSuggestions = initialSuggestions.filter(
+              suggestion => !dismissedSuggestions.has(suggestion.id)
+            );
+            setSuggestions(filteredSuggestions);
+          },
+          { forceCheck: true } // Force check even if similar to cached
+        );
+      }
+    }
+  }, [editor, currentDocument?.id, dismissedSuggestions]); // Depend on document ID to re-check when switching documents
+
   // Handle applying suggestions
   const handleApplySuggestion = useCallback(
     (suggestion: SpellingSuggestion, replacement: string) => {
