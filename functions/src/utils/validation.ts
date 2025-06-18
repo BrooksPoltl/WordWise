@@ -24,10 +24,18 @@ export const withValidation = <
       return handler(parsedData, ...args);
     } catch (error) {
       if (error instanceof ZodError) {
+        // Provide more detailed error information for debugging
+        const errorDetails = error.errors.map(err => ({
+          path: err.path.join('.'),
+          message: err.message,
+          code: err.code,
+          received: 'received' in err ? err.received : undefined,
+        }));
+        
         throw new HttpsError(
           "invalid-argument",
-          "Request data validation failed.",
-          error.errors,
+          `Request data validation failed: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`,
+          errorDetails,
         );
       }
       throw error;
