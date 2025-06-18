@@ -27,64 +27,88 @@ export interface SpellCheckResponse {
 }
 
 /**
- * Create an improved prompt that handles edge cases better
+ * Create a prompt to get spelling suggestions for a list of words.
+ *
+ * @param words An array of words that might be misspelled.
+ * @param limitSuggestions Whether to limit the suggestions to the single most likely correction.
+ * @returns A prompt string for the OpenAI API.
  */
-export function createSpellCheckPrompt(text: string, limitSuggestions: boolean = false): string {
+export function createSpellCheckPrompt(
+  words: string[],
+  limitSuggestions: boolean = false,
+): string {
   const suggestionLimitRule = limitSuggestions
-    ? '\n4. **Give one practical suggestion**: Provide only the single most likely correction for each error.'
-    : '\n4. **Give practical suggestions**: Provide the most likely corrections for each error.';
+    ? "Provide only the single most likely correction for each word."
+    : "Provide the most likely corrections for each word.";
 
-  return `You are a highly proficient English language spell checker. Your task is to identify and correct spelling errors and obvious typos in the provided text.
+  const wordList = words.join(", ");
+
+  return `You are a highly proficient English language spell checker. For the following list of words, please provide spelling corrections.
 
 IMPORTANT RULES:
-1.  **Aggressively correct typos**: Flag words that are clearly misspelled. Pay special attention to short, common words (2-3 letters) that are likely typos for other words (e.g., 'teh' for 'the', 'wa' for 'was'). A standalone word like "th" should be flagged as a typo for "the" unless it follows a number (e.g., "4th"). Do not be overly conservative with these short words.
-2.  **Be careful with proper nouns**: Do NOT flag proper names, acronyms, or technical jargon unless they are extremely common and clearly misspelled (e.g., 'Gogle' for 'Google').
-3.  **Provide accurate character offsets**: The 'startOffset' and 'endOffset' must correspond to the exact position of the misspelled word in the original text (0-indexed).${suggestionLimitRule}
-5.  **Return ONLY valid JSON**: Your entire output must be a single, valid JSON object, with no markdown formatting or other text.
+1.  **Correct typos and misspellings**: For each word in the list, provide the correct spelling.
+2.  **Do not correct proper nouns or technical jargon**: If a word seems correct (e.g., a name, brand, or technical term), do not suggest a correction.
+3.  **${suggestionLimitRule}**
+4.  **Return ONLY valid JSON**: Your entire output must be a single, valid JSON object with no markdown formatting or other text. The keys of the object should be the original words, and the values should be an array of suggested corrections.
 
-Text to check: "${text}"
+Word list: "${wordList}"
 
-Return this exact JSON format:
+Return this exact JSON format, omitting words that do not need correction:
 {
-  "errors": [
-    {
-      "word": "misspelled_word",
-      "startOffset": 0,
-      "endOffset": 10,
-      "suggestions": ["best_correction"]
-    }
-  ]
+  "word1": ["correction1", "correction2"],
+  "word2": ["correction1"]
 }`;
 }
 
-
 /**
- * Perform the actual spell check with OpenAI
+ * Perform the actual spell check with OpenAI and return a map of corrections.
+ *
+ * @param words An array of words to check.
+ * @param limitSuggestions Whether to limit to one suggestion per word.
+ * @param openaiClient The OpenAI client instance.
+ * @returns A promise that resolves to a Map where keys are misspelled words
+ *          and values are arrays of suggestions.
  */
 export async function performSpellCheck(
-  prompt: string, 
-  originalText: string, 
+  words: string[],
   limitSuggestions: boolean = false,
-  openaiClient: OpenAI
-): Promise<SpellCheckResponse['suggestions']> {
+  openaiClient: OpenAI,
+): Promise<Map<string, string[]>> {
+  if (words.length === 0) {
+    return new Map();
+  }
+
+  const prompt = createSpellCheckPrompt(words, limitSuggestions);
+
   const completion = await openaiClient.chat.completions.create({
     model: "gpt-4o",
     messages: [{ role: "user", content: prompt }],
     temperature: 0,
-    max_tokens: 500,
+    max_tokens: 500, // Adjust as needed
   });
 
   const aiResponse = completion.choices[0]?.message?.content;
-  
+
   if (!aiResponse) {
-    throw new Error('No response from OpenAI');
+    throw new Error("No response from OpenAI");
   }
 
-  // Parse and validate AI response
   const parsedResult = parseAIResponse(aiResponse);
-  
-  // Convert to our API format with validation
-  return convertToSuggestions(parsedResult.errors || [], originalText, limitSuggestions);
+  const suggestionMap = new Map<string, string[]>();
+
+  for (const word in parsedResult) {
+    if (Object.prototype.hasOwnProperty.call(parsedResult, word)) {
+      const suggestions = parsedResult[word];
+      if (Array.isArray(suggestions) && suggestions.length > 0) {
+        suggestionMap.set(
+          word,
+          limitSuggestions ? suggestions.slice(0, 1) : suggestions,
+        );
+      }
+    }
+  }
+
+  return suggestionMap;
 }
 
 /**
@@ -104,105 +128,6 @@ export function parseAIResponse(response: string): any {
     // Return empty result instead of throwing
     return { errors: [] };
   }
-}
-
-/**
- * Convert AI results to our API format with validation
- */
-export function convertToSuggestions(
-  errors: any[], 
-  originalText: string,
-  limitSuggestions: boolean = false
-): SpellCheckResponse['suggestions'] {
-  return errors
-    .slice(0, limitSuggestions ? 1 : errors.length) // Limit to 1 error if requested
-    .map((error: any, index: number) => {
-      // Validate required fields
-      if (!error.word || typeof error.word !== 'string') {
-        return null;
-      }
-      
-      let startOffset = error.startOffset ?? error.start;
-      let endOffset = error.endOffset ?? error.end;
-      
-      // If offsets are missing or invalid, try to find the word in text
-      if (typeof startOffset !== 'number' || typeof endOffset !== 'number') {
-        const wordPosition = findWordInText(originalText, error.word);
-        if (wordPosition) {
-          startOffset = wordPosition.start;
-          endOffset = wordPosition.end;
-        } else {
-          console.warn(`Could not locate word "${error.word}" in text`);
-          return null;
-        }
-      }
-      
-      // Validate offsets
-      if (startOffset < 0 || endOffset <= startOffset || endOffset > originalText.length) {
-        console.warn(`Invalid offsets for word "${error.word}": ${startOffset}-${endOffset}`);
-        return null;
-      }
-      
-      // Verify the word actually exists at those offsets
-      const actualWord = originalText.substring(startOffset, endOffset);
-      if (actualWord !== error.word) {
-        console.warn(`Offset mismatch: expected "${error.word}", found "${actualWord}"`);
-        // Try to find the correct position
-        const correctedPosition = findWordInText(originalText, error.word, startOffset);
-        if (correctedPosition) {
-          startOffset = correctedPosition.start;
-          endOffset = correctedPosition.end;
-        } else {
-          return null;
-        }
-      }
-
-      // Limit suggestions if requested
-      const suggestions = Array.isArray(error.suggestions) ? error.suggestions : [];
-      const limitedSuggestions = limitSuggestions ? suggestions.slice(0, 1) : suggestions;
-
-      return {
-        id: `spell-${startOffset}-${endOffset}-${index}`,
-        word: error.word,
-        startOffset,
-        endOffset,
-        suggestions: limitedSuggestions,
-        message: `"${error.word}" may be misspelled`
-      };
-    })
-    .filter(Boolean) as SpellCheckResponse['suggestions'];
-}
-
-/**
- * Find a word in text and return its position
- */
-export function findWordInText(text: string, word: string, startFrom: number = 0): { start: number; end: number } | null {
-  let searchStart = startFrom;
-  
-  while (searchStart < text.length) {
-    const foundIndex = text.indexOf(word, searchStart);
-    
-    if (foundIndex === -1) {
-      break;
-    }
-    
-    const start = foundIndex;
-    const end = foundIndex + word.length;
-    
-    // Check word boundaries
-    const beforeChar = text[start - 1];
-    const afterChar = text[end];
-    const isBoundaryStart = start === 0 || /\W/.test(beforeChar);
-    const isBoundaryEnd = end === text.length || /\W/.test(afterChar);
-    
-    if (isBoundaryStart && isBoundaryEnd) {
-      return { start, end };
-    }
-    
-    searchStart = foundIndex + 1;
-  }
-  
-  return null;
 }
 
 /**

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
-import { useDocumentStore } from '../store/documentStore';
+import { useAuthStore } from '../store/auth/auth.store';
+import { useDocumentStore } from '../store/document/document.store';
+import { Document } from '../types';
 
 const DocumentList: React.FC = () => {
   const navigate = useNavigate();
@@ -222,7 +223,7 @@ const DocumentList: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {documents.map(doc => (
+          {documents.map((doc: Document) => (
             <div
               key={doc.id}
               role="button"

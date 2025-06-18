@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
-import { useDocumentStore } from '../store/documentStore';
+import { useAuthStore } from '../store/auth/auth.store';
+import { useDocumentStore } from '../store/document/document.store';
 import TextEditor from './TextEditor';
 
 const DocumentEditor: React.FC = () => {

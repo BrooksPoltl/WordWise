@@ -1,9 +1,11 @@
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../config';
 import { Tone } from '../types';
+import { logger } from './logger';
 
 interface ToneDetectResponse {
   success: boolean;
-  tone: Tone;
-  confidence?: number;
+  tone: Tone | null;
   error?: string;
 }
 
@@ -13,90 +15,70 @@ interface ToneRewriteResponse {
   error?: string;
 }
 
+/**
+ * A service for performing tone analysis and rewriting using the Firebase backend.
+ */
 class ToneAnalyzerService {
-  private readonly debounceMs = 3000;
-
-  private debounceTimer: NodeJS.Timeout | null = null;
-
-  private lastCheckedText = '';
-
-  private cachedTone: Tone | null = null;
-
-  public detectTone(text: string, callback: (tone: Tone | null) => void): void {
-    // If text hasn't changed, return cached tone
-    if (text === this.lastCheckedText && this.cachedTone) {
-      callback(this.cachedTone);
-      return;
+  /**
+   * Analyzes the tone of a given block of text.
+   * @param text - The text to analyze.
+   * @returns A promise that resolves to the detected tone.
+   */
+  public async analyzeTone(text: string): Promise<Tone | null> {
+    logger.info('Calling toneDetect function...');
+    if (!text.trim()) {
+      logger.warning('Text is empty, returning null tone.');
+      return null;
     }
 
-    // Debounce API calls
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
-    }
+    try {
+      const detectToneCallable = httpsCallable<
+        { text: string },
+        ToneDetectResponse
+      >(functions, 'toneDetect');
 
-    this.debounceTimer = setTimeout(async () => {
-      try {
-        const tone = await this.performDetect(text);
-        this.lastCheckedText = text;
-        this.cachedTone = tone;
-        callback(tone);
-      } catch (error) {
-        console.error('Tone detection failed:', error);
-        callback(null);
+      const result = await detectToneCallable({ text });
+      const { success, tone, error } = result.data;
+
+      if (!success) {
+        throw new Error(error || 'API error during tone detection');
       }
-    }, this.debounceMs);
+
+      logger.info('Tone detected successfully.', { tone });
+      return tone;
+    } catch (error) {
+      logger.error('Error calling toneDetect callable:', error);
+      throw error;
+    }
   }
 
-  public async rewriteText(text: string, tone: Tone): Promise<string> {
-    const response = await fetch(`${this.getFunctionsUrl()}/spellCheck`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: 'toneRewrite', text, tone }),
-    });
+  /**
+   * Rewrites a block of text to match a specified tone.
+   * @param text - The text to rewrite.
+   * @param tone - The target tone.
+   * @returns A promise that resolves to the rewritten text.
+   */
+  public async rewriteTone(text: string, tone: Tone): Promise<string> {
+    logger.info('Calling toneRewrite function with tone:', { tone });
+    try {
+      const rewriteTextCallable = httpsCallable<
+        { text: string; tone: Tone },
+        ToneRewriteResponse
+      >(functions, 'toneRewrite');
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      const result = await rewriteTextCallable({ text, tone });
+      const { success, text: rewrittenText, error } = result.data;
+
+      if (!success) {
+        throw new Error(error || 'API error during tone rewrite');
+      }
+
+      logger.info('Text rewritten successfully.');
+      return rewrittenText;
+    } catch (error) {
+      logger.error('Error calling toneRewrite callable:', error);
+      throw error;
     }
-
-    const result: ToneRewriteResponse = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || 'API error');
-    }
-
-    return result.text;
-  }
-
-  // Private helpers
-  private async performDetect(text: string): Promise<Tone | null> {
-    // Guard against empty text
-    if (!text.trim()) return null;
-
-    const response = await fetch(`${this.getFunctionsUrl()}/spellCheck`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: 'toneDetect', text }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const result: ToneDetectResponse = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || 'API error');
-    }
-
-    return result.tone;
-  }
-
-  private getFunctionsUrl(): string {
-    if (
-      typeof window !== 'undefined' &&
-      window.location.hostname === 'localhost'
-    ) {
-      return 'http://localhost:5001/wordwise-34da3/us-central1';
-    }
-    return 'https://us-central1-wordwise-34da3.cloudfunctions.net';
   }
 }
 

@@ -1,12 +1,13 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import {
-  getFirestore,
-  connectFirestoreEmulator,
-  doc,
-  setDoc,
-  getDoc,
+    connectFirestoreEmulator,
+    doc,
+    getDoc,
+    getFirestore,
+    setDoc,
 } from 'firebase/firestore';
+import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 import { logger } from '../utils/logger';
 
 interface Config {
@@ -53,6 +54,9 @@ export const auth = getAuth(app);
 // Initialize Cloud Firestore and get a reference to the service
 export const db = getFirestore(app);
 
+// Initialize Firebase Functions and get a reference to the service
+export const functions = getFunctions(app);
+
 // Connect to emulators if in development mode
 if (config.useEmulator) {
   logger.firebase.emulator('Running in Firebase Emulator mode');
@@ -65,6 +69,10 @@ if (config.useEmulator) {
     // Connect to Firestore emulator
     connectFirestoreEmulator(db, '127.0.0.1', 8080);
     logger.firebase.emulator('Connected to Firestore emulator on port 8080');
+
+    // Connect to Functions emulator
+    connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+    logger.firebase.emulator('Connected to Functions emulator on port 5001');
 
     // Test Firestore connection after a short delay
     setTimeout(async () => {

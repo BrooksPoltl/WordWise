@@ -1,50 +1,60 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { EDITOR_CONFIG } from '../constants/editorConstants';
+import { useDocumentStore } from '../store/document/document.store';
+import { logger } from '../utils/logger';
 
-interface UseAutoSaveProps {
-  documentId: string;
-  updateDocument: (payload: { id: string; content: string }) => Promise<void>;
-  currentContent?: string;
-}
-
-export const useAutoSave = ({ documentId, updateDocument, currentContent }: UseAutoSaveProps) => {
-  const contentRef = useRef(currentContent);
+/**
+ * A hook for debouncing and auto-saving document content changes.
+ *
+ * @param documentId - The ID of the document to save.
+ * @returns An object containing the debounced save function and a cleanup function.
+ */
+export const useAutoSave = (documentId: string) => {
+  const { updateDocument, currentDocument } = useDocumentStore();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  contentRef.current = currentContent;
+  const lastSavedContentRef = useRef<string | undefined>(
+    currentDocument?.content,
+  );
+
+  // Keep lastSavedContentRef in sync with the document from the store
+  useEffect(() => {
+    lastSavedContentRef.current = currentDocument?.content;
+  }, [currentDocument?.content]);
 
   const debouncedSave = useCallback(
-    (content: string) => {
-      // Clear the previous timeout if it exists
+    (newContent: string) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      
-      // Set a new timeout
+
       timeoutRef.current = setTimeout(async () => {
-        if (documentId && content !== contentRef.current) {
+        if (newContent !== lastSavedContentRef.current) {
+          logger.info('Auto-saving document...', { documentId });
           try {
             await updateDocument({
               id: documentId,
-              content,
+              content: newContent,
             });
+            lastSavedContentRef.current = newContent; // Update after successful save
+            logger.success('Auto-save successful.', { documentId });
           } catch (error) {
-            console.error('Auto-save failed:', error);
+            logger.error('Auto-save failed:', error);
           }
         }
-        timeoutRef.current = null;
       }, EDITOR_CONFIG.AUTO_SAVE_DELAY);
     },
-    [documentId, updateDocument]
+    [documentId, updateDocument],
   );
 
-  // Cleanup function
-  const cleanup = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  }, []);
+  // Cleanup on unmount
+  useEffect(
+    () => () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    },
+    [],
+  );
 
-  return { debouncedSave, cleanup };
+  return { debouncedSave };
 }; 

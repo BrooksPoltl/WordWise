@@ -1,238 +1,156 @@
-import { SpellingSuggestion, WritingMetrics } from '../types';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../config';
+import { SpellingSuggestion } from '../types';
+import { logger } from './logger';
 
-interface SpellCheckResult {
-  suggestions: SpellingSuggestion[];
-  metrics: WritingMetrics;
-}
-
-interface SpellCheckResponse {
+interface SpellCheckCallableResponse {
   success: boolean;
-  suggestions: SpellingSuggestion[];
-  metrics: WritingMetrics;
+  suggestionMap: Record<string, string[]>;
   error?: string;
 }
 
-
-
-interface TextChunk {
-  text: string;
-  startOffset: number;
-}
-
-
-
 /**
- * Enhanced SpellChecker Service with improved text change handling
- *
- * Key improvements:
- * - Better text removal detection and suggestion cleanup
- * - Batch processing for paste events
- * - Request deduplication and conflict resolution
- * - Improved offset management for large text changes
- * - Smart suggestion invalidation on text edits
+ * A service for performing spell checking using the Firebase backend.
  */
 class SpellCheckerService {
-  private readonly debounceMs = 1500;
-
-  private readonly maxChunkSize = 2000;
-
-  private readonly minChunkOverlap = 100;
-
-  private debounceTimer: NodeJS.Timeout | null = null;
-
-  private lastCheckedText = '';
-
-  private cachedSuggestions: SpellingSuggestion[] = [];
-
   /**
-   * Main entry point for spell checking with improved text change detection
+   * Calls the 'spellCheck' Firebase Function.
+   * @param words - An array of unique words to be checked.
+   * @returns A promise that resolves to a map of misspelled words to their suggestions.
    */
-  public checkText(
-    text: string,
-    callback: (suggestions: SpellingSuggestion[]) => void,
-    options: { isPaste?: boolean; forceCheck?: boolean } = {}
-  ): void {
-    // Clear existing timer
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
-    }
-
-    // Handle text removal - clear cached suggestions when text is shorter
-    if (text.length < this.lastCheckedText.length) {
-      this.cachedSuggestions = [];
-      callback([]);
-    }
-
-    // If text hasn't changed significantly and we have recent results, use cache
-    if (!options.forceCheck && this.shouldUseCachedResults(text)) {
-      callback(this.cachedSuggestions);
-      return;
-    }
-
-    // For paste operations, use immediate batch processing
-    if (options.isPaste) {
-      this.handlePasteEvent(text, callback);
-      return;
-    }
-
-    // Debounce the actual check
-    this.debounceTimer = setTimeout(async () => {
-      try {
-        const suggestions = await this.performSpellCheck(text);
-        this.lastCheckedText = text;
-        this.cachedSuggestions = suggestions;
-        callback(suggestions);
-      } catch (error) {
-        console.error('Spell check failed:', error);
-        callback([]);
-      }
-    }, this.debounceMs);
-  }
-
-  /**
-   * Handle paste events with immediate full text processing
-   */
-  private async handlePasteEvent(
-    text: string,
-    callback: (suggestions: SpellingSuggestion[]) => void
-  ): Promise<void> {
+  private async callSpellCheck(
+    words: string[],
+  ): Promise<Record<string, string[]>> {
+    logger.info('Calling spellCheck function with', { count: words.length });
     try {
-      // For paste events, send the full text for comprehensive spell checking
-      const suggestions = await this.performSpellCheck(text);
-      
-      this.lastCheckedText = text;
-      this.cachedSuggestions = suggestions;
-      callback(suggestions);
+      const spellCheckCallable = httpsCallable<
+        { words: string[] },
+        SpellCheckCallableResponse
+      >(functions, 'spellCheck');
+
+      const result = await spellCheckCallable({ words });
+      const { success, suggestionMap, error } = result.data;
+
+      if (!success) {
+        throw new Error(error || 'API error during spell check');
+      }
+
+      return suggestionMap;
     } catch (error) {
-      console.error('Paste spell check failed:', error);
-      
-      // Fallback to empty suggestions on error
-      callback([]);
+      logger.error('Error calling spellCheck callable:', error);
+      throw error;
     }
   }
 
-
   /**
-   * Check a specific word at a given position (triggered by space)
+   * Performs a full spell check on a given block of text.
+   * @param text - The text to check.
+   * @returns A promise that resolves to an array of spelling suggestions.
    */
-  public checkWordAt(
+  public async getFullSpellCheck(
     text: string,
-    cursorPosition: number,
-    callback: (suggestions: SpellingSuggestion[]) => void
-  ): void {
-    const word = this.extractWordBeforeCursor(text, cursorPosition);
-    if (!word.word || word.word.length < 2) {
-      callback([]);
-      return;
+  ): Promise<SpellingSuggestion[]> {
+    if (!text.trim()) {
+      return [];
     }
 
-    // Check if this word is likely misspelled
-    this.performWordSpellCheck(word.word, word.startOffset, word.endOffset)
-      .then(suggestions => {
-        callback(suggestions);
-      })
-      .catch(error => {
-        console.error('Word spell check failed:', error);
-        callback([]);
-      });
+    const words = this.getUniqueWords(text);
+    if (words.length === 0) {
+      return [];
+    }
+
+    const suggestionMap = await this.callSpellCheck(words);
+    if (Object.keys(suggestionMap).length === 0) {
+      return []; // No misspellings found
+    }
+
+    const suggestions: SpellingSuggestion[] = [];
+    const misspelledWords = Object.keys(suggestionMap);
+
+    misspelledWords.forEach(word => {
+      const regex = new RegExp(`\\b${word}\\b`, 'gi');
+      let match: RegExpExecArray | null;
+      // eslint-disable-next-line no-cond-assign
+      while ((match = regex.exec(text))) {
+        const startOffset = match.index;
+        const endOffset = startOffset + word.length;
+        suggestions.push({
+          id: `${word}-${startOffset}`,
+          word,
+          suggestions: suggestionMap[word],
+          startOffset,
+          endOffset,
+          type: 'spelling',
+        });
+      }
+    });
+
+    logger.info('Generated suggestions', { count: suggestions.length });
+    return this.removeDuplicateSuggestions(suggestions);
   }
 
   /**
-   * Extract the word before the cursor position
+   * Performs a spell check on a single word.
+   * @param word - The word to check.
+   * @param startOffset - The starting position of the word in the document.
+   * @returns A promise that resolves to a spelling suggestion if the word is misspelled, otherwise null.
    */
-  private extractWordBeforeCursor(
-    text: string,
-    cursorPosition: number
-  ): { word: string; startOffset: number; endOffset: number } {
-    // We only care about the text up to the cursor.
-    const textBeforeCursor = text.slice(0, cursorPosition);
+  public async checkWord(
+    word: string,
+    startOffset: number,
+  ): Promise<SpellingSuggestion | null> {
+    if (!word.trim()) {
+      return null;
+    }
 
-    // Find the end of the last word (by trimming trailing spaces from the text before cursor)
-    const trimmedText = textBeforeCursor.trimEnd();
-    const wordEnd = trimmedText.length;
+    const suggestionMap = await this.callSpellCheck([word]);
+    const suggestionsForWord = suggestionMap[word];
 
-    // Find the start of the last word by finding the last space/nbsp before it
-    const lastSpace = trimmedText.lastIndexOf(' ');
-    const lastNbsp = trimmedText.lastIndexOf('\u00A0'); // Handle non-breaking space
-    const wordStart = Math.max(lastSpace, lastNbsp) + 1;
-
-    const word = trimmedText.substring(wordStart);
-
-    if (!word) {
-      return { word: '', startOffset: 0, endOffset: 0 };
+    if (!suggestionsForWord || suggestionsForWord.length === 0) {
+      return null;
     }
 
     return {
+      id: `${word}-${startOffset}`,
       word,
-      startOffset: wordStart,
-      endOffset: wordEnd,
+      suggestions: suggestionsForWord,
+      startOffset,
+      endOffset: startOffset + word.length,
+      type: 'spelling',
     };
   }
 
   /**
-   * Perform spell check on a specific word
-   */
-  private async performWordSpellCheck(
-    word: string,
-    startOffset: number,
-    endOffset: number
-  ): Promise<SpellingSuggestion[]> {
-    try {
-      const response = await fetch(`${this.getFunctionsUrl()}/spellCheck`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: word, limitSuggestions: true }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const result: SpellCheckResponse = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || 'API error');
-      }
-
-      // Return only the first suggestion and adjust offsets
-      return result.suggestions
-        .slice(0, 1) // Limit to 1 suggestion
-        .map(suggestion => ({
-          ...suggestion,
-          startOffset,
-          endOffset,
-          word,
-          suggestions: suggestion.suggestions.slice(0, 1), // Limit to 1 fix option
-        }))
-        .filter(
-          suggestion =>
-            suggestion.word &&
-            suggestion.word.length > 0 &&
-            suggestion.suggestions.length > 0
-        );
-    } catch (error) {
-      console.error('Word spell check failed:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Apply a suggestion and return updated suggestions list
-   * Processes in reverse order to avoid offset management complexity
+   * Applies a given suggestion, replacing the misspelled word in the text
+   * and adjusting the offsets of other suggestions.
+   * @param text - The original text.
+   * @param suggestions - The current list of suggestions.
+   * @param targetSuggestion - The suggestion to apply.
+   * @param replacement - The word to replace the misspelling with.
+   * @returns An object containing the updated text and the adjusted list of suggestions.
    */
   public applySuggestion(
+    text: string,
     suggestions: SpellingSuggestion[],
     targetSuggestion: SpellingSuggestion,
-    replacement: string
-  ): SpellingSuggestion[] {
-    const delta = replacement.length - targetSuggestion.word.length;
-    const targetStartOffset = targetSuggestion.startOffset;
+    replacement: string,
+  ): { updatedText: string; updatedSuggestions: SpellingSuggestion[] } {
+    const { startOffset, endOffset, word } = targetSuggestion;
+
+    // Create the new text
+    const updatedText =
+      text.substring(0, startOffset) +
+      replacement +
+      text.substring(endOffset);
+
+    // Calculate the change in length
+    const delta = replacement.length - word.length;
 
     // Filter out the applied suggestion and update offsets of subsequent suggestions
-    return suggestions
+    const updatedSuggestions = suggestions
       .filter(s => s.id !== targetSuggestion.id)
       .map(s => {
-        if (s.startOffset > targetStartOffset) {
+        if (s.startOffset > startOffset) {
           return {
             ...s,
             startOffset: s.startOffset + delta,
@@ -241,204 +159,40 @@ class SpellCheckerService {
         }
         return s;
       });
+
+    return { updatedText, updatedSuggestions };
   }
 
   /**
-   * Get metrics for text without spell checking
+   * Removes duplicate suggestions that might arise from multiple checks.
+   * A duplicate is defined as a suggestion for the same word at the same start offset.
+   * @param suggestions - The array of suggestions to filter.
+   * @returns A new array with duplicates removed.
    */
-  public calculateMetrics(text: string): WritingMetrics {
-    const words = this.getWords(text);
-
-    return {
-      wordCount: words.length,
-      characterCount: text.length,
-      spellingErrors: 0, // Will be updated by caller
-    };
-  }
-
-  /**
-   * Perform full spell check (used for manual refresh)
-   */
-  public async getFullSpellCheck(text: string): Promise<SpellCheckResult> {
-    const suggestions = await this.performSpellCheck(text);
-    const metrics = this.calculateMetrics(text);
-
-    return {
-      suggestions,
-      metrics: {
-        ...metrics,
-        spellingErrors: suggestions.length,
-      },
-    };
-  }
-
-  // Private methods
-
-  private shouldUseCachedResults(text: string): boolean {
-    if (!this.lastCheckedText || !this.cachedSuggestions.length) {
-      return false;
-    }
-
-    // Use simple similarity check - if 90% similar, use cache
-    const similarity = this.calculateSimilarity(this.lastCheckedText, text);
-    return similarity > 0.9;
-  }
-
-  private calculateSimilarity(text1: string, text2: string): number {
-    const words1 = new Set(this.getWords(text1));
-    const words2 = new Set(this.getWords(text2));
-    const union = new Set([...words1, ...words2]);
-    const intersection = new Set([...words1].filter(word => words2.has(word)));
-
-    return intersection.size / union.size;
-  }
-
-  private async performSpellCheck(text: string): Promise<SpellingSuggestion[]> {
-    // Handle empty or very short text
-    if (!text.trim() || text.trim().length < 3) {
-      return [];
-    }
-
-    // For large texts, process in chunks
-    if (text.length > this.maxChunkSize) {
-      return this.processTextInChunks(text);
-    }
-
-    // For normal-sized text, process directly
-    return this.checkTextChunk(text, 0);
-  }
-
-  private async processTextInChunks(
-    text: string
-  ): Promise<SpellingSuggestion[]> {
-    const chunks = this.createTextChunks(text);
-    const allSuggestions: SpellingSuggestion[] = [];
-
-    // Process chunks in parallel for better performance
-    const chunkPromises = chunks.map(chunk =>
-      this.checkTextChunk(chunk.text, chunk.startOffset)
-    );
-
-    const chunkResults = await Promise.allSettled(chunkPromises);
-
-    // Collect successful results
-    chunkResults.forEach(result => {
-      if (result.status === 'fulfilled') {
-        allSuggestions.push(...result.value);
-      }
-    });
-
-    // Remove duplicates that might occur at chunk boundaries
-    return this.removeDuplicateSuggestions(allSuggestions);
-  }
-
-  private createTextChunks(text: string): TextChunk[] {
-    const chunks: TextChunk[] = [];
-    let currentPos = 0;
-
-    while (currentPos < text.length) {
-      const chunkEnd = Math.min(currentPos + this.maxChunkSize, text.length);
-
-      // Try to break at a word boundary if we're not at the end
-      let actualEnd = chunkEnd;
-      if (chunkEnd < text.length) {
-        const nextSpace = text.indexOf(' ', chunkEnd);
-        const prevSpace = text.lastIndexOf(' ', chunkEnd);
-
-        // Choose the closer word boundary
-        if (
-          nextSpace !== -1 &&
-          (prevSpace === -1 || nextSpace - chunkEnd < chunkEnd - prevSpace)
-        ) {
-          actualEnd = nextSpace;
-        } else if (prevSpace !== -1) {
-          actualEnd = prevSpace;
-        }
-      }
-
-      chunks.push({
-        text: text.substring(currentPos, actualEnd + this.minChunkOverlap),
-        startOffset: currentPos,
-      });
-
-      currentPos = actualEnd;
-    }
-
-    return chunks;
-  }
-
-  private async checkTextChunk(
-    text: string,
-    globalOffset: number
-  ): Promise<SpellingSuggestion[]> {
-    try {
-      const response = await fetch(`${this.getFunctionsUrl()}/spellCheck`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, limitSuggestions: true }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const result: SpellCheckResponse = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || 'API error');
-      }
-
-      // Adjust offsets for global position, limit to 1 suggestion per word, and validate
-      return result.suggestions
-        .slice(0, 1) // Limit to 1 suggestion for cleaner UX
-        .map(suggestion => ({
-          ...suggestion,
-          startOffset: suggestion.startOffset + globalOffset,
-          endOffset: suggestion.endOffset + globalOffset,
-          suggestions: suggestion.suggestions.slice(0, 1), // Limit to 1 fix option
-        }))
-        .filter(
-          suggestion =>
-            // Validate that offsets are reasonable
-            suggestion.startOffset >= 0 &&
-            suggestion.endOffset > suggestion.startOffset &&
-            suggestion.word &&
-            suggestion.word.length > 0 &&
-            suggestion.suggestions.length > 0
-        );
-    } catch (error) {
-      console.error('Chunk spell check failed:', error);
-      return [];
-    }
-  }
-
   private removeDuplicateSuggestions(
-    suggestions: SpellingSuggestion[]
+    suggestions: SpellingSuggestion[],
   ): SpellingSuggestion[] {
     const seen = new Set<string>();
-    return suggestions.filter(suggestion => {
-      const key = `${suggestion.startOffset}-${suggestion.endOffset}-${suggestion.word}`;
-      if (seen.has(key)) {
+    return suggestions.filter(s => {
+      const identifier = `${s.word}-${s.startOffset}`;
+      if (seen.has(identifier)) {
         return false;
       }
-      seen.add(key);
+      seen.add(identifier);
       return true;
     });
   }
 
-  private getWords(text: string): string[] {
-    return text
-      .split(/\s+/)
-      .map(word => word.trim())
-      .filter(word => word.length > 0);
-  }
-
-  private getFunctionsUrl(): string {
-    if (window.location.hostname === 'localhost') {
-      return 'http://localhost:5001/wordwise-34da3/us-central1';
-    }
-    return 'https://us-central1-wordwise-34da3.cloudfunctions.net';
+  /**
+   * Extracts unique words from a string of text.
+   * @param text - The text to process.
+   * @returns An array of unique words.
+   */
+  private getUniqueWords(text: string): string[] {
+    const words = text.match(/\b\w+\b/g) || [];
+    return [...new Set(words)];
   }
 }
 
-export const spellChecker = new SpellCheckerService();
+const spellChecker = new SpellCheckerService();
+export default spellChecker;

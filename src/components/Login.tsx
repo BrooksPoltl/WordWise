@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore } from '../store/auth/auth.store';
 import { UserLoginPayload } from '../types';
 
 interface LoginProps {

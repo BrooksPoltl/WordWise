@@ -1,10 +1,13 @@
-import { EditorContent } from '@tiptap/react';
+import { Transaction } from '@tiptap/pm/state';
+import { ReplaceStep } from '@tiptap/pm/transform';
+import { Editor, EditorContent } from '@tiptap/react';
 import React, { useCallback, useEffect } from 'react';
+import { EDITOR_CONFIG } from '../constants/editorConstants';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { useSpellCheck } from '../hooks/useSpellCheck';
 import { useTextEditor } from '../hooks/useTextEditor';
 import { useToneAnalysis } from '../hooks/useToneAnalysis';
-import { useDocumentStore } from '../store/documentStore';
+import { useDocumentStore } from '../store/document/document.store';
 import EditorHeader from './editor/EditorHeader';
 import EditorToolbar from './editor/EditorToolbar';
 import ToneModal from './editor/ToneModal';
@@ -21,24 +24,8 @@ const TextEditor: React.FC<TextEditorProps> = ({
   onTitleChange,
   showSidebar = true,
 }) => {
-  const { currentDocument, updateDocument, loading } = useDocumentStore();
-
-  // Auto-save functionality
-  const { debouncedSave } = useAutoSave({
-    documentId,
-    updateDocument,
-    currentContent: currentDocument?.content,
-  });
-
-  // Handle content changes
-  const handleContentChange = useCallback(
-    (content: string) => {
-      debouncedSave(content);
-    },
-    [debouncedSave]
-  );
-
-  // Initialize text editor
+  const { currentDocument, loading } = useDocumentStore();
+  const { debouncedSave } = useAutoSave(documentId);
   const {
     editor,
     title,
@@ -46,15 +33,14 @@ const TextEditor: React.FC<TextEditorProps> = ({
     wordCount,
     characterCount,
     updateContent,
+    isProgrammaticUpdate,
   } = useTextEditor({
     initialContent: currentDocument?.content || '',
-    onContentChange: handleContentChange,
   });
-
-  // Spell checking
   const {
     suggestions,
     metrics,
+    checkWord,
     handleApplySuggestion,
     handleDismissSuggestion,
     checkText,
@@ -62,8 +48,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
     editor,
     documentId,
   });
-
-  // Tone analysis
   const {
     detectedTone,
     selectedTone,
@@ -75,45 +59,86 @@ const TextEditor: React.FC<TextEditorProps> = ({
     closeToneModal,
   } = useToneAnalysis({ editor });
 
-  // Enhanced content change handler that includes spell checking and tone detection
-  const handleEnhancedContentChange = useCallback(
-    (content: string, options?: { isPaste?: boolean }) => {
-      handleContentChange(content);
-      checkText(content, options);
-      
-      if (editor) {
-        detectTone(editor.getText());
-      }
-    },
-    [handleContentChange, checkText, detectTone, editor]
-  );
-
-  // Handle title changes
   const handleTitleChange = useCallback(
     (newTitle: string) => {
       setTitle(newTitle);
       onTitleChange(newTitle);
     },
-    [setTitle, onTitleChange]
+    [setTitle, onTitleChange],
   );
 
-  // Sync title with document changes
   useEffect(() => {
     setTitle(currentDocument?.title || '');
   }, [currentDocument?.title, setTitle]);
 
-  // Update editor content when document changes
   useEffect(() => {
     if (currentDocument?.content) {
       updateContent(currentDocument.content);
     }
   }, [currentDocument?.content, updateContent]);
 
-  // Update the text editor's content change handler
+  // Set up editor update handler
   useEffect(() => {
-    // This effect ensures the content change handler is updated when dependencies change
-    // The actual editor setup is handled by the useTextEditor hook above
-  }, [handleEnhancedContentChange]);
+    if (!editor) return undefined;
+
+    const handleUpdate = ({
+      editor: editorInstance,
+      transaction,
+    }: {
+      editor: Editor;
+      transaction: Transaction;
+    }) => {
+      if (isProgrammaticUpdate.current) {
+        isProgrammaticUpdate.current = false;
+        return;
+      }
+      const text = editorInstance.getText();
+      debouncedSave(text);
+      detectTone(text);
+
+      if (transaction.docChanged && transaction.steps.length > 0) {
+        const lastStep = transaction.steps[transaction.steps.length - 1];
+        if (lastStep instanceof ReplaceStep && lastStep.slice.size > 0) {
+          const insertedText = lastStep.slice.content.textBetween(
+            0,
+            lastStep.slice.content.size,
+            '',
+          );
+          if (insertedText.trim() === '' && insertedText.includes(' ')) {
+            const cursorPosition = lastStep.from;
+            const textBeforeCursor = text.slice(0, cursorPosition);
+            const match = textBeforeCursor.match(/(\w+)$/);
+            if (match) {
+              const word = match[1];
+              const startOffset = cursorPosition - word.length;
+              checkWord(word, startOffset);
+            }
+          }
+        }
+      }
+    };
+
+    editor.on('transaction', handleUpdate);
+
+    const pasteHandler = () => {
+      setTimeout(() => {
+        checkText(editor.getText());
+      }, EDITOR_CONFIG.PASTE_CHECK_DELAY);
+    };
+    editor.view.dom.addEventListener('paste', pasteHandler);
+
+    return () => {
+      editor.off('transaction', handleUpdate);
+      editor.view.dom.removeEventListener('paste', pasteHandler);
+    };
+  }, [
+    editor,
+    isProgrammaticUpdate,
+    debouncedSave,
+    detectTone,
+    checkWord,
+    checkText,
+  ]);
 
   if (!editor) {
     return (
@@ -125,10 +150,8 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   return (
     <div className="flex h-full">
-      {/* Main Editor */}
       <div className={`flex-1 ${showSidebar ? 'mr-4' : ''}`}>
         <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden h-full">
-          {/* Editor Header and Toolbar */}
           <div className="border-b border-gray-200 p-4">
             <EditorHeader
               title={title}
@@ -149,14 +172,12 @@ const TextEditor: React.FC<TextEditorProps> = ({
             />
           </div>
 
-          {/* Editor Content */}
           <div className="min-h-[500px] flex-1">
             <EditorContent editor={editor} />
           </div>
         </div>
       </div>
 
-      {/* Suggestion Sidebar */}
       {showSidebar && (
         <div className="h-full">
           <SuggestionSidebar
@@ -168,7 +189,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
         </div>
       )}
 
-      {/* Tone Modal */}
       <ToneModal
         isOpen={isToneModalOpen}
         selectedTone={selectedTone}

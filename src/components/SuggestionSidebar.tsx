@@ -112,9 +112,6 @@ const SuggestionSidebar: React.FC<SuggestionSidebarProps> = ({
                       <p className="text-sm font-medium text-gray-900 mb-1">
                         &quot;{suggestion.word}&quot;
                       </p>
-                      <p className="text-xs text-gray-600 mb-3">
-                        {suggestion.message}
-                      </p>
                     </div>
                     <button type="button"
                       onClick={() => onDismissSuggestion(suggestion.id)}

@@ -1,18 +1,17 @@
 import CharacterCount from '@tiptap/extension-character-count';
 import Placeholder from '@tiptap/extension-placeholder';
-import { Editor, useEditor } from '@tiptap/react';
+import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useCallback, useEffect, useState } from 'react';
-import { EDITOR_CONFIG } from '../constants/editorConstants';
+import { useCallback, useRef, useState } from 'react';
 import { SpellCheckDecorations } from '../extensions/SpellCheckDecorations';
 
 interface UseTextEditorProps {
   initialContent?: string;
-  onContentChange?: (content: string, options?: { isPaste?: boolean }) => void;
 }
 
-export const useTextEditor = ({ initialContent = '', onContentChange }: UseTextEditorProps) => {
+export const useTextEditor = ({ initialContent = '' }: UseTextEditorProps) => {
   const [title, setTitle] = useState<string>('');
+  const isProgrammaticUpdate = useRef(false);
 
   const editor = useEditor({
     extensions: [
@@ -31,56 +30,21 @@ export const useTextEditor = ({ initialContent = '', onContentChange }: UseTextE
     },
   });
 
-  // Handle text changes
-  const handleTextChange = useCallback(
-    (content: string, options?: { isPaste?: boolean }) => {
-      onContentChange?.(content, options);
-    },
-    [onContentChange]
-  );
-
-  // Set up editor update handler
-  useEffect(() => {
-    if (!editor) return undefined;
-    
-    const handleUpdate = ({ editor: editorInstance }: { editor: unknown }) => {
-      const content = (editorInstance as Editor).getHTML();
-      handleTextChange(content);
-    };
-
-    editor.on('update', handleUpdate);
-
-    return () => {
-      editor.off('update', handleUpdate);
-    };
-  }, [editor, handleTextChange]);
-
-  // Handle paste events
-  useEffect(() => {
-    if (!editor) return undefined;
-    
-    const pasteHandler = () => {
-      setTimeout(() => {
-        handleTextChange(editor.getHTML(), { isPaste: true });
-      }, EDITOR_CONFIG.TONE_REWRITE_DELAY);
-    };
-
-    editor.view.dom.addEventListener('paste', pasteHandler);
-    return () => {
-      editor.view.dom.removeEventListener('paste', pasteHandler);
-    };
-  }, [editor, handleTextChange]);
-
   // Update editor content when external content changes
-  const updateContent = useCallback((content: string) => {
-    if (editor) {
-      const editorContent = editor.getHTML();
-      if (content !== editorContent) {
-        editor.commands.setContent(content, false);
-        handleTextChange(content);
+  const updateContent = useCallback(
+    (content: string) => {
+      if (editor) {
+        const editorContent = editor.getHTML();
+        if (content !== editorContent) {
+          isProgrammaticUpdate.current = true;
+          editor.commands.setContent(content, false, {
+            preserveWhitespace: 'full',
+          });
+        }
       }
-    }
-  }, [editor, handleTextChange]);
+    },
+    [editor],
+  );
 
   // Get word and character counts
   const wordCount = editor?.storage.characterCount.words() || 0;
@@ -93,5 +57,6 @@ export const useTextEditor = ({ initialContent = '', onContentChange }: UseTextE
     wordCount,
     characterCount,
     updateContent,
+    isProgrammaticUpdate,
   };
 }; 

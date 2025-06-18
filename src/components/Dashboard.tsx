@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useAuthStore } from '../store/authStore';
-import { useDocumentStore } from '../store/documentStore';
+import { useAuthStore } from '../store/auth/auth.store';
+import { useDocumentStore } from '../store/document/document.store';
+import { Document } from '../types';
 import DocumentList from './DocumentList';
 
 const Dashboard: React.FC = () => {
@@ -146,7 +147,7 @@ const Dashboard: React.FC = () => {
                         </dt>
                         <dd className="text-lg font-medium text-gray-900">
                           {documents.reduce(
-                            (total, doc) => total + doc.wordCount,
+                            (total: number, doc: Document) => total + doc.wordCount,
                             0
                           )}
                         </dd>

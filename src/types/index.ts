@@ -63,7 +63,7 @@ export interface SpellingSuggestion {
   startOffset: number;
   endOffset: number;
   suggestions: string[];
-  message: string;
+  type: 'spelling' | 'grammar' | 'style';
 }
 
 export interface WritingMetrics {

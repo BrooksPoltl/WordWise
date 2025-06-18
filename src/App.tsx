@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuthStore } from './store/authStore';
+import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import AuthWrapper from './components/AuthWrapper';
 import Dashboard from './components/Dashboard';
 import DocumentEditor from './components/DocumentEditor';
+import { useAuthStore } from './store/auth/auth.store';
 
 const App: React.FC = () => {
   const { user, isInitialized, initializeAuth } = useAuthStore();
@@ -26,7 +26,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         {/* Public routes */}
         <Route
@@ -68,7 +68,7 @@ const App: React.FC = () => {
           element={<Navigate to={user ? '/dashboard' : '/auth'} replace />}
         />
       </Routes>
-    </BrowserRouter>
+    </Router>
   );
 };
 
