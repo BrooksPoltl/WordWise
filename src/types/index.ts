@@ -74,14 +74,11 @@ export interface WritingMetrics {
 
 // Tone analysis types
 export type Tone =
-  | 'Formal'
-  | 'Informal'
   | 'Friendly'
   | 'Professional'
   | 'Humorous'
   | 'Serious'
   | 'Academic'
-  | 'Conversational'
   | 'Persuasive'
   | 'Empathetic';
 

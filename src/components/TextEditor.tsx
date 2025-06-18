@@ -369,27 +369,21 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   // Tone related helpers
   const TONE_OPTIONS: Tone[] = [
-    'Formal',
-    'Informal',
     'Friendly',
     'Professional',
     'Humorous',
     'Serious',
     'Academic',
-    'Conversational',
     'Persuasive',
     'Empathetic',
   ];
 
   const toneEmojiMap: Record<Tone, string> = {
-    Formal: '🎓',
-    Informal: '😎',
     Friendly: '😊',
     Professional: '💼',
     Humorous: '😂',
     Serious: '🧐',
     Academic: '📚',
-    Conversational: '🗨️',
     Persuasive: '🗣️',
     Empathetic: '🤗',
   } as const;
