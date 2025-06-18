@@ -157,7 +157,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+      files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', '**/setupTests.ts'],
       env: {
         jest: true,
       },
