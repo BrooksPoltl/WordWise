@@ -110,7 +110,7 @@ const SuggestionSidebar: React.FC<SuggestionSidebarProps> = ({
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900 mb-1">
-                        "{suggestion.word}"
+                        &quot;{suggestion.word}&quot;
                       </p>
                       <p className="text-xs text-gray-600 mb-3">
                         {suggestion.message}
@@ -127,9 +127,9 @@ const SuggestionSidebar: React.FC<SuggestionSidebarProps> = ({
                   {/* Suggestions */}
                   <div className="space-y-1">
                     {suggestion.suggestions.length > 0 ? (
-                      suggestion.suggestions.map((replacement, index) => (
+                      suggestion.suggestions.map((replacement) => (
                         <button type="button"
-                          key={index}
+                          key={`${suggestion.id}-${replacement}`}
                           onClick={() =>
                             onApplySuggestion(suggestion, replacement)
                           }

@@ -1,25 +1,25 @@
-import { create } from 'zustand';
 import {
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  getDocs,
-  getDoc,
-  query,
-  where,
-  orderBy,
-  serverTimestamp,
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    orderBy,
+    query,
+    serverTimestamp,
+    updateDoc,
+    where,
 } from 'firebase/firestore';
+import { create } from 'zustand';
 import { db } from '../config';
 import {
-  Document,
-  DocumentCreatePayload,
-  DocumentUpdatePayload,
+    Document,
+    DocumentCreatePayload,
+    DocumentUpdatePayload,
 } from '../types';
-import { logger } from '../utils/logger';
 import { getFriendlyErrorMessage } from '../utils/errorMessages';
+import { logger } from '../utils/logger';
 
 interface DocumentState {
   documents: Document[];
@@ -59,10 +59,10 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       const querySnapshot = await getDocs(q);
       const documents: Document[] = [];
 
-      querySnapshot.forEach(doc => {
-        const data = doc.data();
+      querySnapshot.forEach(docSnapshot => {
+        const data = docSnapshot.data();
         documents.push({
-          id: doc.id,
+          id: docSnapshot.id,
           title: data.title,
           content: data.content,
           userId: data.userId,
@@ -191,16 +191,16 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
 
       // Update local state
       const { documents, currentDocument } = get();
-      const updatedDocuments = documents.map(doc =>
-        doc.id === payload.id
+      const updatedDocuments = documents.map(document =>
+        document.id === payload.id
           ? {
-              ...doc,
+              ...document,
               ...updateData,
               updatedAt: new Date(),
-              wordCount: updateData.wordCount || doc.wordCount,
-              characterCount: updateData.characterCount || doc.characterCount,
+              wordCount: updateData.wordCount || document.wordCount,
+              characterCount: updateData.characterCount || document.characterCount,
             }
-          : doc
+                      : document
       );
 
       set({
@@ -237,7 +237,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
 
       // Update local state
       const { documents, currentDocument } = get();
-      const updatedDocuments = documents.filter(doc => doc.id !== documentId);
+      const updatedDocuments = documents.filter(document => document.id !== documentId);
 
       set({
         documents: updatedDocuments,

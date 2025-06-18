@@ -46,9 +46,15 @@ const TextEditor: React.FC<TextEditorProps> = ({
   // Debounced save function
   const debouncedSave = useCallback(
     (() => {
-      let timeoutId: NodeJS.Timeout;
+      let timeoutId: NodeJS.Timeout | null = null;
+      
       return (content: string) => {
-        clearTimeout(timeoutId);
+        // Clear the previous timeout if it exists
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        
+        // Set a new timeout
         timeoutId = setTimeout(async () => {
           if (documentId && content !== contentRef.current) {
             try {
@@ -60,6 +66,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
               console.error('Auto-save failed:', error);
             }
           }
+          timeoutId = null;
         }, 3000); // Save after 3 seconds of inactivity
       };
     })(),
@@ -112,18 +119,18 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   // Set up editor update handler
   useEffect(() => {
-    if (editor) {
-      const handleUpdate = ({ editor }: { editor: any }) => {
-        const content = editor.getHTML();
-        handleTextChange(content);
-      };
+    if (!editor) return undefined;
+    
+    const handleUpdate = ({ editor: editorInstance }: { editor: unknown }) => {
+      const content = (editorInstance as any).getHTML();
+      handleTextChange(content);
+    };
 
-      editor.on('update', handleUpdate);
+    editor.on('update', handleUpdate);
 
-      return () => {
-        editor.off('update', handleUpdate);
-      };
-    }
+    return () => {
+      editor.off('update', handleUpdate);
+    };
   }, [editor, handleTextChange]);
 
   // Update editor content when document changes
@@ -183,7 +190,8 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   // Handle paste events
   useEffect(() => {
-    if (!editor) return;
+    if (!editor) return undefined;
+    
     const pasteHandler = () => {
       setTimeout(() => {
         handleTextChange(editor.getHTML());
@@ -197,7 +205,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   // Handle space-triggered spell check
   useEffect(() => {
-    if (!editor) return;
+    if (!editor) return undefined;
 
     const keydownHandler = (event: KeyboardEvent) => {
       if (event.key === ' ') {
@@ -402,9 +410,17 @@ const TextEditor: React.FC<TextEditorProps> = ({
                 {/* Tone indicator */}
                 {detectedTone && (
                   <div
+                    role="button"
+                    tabIndex={0}
                     className="flex items-center space-x-1 cursor-pointer"
                     title="Click to change tone"
                     onClick={() => handleToneSelection(detectedTone as Tone)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleToneSelection(detectedTone as Tone);
+                      }
+                    }}
                   >
                     <span>{toneEmojiMap[detectedTone]}</span>
                     <span>{detectedTone}</span>

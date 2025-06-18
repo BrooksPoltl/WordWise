@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useDocumentStore } from '../store/documentStore';
 import DocumentList from './DocumentList';
-import UserProfile from './UserProfile';
 
 const Dashboard: React.FC = () => {
   const { user, logout, loading } = useAuthStore();
@@ -70,9 +69,7 @@ const Dashboard: React.FC = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {showProfile ? (
-          <UserProfile onClose={() => setShowProfile(false)} />
-        ) : (
+        { (
           <div className="space-y-6">
             {/* Welcome Section */}
             <div className="bg-white overflow-hidden shadow rounded-lg">

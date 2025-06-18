@@ -40,8 +40,8 @@ const DocumentList: React.FC = () => {
       });
 
       navigate(`/editor/${documentId}`);
-    } catch (error) {
-      console.error('Failed to create document:', error);
+    } catch (createError) {
+      console.error('Failed to create document:', createError);
     } finally {
       setCreatingDocument(false);
     }
@@ -51,8 +51,8 @@ const DocumentList: React.FC = () => {
     try {
       await deleteDocument(documentId);
       setShowDeleteModal(null);
-    } catch (error) {
-      console.error('Failed to delete document:', error);
+    } catch (deleteError) {
+      console.error('Failed to delete document:', deleteError);
     }
   };
 
@@ -225,8 +225,16 @@ const DocumentList: React.FC = () => {
           {documents.map(doc => (
             <div
               key={doc.id}
+              role="button"
+              tabIndex={0}
               className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 cursor-pointer"
               onClick={() => navigate(`/editor/${doc.id}`)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  navigate(`/editor/${doc.id}`);
+                }
+              }}
             >
               <div className="p-6">
                 <div className="flex items-start justify-between mb-3">

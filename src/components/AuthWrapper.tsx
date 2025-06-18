@@ -13,14 +13,10 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ onAuthSuccess }) => {
     setIsLoginMode(prev => !prev);
   };
 
-  return (
-    <>
-      {isLoginMode ? (
-        <Login onToggleMode={toggleMode} onSuccess={onAuthSuccess} />
-      ) : (
-        <SignUp onToggleMode={toggleMode} onSuccess={onAuthSuccess} />
-      )}
-    </>
+  return isLoginMode ? (
+    <Login onToggleMode={toggleMode} onSuccess={onAuthSuccess} />
+  ) : (
+    <SignUp onToggleMode={toggleMode} onSuccess={onAuthSuccess} />
   );
 };
 

@@ -174,10 +174,10 @@ module.exports = {
       },
     },
     {
-      files: ['src/extensions/SpellCheckDecorations.ts'],
+      files: ['src/extensions/SpellCheckDecorations.ts', 'src/components/TextEditor.tsx'],
       rules: {
         'import/no-extraneous-dependencies': 'off', // Tiptap peer dependencies
-        '@typescript-eslint/no-explicit-any': 'off', // ProseMirror types are complex
+        '@typescript-eslint/no-explicit-any': 'off', // ProseMirror/Tiptap types are complex
       },
     },
     {

@@ -225,7 +225,7 @@ const Login: React.FC<LoginProps> = ({ onToggleMode, onSuccess }) => {
               onClick={onToggleMode}
               className="text-sm text-blue-600 hover:text-blue-500 focus:outline-none focus:underline transition-colors duration-200"
             >
-              Don't have an account? Sign up here
+              Don&apos;t have an account? Sign up here
             </button>
           </div>
         </form>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useDocumentStore } from '../store/documentStore';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useDocumentStore } from '../store/documentStore';
 import TextEditor from './TextEditor';
 
 const DocumentEditor: React.FC = () => {
@@ -23,7 +23,7 @@ const DocumentEditor: React.FC = () => {
   useEffect(() => {
     if (!user) {
       navigate('/');
-      return;
+      return undefined;
     }
 
     if (documentId) {
@@ -50,8 +50,8 @@ const DocumentEditor: React.FC = () => {
           id: documentId,
           title: newTitle,
         });
-      } catch (error) {
-        console.error('Failed to update title:', error);
+      } catch (updateError) {
+        console.error('Failed to update title:', updateError);
       }
     }, 1500);
 
@@ -110,7 +110,7 @@ const DocumentEditor: React.FC = () => {
             Document Not Found
           </h2>
           <p className="text-gray-600 mb-6">
-            The document you're looking for doesn't exist.
+            The document you&apos;re looking for doesn&apos;t exist.
           </p>
           <button type="button"
             onClick={handleBackToDashboard}
@@ -176,11 +176,13 @@ const DocumentEditor: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 h-full overflow-hidden">
         <div className="max-w-7xl mx-auto h-full">
-          <TextEditor
-            documentId={documentId!}
-            onTitleChange={handleTitleChange}
-            showSidebar
-          />
+          {documentId && (
+            <TextEditor
+              documentId={documentId}
+              onTitleChange={handleTitleChange}
+              showSidebar
+            />
+          )}
         </div>
       </main>
     </div>
