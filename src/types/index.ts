@@ -93,4 +93,4 @@ export interface ToneDetectResult {
 export interface ToneRewritePayload {
   text: string;
   tone: Tone;
-} 
+}

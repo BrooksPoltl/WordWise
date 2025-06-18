@@ -7,7 +7,10 @@ import { useDocumentStore } from '../store/documentStore';
 import { useAuthStore } from '../store/authStore';
 import { SpellingSuggestion, WritingMetrics, Tone } from '../types';
 import { spellChecker } from '../utils/spellChecker';
-import { SpellCheckDecorations, getSuggestionById } from '../extensions/SpellCheckDecorations';
+import {
+  SpellCheckDecorations,
+  getSuggestionById,
+} from '../extensions/SpellCheckDecorations';
 import SuggestionSidebar from './SuggestionSidebar';
 import { toneAnalyzer } from '../utils/toneAnalyzer';
 
@@ -17,16 +20,22 @@ interface TextEditorProps {
   showSidebar?: boolean;
 }
 
-const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, showSidebar = true }) => {
+const TextEditor: React.FC<TextEditorProps> = ({
+  documentId,
+  onTitleChange,
+  showSidebar = true,
+}) => {
   const { user } = useAuthStore();
   const { currentDocument, updateDocument, loading } = useDocumentStore();
   const [suggestions, setSuggestions] = useState<SpellingSuggestion[]>([]);
   const [metrics, setMetrics] = useState<WritingMetrics>({
     wordCount: 0,
     characterCount: 0,
-    spellingErrors: 0
+    spellingErrors: 0,
   });
-  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(
+    new Set()
+  );
   const [title, setTitle] = useState<string>(currentDocument?.title || '');
   const [detectedTone, setDetectedTone] = useState<Tone | null>(null);
   const [selectedTone, setSelectedTone] = useState<Tone | null>(null);
@@ -77,23 +86,31 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
   });
 
   // Handle spell checking and text changes
-  const handleTextChange = useCallback((content: string) => {
-    debouncedSave(content);
-    
-    // Get plain text from editor for spell checking
-    const plainTextForSpellCheck = editor ? editor.getText() : content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-    
-    // Update metrics
-    const newMetrics = spellChecker.calculateMetrics(plainTextForSpellCheck);
-    setMetrics(newMetrics);
-    
-    // Trigger tone detection (debounced inside service)
-    toneAnalyzer.detectTone(plainTextForSpellCheck, (tone) => {
-      if (tone) {
-        setDetectedTone(tone);
-      }
-    });
-  }, [debouncedSave, editor]);
+  const handleTextChange = useCallback(
+    (content: string) => {
+      debouncedSave(content);
+
+      // Get plain text from editor for spell checking
+      const plainTextForSpellCheck = editor
+        ? editor.getText()
+        : content
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+      // Update metrics
+      const newMetrics = spellChecker.calculateMetrics(plainTextForSpellCheck);
+      setMetrics(newMetrics);
+
+      // Trigger tone detection (debounced inside service)
+      toneAnalyzer.detectTone(plainTextForSpellCheck, tone => {
+        if (tone) {
+          setDetectedTone(tone);
+        }
+      });
+    },
+    [debouncedSave, editor]
+  );
 
   // Set up editor update handler
   useEffect(() => {
@@ -119,36 +136,42 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
 
       if (storeContent !== editorContent) {
         // Content has changed from another source, so update the editor
-        editor.commands.setContent(storeContent, false); 
+        editor.commands.setContent(storeContent, false);
         handleTextChange(storeContent);
       }
     }
   }, [editor, currentDocument, handleTextChange]);
 
   // Handle applying suggestions
-  const handleApplySuggestion = useCallback((suggestion: SpellingSuggestion, replacement: string) => {
-    if (!editor) return;
+  const handleApplySuggestion = useCallback(
+    (suggestion: SpellingSuggestion, replacement: string) => {
+      if (!editor) return;
 
-    // Find and replace the word using ProseMirror positions
-    const plainText = editor.getText();
-    const from = suggestion.startOffset + 1; // Convert to 1-based for Tiptap
-    const to = suggestion.endOffset + 1;
-    
-    // Apply the replacement
-    editor.chain()
-      .setTextSelection({ from, to })
-      .insertContent(replacement)
-      .run();
+      // Find and replace the word using ProseMirror positions
+      const plainText = editor.getText();
+      const from = suggestion.startOffset + 1; // Convert to 1-based for Tiptap
+      const to = suggestion.endOffset + 1;
 
-    // Update suggestions list
-    setSuggestions(prev => spellChecker.applySuggestion(prev, suggestion, replacement));
-    
-    // Trigger a new spell check
-    setTimeout(() => {
-      const content = editor.getHTML();
-      handleTextChange(content);
-    }, 100);
-  }, [editor, handleTextChange]);
+      // Apply the replacement
+      editor
+        .chain()
+        .setTextSelection({ from, to })
+        .insertContent(replacement)
+        .run();
+
+      // Update suggestions list
+      setSuggestions(prev =>
+        spellChecker.applySuggestion(prev, suggestion, replacement)
+      );
+
+      // Trigger a new spell check
+      setTimeout(() => {
+        const content = editor.getHTML();
+        handleTextChange(content);
+      }, 100);
+    },
+    [editor, handleTextChange]
+  );
 
   // Handle dismissing suggestions
   const handleDismissSuggestion = useCallback((suggestionId: string) => {
@@ -178,34 +201,38 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
   // Handle space-triggered spell check
   useEffect(() => {
     if (!editor) return;
-    
+
     const keydownHandler = (event: KeyboardEvent) => {
       if (event.key === ' ') {
         setTimeout(() => {
           if (!editor.view.hasFocus()) return;
-          
+
           const cursorPosition = editor.state.selection.from;
           const plainText = editor.getText();
-          
-          spellChecker.checkWordAt(plainText, cursorPosition, (newSuggestions) => {
-            const filteredSuggestions = newSuggestions.filter(
-              suggestion => !dismissedSuggestions.has(suggestion.id)
-            );
-            
-            if (filteredSuggestions.length > 0) {
-              const newSuggestion = filteredSuggestions[0];
-              setSuggestions(prevSuggestions => {
-                const otherSuggestions = prevSuggestions.filter(
-                  s => s.startOffset !== newSuggestion.startOffset
-                );
-                return [...otherSuggestions, newSuggestion];
-              });
+
+          spellChecker.checkWordAt(
+            plainText,
+            cursorPosition,
+            newSuggestions => {
+              const filteredSuggestions = newSuggestions.filter(
+                suggestion => !dismissedSuggestions.has(suggestion.id)
+              );
+
+              if (filteredSuggestions.length > 0) {
+                const newSuggestion = filteredSuggestions[0];
+                setSuggestions(prevSuggestions => {
+                  const otherSuggestions = prevSuggestions.filter(
+                    s => s.startOffset !== newSuggestion.startOffset
+                  );
+                  return [...otherSuggestions, newSuggestion];
+                });
+              }
             }
-          });
+          );
         }, 50);
       }
     };
-    
+
     editor.view.dom.addEventListener('keydown', keydownHandler);
     return () => {
       editor.view.dom.removeEventListener('keydown', keydownHandler);
@@ -215,7 +242,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
   // Handle spell suggestion clicks
   useEffect(() => {
     if (!editor) return;
-    
+
     const handleSpellClick = (event: CustomEvent) => {
       const { suggestionId } = event.detail;
       const suggestion = getSuggestionById(suggestions, suggestionId);
@@ -225,10 +252,16 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
         handleApplySuggestion(suggestion, suggestion.suggestions[0]);
       }
     };
-    
-    editor.view.dom.addEventListener('spellSuggestionClick', handleSpellClick as EventListener);
+
+    editor.view.dom.addEventListener(
+      'spellSuggestionClick',
+      handleSpellClick as EventListener
+    );
     return () => {
-      editor.view.dom.removeEventListener('spellSuggestionClick', handleSpellClick as EventListener);
+      editor.view.dom.removeEventListener(
+        'spellSuggestionClick',
+        handleSpellClick as EventListener
+      );
     };
   }, [editor, suggestions, handleApplySuggestion]);
 
@@ -236,10 +269,15 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
   useEffect(() => {
     if (!editor) return;
 
-    const filteredSuggestions = suggestions.filter(s => !dismissedSuggestions.has(s.id));
-    
+    const filteredSuggestions = suggestions.filter(
+      s => !dismissedSuggestions.has(s.id)
+    );
+
     if (filteredSuggestions.length > 0) {
-      editor.storage.spellCheckDecorations.updateDecorations(editor, filteredSuggestions);
+      editor.storage.spellCheckDecorations.updateDecorations(
+        editor,
+        filteredSuggestions
+      );
     } else {
       editor.storage.spellCheckDecorations.clearDecorations(editor);
     }
@@ -248,7 +286,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
   if (!editor) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
       </div>
     );
   }
@@ -261,7 +299,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
     setMetrics(prev => ({
       ...prev,
       wordCount,
-      characterCount
+      characterCount,
     }));
   }, [wordCount, characterCount]);
 
@@ -339,7 +377,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
               <input
                 type="text"
                 value={title}
-                onChange={(e) => {
+                onChange={e => {
                   const newTitle = e.target.value;
                   setTitle(newTitle);
                   onTitleChange(newTitle);
@@ -351,19 +389,26 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
               <div className="flex items-center space-x-4 text-sm text-gray-500">
                 {loading && (
                   <div className="flex items-center space-x-1">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600" />
                     <span>Saving...</span>
                   </div>
                 )}
                 {suggestions.length > 0 && (
                   <div className="flex items-center space-x-1 text-red-600">
-                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                    <span>{suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''}</span>
+                    <span className="w-2 h-2 bg-red-500 rounded-full" />
+                    <span>
+                      {suggestions.length} suggestion
+                      {suggestions.length !== 1 ? 's' : ''}
+                    </span>
                   </div>
                 )}
                 {/* Tone indicator */}
                 {detectedTone && (
-                  <div className="flex items-center space-x-1 cursor-pointer" title="Click to change tone" onClick={() => handleToneSelection(detectedTone as Tone)}>
+                  <div
+                    className="flex items-center space-x-1 cursor-pointer"
+                    title="Click to change tone"
+                    onClick={() => handleToneSelection(detectedTone as Tone)}
+                  >
                     <span>{toneEmojiMap[detectedTone]}</span>
                     <span>{detectedTone}</span>
                   </div>
@@ -405,11 +450,13 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
               >
                 S
               </button>
-              
-              <div className="w-px h-6 bg-gray-300"></div>
-              
+
+              <div className="w-px h-6 bg-gray-300" />
+
               <button
-                onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                onClick={() =>
+                  editor.chain().focus().toggleHeading({ level: 1 }).run()
+                }
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   editor.isActive('heading', { level: 1 })
                     ? 'bg-blue-600 text-white'
@@ -419,7 +466,9 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
                 H1
               </button>
               <button
-                onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                onClick={() =>
+                  editor.chain().focus().toggleHeading({ level: 2 }).run()
+                }
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   editor.isActive('heading', { level: 2 })
                     ? 'bg-blue-600 text-white'
@@ -439,7 +488,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
                 P
               </button>
 
-              <div className="w-px h-6 bg-gray-300"></div>
+              <div className="w-px h-6 bg-gray-300" />
 
               <button
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -465,16 +514,25 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
 
             {/* Tone selection dropdown */}
             <div className="mt-2">
-              <label htmlFor="tone-select" className="mr-2 text-sm text-gray-600">Tone:</label>
+              <label
+                htmlFor="tone-select"
+                className="mr-2 text-sm text-gray-600"
+              >
+                Tone:
+              </label>
               <select
                 id="tone-select"
                 className="border border-gray-300 rounded p-1 text-sm"
                 value={(selectedTone || detectedTone || '') as string}
-                onChange={(e) => handleToneSelection(e.target.value as Tone)}
+                onChange={e => handleToneSelection(e.target.value as Tone)}
               >
-                <option value="" disabled>Select tone</option>
-                {TONE_OPTIONS.map((tone) => (
-                  <option key={tone} value={tone}>{tone}</option>
+                <option value="" disabled>
+                  Select tone
+                </option>
+                {TONE_OPTIONS.map(tone => (
+                  <option key={tone} value={tone}>
+                    {tone}
+                  </option>
                 ))}
               </select>
             </div>
@@ -503,7 +561,9 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
       {isToneModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-3xl w-full">
-            <h2 className="text-lg font-semibold mb-4">Preview {selectedTone} Tone</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              Preview {selectedTone} Tone
+            </h2>
             <div className="h-96 overflow-y-auto border border-gray-200 rounded p-4 mb-4 whitespace-pre-wrap">
               {refactoredContent}
             </div>
@@ -528,4 +588,4 @@ const TextEditor: React.FC<TextEditorProps> = ({ documentId, onTitleChange, show
   );
 };
 
-export default TextEditor; 
+export default TextEditor;

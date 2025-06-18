@@ -15,8 +15,11 @@ interface ToneRewriteResponse {
 
 class ToneAnalyzerService {
   private readonly debounceMs = 3000;
+
   private debounceTimer: NodeJS.Timeout | null = null;
+
   private lastCheckedText = '';
+
   private cachedTone: Tone | null = null;
 
   public detectTone(text: string, callback: (tone: Tone | null) => void): void {
@@ -45,7 +48,7 @@ class ToneAnalyzerService {
   }
 
   public async rewriteText(text: string, tone: Tone): Promise<string> {
-    const response = await fetch(this.getFunctionsUrl() + '/spellCheck', {
+    const response = await fetch(`${this.getFunctionsUrl()}/spellCheck`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode: 'toneRewrite', text, tone }),
@@ -68,7 +71,7 @@ class ToneAnalyzerService {
     // Guard against empty text
     if (!text.trim()) return null;
 
-    const response = await fetch(this.getFunctionsUrl() + '/spellCheck', {
+    const response = await fetch(`${this.getFunctionsUrl()}/spellCheck`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode: 'toneDetect', text }),
@@ -87,11 +90,14 @@ class ToneAnalyzerService {
   }
 
   private getFunctionsUrl(): string {
-    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    if (
+      typeof window !== 'undefined' &&
+      window.location.hostname === 'localhost'
+    ) {
       return 'http://localhost:5001/wordwise-34da3/us-central1';
     }
     return 'https://us-central1-wordwise-34da3.cloudfunctions.net';
   }
 }
 
-export const toneAnalyzer = new ToneAnalyzerService(); 
+export const toneAnalyzer = new ToneAnalyzerService();

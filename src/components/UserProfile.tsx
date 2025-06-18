@@ -13,7 +13,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState({
     displayName: user?.displayName || '',
     preferences: {
@@ -21,9 +21,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
     },
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    
+
     if (name === 'language') {
       setFormData(prev => ({
         ...prev,
@@ -42,20 +44,20 @@ const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
 
   const handleSave = async () => {
     if (!user) return;
-    
+
     setLoading(true);
     setError(null);
     setSuccess(null);
-    
+
     try {
       const userRef = doc(db, 'users', user.uid);
-      
+
       await updateDoc(userRef, {
         displayName: formData.displayName || null,
         preferences: formData.preferences,
         updatedAt: Timestamp.now(),
       });
-      
+
       setSuccess('Profile updated successfully!');
       setIsEditing(false);
     } catch (err: any) {
@@ -90,8 +92,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -110,10 +122,15 @@ const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
 
         <div className="space-y-6">
           <div>
-            <h4 className="text-md font-medium text-gray-900 mb-4">Basic Information</h4>
+            <h4 className="text-md font-medium text-gray-900 mb-4">
+              Basic Information
+            </h4>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Email Address
                 </label>
                 <input
@@ -124,9 +141,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
                   className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500 cursor-not-allowed sm:text-sm"
                 />
               </div>
-              
+
               <div>
-                <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="displayName"
+                  className="block text-sm font-medium text-gray-700"
+                >
                   Display Name
                 </label>
                 {isEditing ? (
@@ -149,9 +169,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
           </div>
 
           <div>
-            <h4 className="text-md font-medium text-gray-900 mb-4">Preferences</h4>
+            <h4 className="text-md font-medium text-gray-900 mb-4">
+              Preferences
+            </h4>
             <div>
-              <label htmlFor="language" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="language"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Language for Grammar Checks
               </label>
               {isEditing ? (
@@ -172,7 +197,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
                   {user.preferences?.language === 'en-US' && 'English (US)'}
                   {user.preferences?.language === 'en-GB' && 'English (UK)'}
                   {user.preferences?.language === 'en-CA' && 'English (Canada)'}
-                  {user.preferences?.language === 'en-AU' && 'English (Australia)'}
+                  {user.preferences?.language === 'en-AU' &&
+                    'English (Australia)'}
                   {!user.preferences?.language && 'English (US)'}
                 </div>
               )}
@@ -212,4 +238,4 @@ const UserProfile: React.FC<UserProfileProps> = ({ onClose }) => {
   );
 };
 
-export default UserProfile; 
+export default UserProfile;

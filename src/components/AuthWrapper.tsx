@@ -24,4 +24,4 @@ const AuthWrapper: React.FC<AuthWrapperProps> = ({ onAuthSuccess }) => {
   );
 };
 
-export default AuthWrapper; 
+export default AuthWrapper;

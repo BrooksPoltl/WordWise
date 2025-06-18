@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useDocumentStore } from '../store/documentStore';
-import UserProfile from './UserProfile';
 import DocumentList from './DocumentList';
+import UserProfile from './UserProfile';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -22,14 +22,14 @@ const Dashboard: React.FC = () => {
 
   const handleCreateDocument = async () => {
     if (!user || creatingDocument) return;
-    
+
     setCreatingDocument(true);
     try {
       const documentId = await createDocument(user.uid, {
         title: 'Untitled Document',
         content: '',
       });
-      
+
       navigate(`/editor/${documentId}`);
     } catch (error) {
       console.error('Failed to create document:', error);
@@ -41,7 +41,7 @@ const Dashboard: React.FC = () => {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
     );
   }
@@ -55,7 +55,7 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center">
               <h1 className="text-xl font-bold text-gray-900">WordWise</h1>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setShowProfile(!showProfile)}
@@ -63,12 +63,16 @@ const Dashboard: React.FC = () => {
               >
                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-medium">
-                    {user.displayName ? user.displayName.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
+                    {user.displayName
+                      ? user.displayName.charAt(0).toUpperCase()
+                      : user.email.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <span className="hidden sm:block">{user.displayName || user.email}</span>
+                <span className="hidden sm:block">
+                  {user.displayName || user.email}
+                </span>
               </button>
-              
+
               <button
                 onClick={handleLogout}
                 disabled={loading}
@@ -106,15 +110,29 @@ const Dashboard: React.FC = () => {
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <svg
+                          className="w-5 h-5 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
                         </svg>
                       </div>
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">Documents</dt>
-                        <dd className="text-lg font-medium text-gray-900">{documents.length}</dd>
+                        <dt className="text-sm font-medium text-gray-500 truncate">
+                          Documents
+                        </dt>
+                        <dd className="text-lg font-medium text-gray-900">
+                          {documents.length}
+                        </dd>
                       </dl>
                     </div>
                   </div>
@@ -126,16 +144,31 @@ const Dashboard: React.FC = () => {
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        <svg
+                          className="w-5 h-5 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                          />
                         </svg>
                       </div>
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">Total Words</dt>
+                        <dt className="text-sm font-medium text-gray-500 truncate">
+                          Total Words
+                        </dt>
                         <dd className="text-lg font-medium text-gray-900">
-                          {documents.reduce((total, doc) => total + doc.wordCount, 0)}
+                          {documents.reduce(
+                            (total, doc) => total + doc.wordCount,
+                            0
+                          )}
                         </dd>
                       </dl>
                     </div>
@@ -148,14 +181,26 @@ const Dashboard: React.FC = () => {
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        <svg
+                          className="w-5 h-5 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 10V3L4 14h7v7l9-11h-7z"
+                          />
                         </svg>
                       </div>
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">Grammar Checks</dt>
+                        <dt className="text-sm font-medium text-gray-500 truncate">
+                          Grammar Checks
+                        </dt>
                         <dd className="text-lg font-medium text-gray-900">0</dd>
                       </dl>
                     </div>
@@ -165,7 +210,10 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Documents Section */}
-            <div id="documents-section" className="bg-white overflow-hidden shadow rounded-lg">
+            <div
+              id="documents-section"
+              className="bg-white overflow-hidden shadow rounded-lg"
+            >
               <div className="px-4 py-5 sm:p-6">
                 <DocumentList />
               </div>
@@ -177,4 +225,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

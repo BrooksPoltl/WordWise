@@ -111,9 +111,15 @@
 }
 
 @keyframes pulse-error {
-  0% { background-color: rgba(239, 68, 68, 0.15); }
-  50% { background-color: rgba(239, 68, 68, 0.4); }
-  100% { background-color: rgba(239, 68, 68, 0.3); }
+  0% {
+    background-color: rgba(239, 68, 68, 0.15);
+  }
+  50% {
+    background-color: rgba(239, 68, 68, 0.4);
+  }
+  100% {
+    background-color: rgba(239, 68, 68, 0.3);
+  }
 }
 
 /* Grammar error style (for future use) */
@@ -136,4 +142,4 @@
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
-} 
+}

@@ -18,7 +18,7 @@ const App: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
           <p className="mt-4 text-gray-600">Loading WordWise...</p>
         </div>
       </div>
@@ -29,63 +29,47 @@ const App: React.FC = () => {
     <BrowserRouter>
       <Routes>
         {/* Public routes */}
-        <Route 
-          path="/auth" 
+        <Route
+          path="/auth"
           element={
             !user ? (
-              <AuthWrapper 
+              <AuthWrapper
                 onAuthSuccess={() => {
                   // Authentication success is handled by the auth store
                   // This callback could be used for additional logic if needed
-                }} 
+                }}
               />
             ) : (
               <Navigate to="/dashboard" replace />
             )
-          } 
+          }
         />
-        
+
         {/* Protected routes */}
-        <Route 
-          path="/dashboard" 
-          element={
-            user ? (
-              <Dashboard />
-            ) : (
-              <Navigate to="/auth" replace />
-            )
-          } 
+        <Route
+          path="/dashboard"
+          element={user ? <Dashboard /> : <Navigate to="/auth" replace />}
         />
-        
-        <Route 
-          path="/editor/:documentId" 
-          element={
-            user ? (
-              <DocumentEditor />
-            ) : (
-              <Navigate to="/auth" replace />
-            )
-          } 
+
+        <Route
+          path="/editor/:documentId"
+          element={user ? <DocumentEditor /> : <Navigate to="/auth" replace />}
         />
-        
+
         {/* Default redirect */}
-        <Route 
-          path="/" 
-          element={
-            <Navigate to={user ? "/dashboard" : "/auth"} replace />
-          } 
+        <Route
+          path="/"
+          element={<Navigate to={user ? '/dashboard' : '/auth'} replace />}
         />
-        
+
         {/* Catch all route */}
-        <Route 
-          path="*" 
-          element={
-            <Navigate to={user ? "/dashboard" : "/auth"} replace />
-          } 
+        <Route
+          path="*"
+          element={<Navigate to={user ? '/dashboard' : '/auth'} replace />}
         />
       </Routes>
     </BrowserRouter>
   );
 };
 
-export default App; 
+export default App;

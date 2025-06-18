@@ -52,7 +52,7 @@ export function getFriendlyErrorMessage(
 
   // Firestore & generic Firebase errors often expose a "code" property as a string.
   if (typeof error === 'object' && error !== null && 'code' in error) {
-    const code = (error as { code: string }).code;
+    const { code } = error as { code: string };
     if (code === 'permission-denied') {
       return 'You do not have permission to perform this action.';
     }
@@ -72,4 +72,4 @@ export function getFriendlyErrorMessage(
   }
 
   return fallback;
-} 
+}

@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Firebase
+functions/lib/
+.firebase/
+firebase-export-*/
+emulator-data/
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config files
+*.config.js
+*.config.ts
+!vite.config.ts
+
+# Generated files
+*.d.ts
+!src/**/*.d.ts 

@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Firebase
+functions/lib/
+.firebase/
+firebase-export-*/
+emulator-data/
+
+# Package files
+package-lock.json
+yarn.lock
+
+# Generated files
+*.d.ts
+!src/**/*.d.ts
+
+# Config files that have specific formatting requirements
+.eslintrc.cjs
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db 
