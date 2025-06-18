@@ -75,14 +75,8 @@ export const useSpellCheck = ({ editor, documentId }: UseSpellCheckProps) => {
       setSuggestions(prev =>
         spellChecker.applySuggestion(prev, suggestion, replacement)
       );
-
-      // Trigger a new spell check
-      setTimeout(() => {
-        const content = editor.getHTML();
-        checkText(content);
-      }, EDITOR_CONFIG.TONE_REWRITE_DELAY);
     },
-    [editor, checkText]
+    [editor]
   );
 
   // Handle dismissing suggestions
