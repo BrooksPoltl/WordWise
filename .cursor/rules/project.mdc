@@ -1,0 +1,54 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Product:
+Grammarly clone. 
+Uses Open AI for AI features. 
+
+Currently Implemented Features:
+- authentication
+- spell checking 
+- CRUD document operations
+- tone checking and updating
+
+Future features:
+- adding clarity suggestions
+- Craft specific types of documents from text like PRD’s HLDs LLDs
+- Using AI for recommending data to support arguments
+- filtering suggestions
+- adding comments that could make the document better. Similar to how in quip people can add comments to documents
+- setting a description that can be helpful for the document
+
+
+AI features include:
+- tone detection
+- spell checking
+
+Build: Vite
+
+Tech Stack:
+Language: Typescript 
+Node Version: 20
+State Management: Zustand
+
+
+Architecture
+Client-Server Model: The frontend is a single-page application (SPA) built with React. It communicates with Firebase services directly for authentication and database operations.
+State Management: Global state (like user authentication and document data) is managed using Zustand stores, which can be found in src/store/.
+Component-Based: The UI is built with React components located in src/components/.
+Serverless Backend: Backend logic, such as processing text for AI suggestions, is handled by Firebase Functions located in the functions/ directory.
+Real-time Database: Firestore is used as the primary database, allowing for real-time data synchronization between clients, which is essential for collaborative features.
+
+key Directories
+src/: Contains all the frontend React application source code.
+src/components/: Reusable React components.
+DocumentEditor.tsx: The main component for the editor interface.
+TextEditor.tsx: The core Tiptap-based editor component.
+SuggestionSidebar.tsx: Displays AI-powered suggestions.
+src/store/: Zustand state management stores (authStore.ts, documentStore.ts).
+src/utils/: Utility functions for features like spell checking, tone analysis, etc.
+src/extensions/: Custom extensions for the Tiptap editor.
+functions/src/: Source code for Firebase Functions (Node.js/TypeScript).
+firestore.rules: Security rules for the Firestore database. It's critical that these are maintained to ensure data security.

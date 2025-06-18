@@ -1,6 +1,5 @@
 import React from 'react';
 import { SpellingSuggestion, WritingMetrics } from '../types';
-import { highlightSpecificSuggestion, removeAllHighlights } from '../utils/textHighlighter';
 
 interface SuggestionSidebarProps {
   suggestions: SpellingSuggestion[];
@@ -97,9 +96,7 @@ const SuggestionSidebar: React.FC<SuggestionSidebarProps> = ({
               <div 
                 key={suggestion.id}
                 data-sidebar-suggestion={suggestion.id}
-                className="p-4 border-l-4 border-red-500 bg-red-50 hover:bg-red-100 cursor-pointer"
-                onMouseEnter={() => highlightSpecificSuggestion(suggestion.id)}
-                onMouseLeave={() => removeAllHighlights()}
+                className="p-4 border-l-4 border-red-500 bg-red-50 hover:bg-red-100"
               >
                 <div className="mb-2">
                   <div className="flex items-start justify-between">

@@ -13,10 +13,6 @@ Types should always be explicitly defined, both in Typescript and Python.
 Styling:
 For linting in typescript it should use AIRBNB linting style.
 
-Mobile-First Design:
-Always design and implement for mobile screens first, then scale up to larger screens.
-Use Tailwind's responsive prefixes (sm:, md:, lg:, xl:) to adjust layouts for different screen sizes.
-
 Performance Optimization:
 Use React.lazy() and Suspense for code-splitting and lazy-loading components.
 Implement virtualization for long lists using libraries like react-window.

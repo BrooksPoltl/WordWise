@@ -1,202 +1,122 @@
-# 📝 WordWise
+# WordWise
 
-**AI-powered writing assistant** built with React, TypeScript, and Firebase. Features real-time collaboration, intelligent suggestions, and seamless Firebase emulator integration for development.
+A modern grammar and spell checking application built with React, Tiptap, and Firebase.
 
-## ✨ Features
+## Features
 
-- 🔐 **Firebase Authentication** - Secure user management with email/password and Google sign-in
-- 💾 **Firestore Database** - Real-time data storage and synchronization
-- 🎨 **Modern UI** - Clean, responsive interface built with React and Tailwind CSS
-- 🔥 **Firebase Emulator Support** - Complete local development environment
-- ⚡ **Fast Development** - Vite-powered build system with hot reload
-- 🛡️ **TypeScript** - Type-safe development experience
-- 📱 **Responsive Design** - Works perfectly on desktop and mobile
-- 🔧 **Smart Logging** - Development-only logging that's silent in production
+### Current Features
+- **Authentication**: User registration and login
+- **Spell Checking**: Real-time spell checking with AI-powered suggestions
+- **Document Operations**: Create, read, update, and delete documents
+- **Tone Analysis**: Detect and modify the tone of text
+- **Real-time Editing**: Live text editing with immediate feedback
 
-## 🚀 Quick Start
+### AI-Powered Features
+- **Spell Checking**: Advanced spell checking using OpenAI API
+- **Tone Detection**: Automatically detect the tone of written content
+- **Tone Rewriting**: Transform text to match desired tones
 
-1. **Clone and install:**
-   ```bash
-   git clone <repository-url>
-   cd wordwise
-   npm install
-   ```
+## Technology Stack
 
-2. **Setup Firebase emulator:**
-   ```bash
-   npm run setup
-   ```
+- **Frontend**: React 18 with TypeScript
+- **Editor**: Tiptap (ProseMirror-based rich text editor)
+- **State Management**: Zustand
+- **Backend**: Firebase (Firestore, Functions, Auth)
+- **AI**: OpenAI API
+- **Styling**: Tailwind CSS
+- **Build Tool**: Vite
 
-3. **Start development:**
-   ```bash
-   npm run dev
-   ```
+## Architecture
 
-4. **Open your browser:**
-   - App: http://localhost:5173
-   - Firebase Emulator UI: http://localhost:4000
+### Spell Checking Implementation
 
-## 🏗️ Architecture
+The spell checking system has been completely redesigned to use ProseMirror's decoration system for better performance and reliability:
 
-WordWise is a **frontend-only** React application that connects directly to Firebase services:
+#### New Decoration-Based Approach
+- **Robust Highlighting**: Uses ProseMirror decorations that automatically adapt to text changes
+- **Accurate Positioning**: Reliable offset-to-position conversion
+- **Performance Optimized**: Decorations are efficiently managed and updated
+- **Click Handling**: Built-in click detection for spell suggestions
+
+#### Key Components
+- `SpellCheckDecorations` extension: Handles all decoration logic
+- Real-time API integration with OpenAI
+- Automatic decoration updates when text changes
+- Proper cleanup and memory management
+
+#### Benefits Over Previous Implementation
+- **No offset drift**: Decorations automatically map through document changes
+- **Better performance**: No complex DOM manipulation or HTML parsing
+- **Cleaner code**: Simpler, more maintainable implementation
+- **Fewer bugs**: Leverages ProseMirror's battle-tested decoration system
+
+### Project Structure
 
 ```
 src/
-├── components/           # React components
-│   ├── AuthWrapper.tsx   # Authentication wrapper
-│   ├── Login.tsx         # Login form
-│   ├── SignUp.tsx        # Registration form
-│   ├── Dashboard.tsx     # User dashboard
-│   └── UserProfile.tsx   # Profile management
-├── store/               # Zustand state stores
-│   ├── authStore.ts     # Authentication state
-│   └── userStore.ts     # User data operations
-├── config/              # Firebase configuration
-├── types/               # TypeScript definitions
-├── utils/               # Utility functions
-│   └── logger.ts        # Development logging utility
-└── App.tsx              # Main app component
+├── components/
+│   ├── TextEditor.tsx          # Main editor with spell checking
+│   ├── SuggestionSidebar.tsx   # AI-powered suggestions display
+│   └── ...
+├── extensions/
+│   └── SpellCheckDecorations.ts # New decoration-based spell checking
+├── store/
+│   ├── authStore.ts
+│   ├── documentStore.ts
+│   └── userStore.ts
+├── utils/
+│   ├── spellChecker.ts         # Spell checking service
+│   ├── toneAnalyzer.ts         # Tone analysis utilities
+│   └── ...
+└── types/
+    └── index.ts                # TypeScript definitions
 ```
 
-## 🛠️ Development
+## Getting Started
 
-### Available Scripts
+1. **Clone the repository**
+2. **Install dependencies**: `npm install`
+3. **Configure Firebase**: Set up your Firebase project
+4. **Configure OpenAI**: Add your OpenAI API key
+5. **Start development server**: `npm run dev`
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with emulators |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build |
-| `npm run emulator` | Start only Firebase emulators |
-| `npm run emulator:clean` | Start fresh emulators |
-| `npm run setup` | One-time emulator setup |
+## Firebase Configuration
 
-### Firebase Emulator
+Create a `.env` file with your Firebase configuration:
 
-The app runs entirely on Firebase emulators for development:
-
-- **Authentication**: http://localhost:9099
-- **Firestore**: http://localhost:8080  
-- **Emulator UI**: http://localhost:4000
-
-No real Firebase project needed for development! 🎉
-
-### Development Logging
-
-WordWise includes a smart logging utility that only shows logs during development:
-
-```typescript
-import { logger } from './utils/logger';
-
-// These only show in development (VITE_USE_FIREBASE_EMULATOR=true)
-logger.debug('Debug information');
-logger.info('General information');
-logger.success('Operation completed');
-logger.warning('Warning message');
-
-// Firebase-specific logging
-logger.firebase.auth('User authenticated');
-logger.firebase.firestore('Document saved');
-
-// Grouped logging for complex operations
-logger.group.start('User Registration');
-logger.group.log('Creating auth user...');
-logger.group.log('Saving profile...');
-logger.group.end();
-
-// Errors always show (even in production)
-logger.error('Something went wrong');
-```
-
-In production builds, all development logs are automatically silenced for clean console output.
-
-## 📦 Tech Stack
-
-### Frontend
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **Tailwind CSS** - Styling
-- **Zustand** - State management
-
-### Firebase Services
-- **Authentication** - User management
-- **Firestore** - NoSQL database
-- **Hosting** - Static site hosting (production)
-
-### Development Tools
-- **Firebase Emulator Suite** - Local development
-- **ESLint** - Code linting
-- **Prettier** - Code formatting
-
-## 🔐 Environment Configuration
-
-### Development (.env)
 ```env
-# Firebase Emulator (default)
-VITE_USE_FIREBASE_EMULATOR=true
-VITE_FIREBASE_PROJECT_ID=demo-wordwise
-
-# These can be demo values for emulator
-VITE_FIREBASE_API_KEY=demo-api-key
-VITE_FIREBASE_AUTH_DOMAIN=demo-project.firebaseapp.com
-VITE_FIREBASE_STORAGE_BUCKET=demo-project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
-VITE_FIREBASE_APP_ID=1:123456789:web:abcdef
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_project_id
+# ... other Firebase config
 ```
 
-### Production
-For production deployment, set `VITE_USE_FIREBASE_EMULATOR=false` and provide real Firebase configuration values.
+## OpenAI Configuration
 
-## 🔒 Security
+Add your OpenAI API key to Firebase Functions environment:
 
-### Firestore Security Rules
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Users can only access their own data
-    match /users/{userId} {
-      allow read, write: if request.auth != null 
-        && request.auth.uid == userId;
-    }
-  }
-}
-```
-
-## 🚀 Deployment
-
-### Build for Production
 ```bash
+firebase functions:config:set openai.api_key="your_openai_api_key"
+```
+
+## Development
+
+```bash
+# Start development server
+npm run dev
+
+# Start Firebase emulators
+npm run emulator
+
+# Build for production
 npm run build
 ```
 
-### Deploy to Firebase Hosting
-```bash
-firebase deploy --only hosting
-```
+## Future Features
 
-## 📚 Documentation
-
-- [Emulator Setup Guide](EMULATOR_SETUP.md) - Detailed emulator configuration
-- [Firebase Documentation](https://firebase.google.com/docs) - Official Firebase docs
-- [React Documentation](https://react.dev) - React framework docs
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Firebase](https://firebase.google.com) for the amazing backend services
-- [React](https://react.dev) for the powerful UI framework
-- [Vite](https://vitejs.dev) for the lightning-fast build tool
-- [Tailwind CSS](https://tailwindcss.com) for the utility-first styling
+- **Clarity Suggestions**: AI-powered clarity and readability improvements
+- **Document Templates**: Generate specific document types (PRDs, HLDs, LLDs)
+- **Data Recommendations**: AI suggestions for supporting arguments with data
+- **Comment System**: Collaborative commenting similar to Quip
+- **Document Descriptions**: AI-generated helpful descriptions for documents
+- **Advanced Filtering**: Filter suggestions by type and severity
