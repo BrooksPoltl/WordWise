@@ -1,5 +1,5 @@
-import { onRequest } from 'firebase-functions/v2/https';
 import cors from 'cors';
+import { onRequest } from 'firebase-functions/v2/https';
 import OpenAI from 'openai';
 
 
@@ -28,8 +28,9 @@ function getOpenAIClient(): OpenAI {
 }
 
 interface SpellCheckRequest {
-  mode?: 'spell' | 'toneDetect' | 'toneRewrite';
-  text: string;
+  mode?: 'spell' | 'toneDetect' | 'toneRewrite' | 'batchSpell';
+  text?: string;
+  words?: Array<{ word: string; startOffset: number; endOffset: number }>;
   tone?: Tone; // Required if mode === 'toneRewrite'
   limitSuggestions?: boolean; // Limit to 1 suggestion per word
 }
@@ -81,9 +82,14 @@ export const spellCheck = onRequest(
           return;
         }
 
-        const { mode = 'spell', text, tone, limitSuggestions = false }: SpellCheckRequest = request.body;
+        const { mode = 'spell', text, words, tone, limitSuggestions = false }: SpellCheckRequest = request.body;
 
-        if (!text || typeof text !== 'string') {
+        if (mode === 'batchSpell') {
+          if (!words || !Array.isArray(words) || words.length === 0) {
+            response.status(400).json({ error: 'Words array is required for batch spell check' });
+            return;
+          }
+        } else if (!text || typeof text !== 'string') {
           response.status(400).json({ error: 'Text is required and must be a string' });
           return;
         }
@@ -126,6 +132,23 @@ export const spellCheck = onRequest(
             return;
           }
 
+          case 'batchSpell': {
+            // ======== Batch Spell Check (new logic) ========
+            if (!words || words.length === 0) {
+              response.status(200).json({ success: true, suggestions: [], metrics: { wordCount: 0, characterCount: 0, spellingErrors: 0 } });
+              return;
+            }
+
+            const batchSuggestions = await performBatchSpellCheck(words, limitSuggestions);
+            const metrics = {
+              wordCount: words.length,
+              characterCount: words.reduce((sum, w) => sum + w.word.length, 0),
+              spellingErrors: batchSuggestions.length
+            };
+            response.status(200).json({ success: true, suggestions: batchSuggestions, metrics });
+            return;
+          }
+
           case 'toneRewrite': {
             if (!tone || !TONE_OPTIONS.includes(tone)) {
               response.status(400).json({ error: 'Valid tone must be provided for rewrite' });
@@ -147,7 +170,7 @@ export const spellCheck = onRequest(
           default:
             response.status(400).json({ error: 'Unknown mode' });
         }
-      } catch (error) {
+              } catch (error) {
         console.error('Language tool error:', error);
         response.status(500).json({ success: false, error: 'Internal server error' });
       }
@@ -184,6 +207,76 @@ Return this exact JSON format:
     }
   ]
 }`;
+}
+
+/**
+ * Perform batch spell check for multiple words
+ */
+async function performBatchSpellCheck(
+  words: Array<{ word: string; startOffset: number; endOffset: number }>,
+  limitSuggestions: boolean = false
+): Promise<SpellCheckResponse['suggestions']> {
+  if (words.length === 0) return [];
+
+  const openaiClient = getOpenAIClient();
+  
+  // Create a prompt for batch spell checking
+  const wordList = words.map(w => w.word).join(', ');
+  const prompt = `You are a highly proficient English language spell checker. Check these words for spelling errors: ${wordList}
+
+IMPORTANT RULES:
+1. **Aggressively correct typos**: Flag words that are clearly misspelled, especially short words that are likely typos.
+2. **Be careful with proper nouns**: Do NOT flag proper names, acronyms, or technical jargon unless clearly misspelled.
+3. **Provide accurate corrections**: Give the best correction for each misspelled word.${limitSuggestions ? '\n4. **Give one practical suggestion**: Provide only the single most likely correction for each error.' : '\n4. **Give practical suggestions**: Provide the most likely corrections for each error.'}
+
+Return ONLY valid JSON in this exact format:
+{
+  "errors": [
+    {
+      "word": "misspelled_word",
+      "suggestions": ["best_correction"]
+    }
+  ]
+}`;
+
+  try {
+    const completion = await openaiClient.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0,
+      max_tokens: 500,
+    });
+
+    const aiResponse = completion.choices[0]?.message?.content?.trim() || '';
+    const errors = parseAIResponse(aiResponse);
+    
+    // Convert to suggestions with proper offsets
+    const suggestions: SpellCheckResponse['suggestions'] = [];
+    
+    if (errors && Array.isArray(errors)) {
+      for (const error of errors) {
+        if (error?.word && error?.suggestions) {
+          // Find the matching word from the original request
+          const matchingWord = words.find(w => w.word.toLowerCase() === error.word.toLowerCase());
+          if (matchingWord) {
+            suggestions.push({
+              id: `spell-${matchingWord.startOffset}-${matchingWord.endOffset}-${Date.now()}`,
+              word: matchingWord.word,
+              startOffset: matchingWord.startOffset,
+              endOffset: matchingWord.endOffset,
+              suggestions: limitSuggestions ? error.suggestions.slice(0, 1) : error.suggestions.slice(0, 3),
+              message: `"${matchingWord.word}" may be misspelled`
+            });
+          }
+        }
+      }
+    }
+
+    return suggestions;
+  } catch (error) {
+    console.error('Batch spell check failed:', error);
+    return [];
+  }
 }
 
 /**

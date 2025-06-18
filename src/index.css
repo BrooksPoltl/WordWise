@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Spell check error styling */
+.spell-error {
+  background-color: rgba(239, 68, 68, 0.2);
+  border-bottom: 2px wavy #ef4444;
+  cursor: pointer;
+  position: relative;
+}
+
+.spell-error:hover {
+  background-color: rgba(239, 68, 68, 0.3);
+}
+
 /* Tiptap Editor Styles */
 .ProseMirror {
   outline: none;

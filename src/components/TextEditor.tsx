@@ -87,9 +87,9 @@ const TextEditor: React.FC<TextEditorProps> = ({
     },
   });
 
-  // Handle spell checking and text changes
+  // Handle text changes - only do batch spell checking for paste events
   const handleTextChange = useCallback(
-    (content: string) => {
+    (content: string, options?: { isPaste?: boolean }) => {
       debouncedSave(content);
 
       // Get plain text from editor for spell checking
@@ -104,6 +104,20 @@ const TextEditor: React.FC<TextEditorProps> = ({
       const newMetrics = spellChecker.calculateMetrics(plainTextForSpellCheck);
       setMetrics(newMetrics);
 
+      // Only do spell checking for paste events - regular typing uses space-triggered checking
+      if (options?.isPaste) {
+        spellChecker.checkText(
+          plainTextForSpellCheck,
+          (newSuggestions) => {
+            const filteredSuggestions = newSuggestions.filter(
+              suggestion => !dismissedSuggestions.has(suggestion.id)
+            );
+            setSuggestions(filteredSuggestions);
+          },
+          { isPaste: true }
+        );
+      }
+
       // Trigger tone detection (debounced inside service)
       toneAnalyzer.detectTone(plainTextForSpellCheck, tone => {
         if (tone) {
@@ -111,7 +125,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
         }
       });
     },
-    [debouncedSave, editor]
+    [debouncedSave, editor, dismissedSuggestions]
   );
 
   // Set up editor update handler
@@ -185,13 +199,13 @@ const TextEditor: React.FC<TextEditorProps> = ({
     setTitle(currentDocument?.title || '');
   }, [currentDocument?.title]);
 
-  // Handle paste events
+  // Handle paste events with improved spell checking for pasted content
   useEffect(() => {
     if (!editor) return undefined;
     
     const pasteHandler = () => {
       setTimeout(() => {
-        handleTextChange(editor.getHTML());
+        handleTextChange(editor.getHTML(), { isPaste: true });
       }, 100);
     };
     editor.view.dom.addEventListener('paste', pasteHandler);
@@ -200,7 +214,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
     };
   }, [editor, handleTextChange]);
 
-  // Handle space-triggered spell check
+  // Handle space-triggered spell check and deletion cleanup
   useEffect(() => {
     if (!editor) return undefined;
 
@@ -232,6 +246,32 @@ const TextEditor: React.FC<TextEditorProps> = ({
             }
           );
         }, 50);
+      } else if (event.key === 'Backspace' || event.key === 'Delete') {
+        // Handle deletion events to immediately clean up invalid suggestions
+        setTimeout(() => {
+          if (!editor.view.hasFocus()) return;
+          
+          const plainText = editor.getText();
+          const currentSuggestions = suggestions;
+          
+          // Filter out suggestions that no longer apply
+          const validSuggestions = currentSuggestions.filter(suggestion => {
+            if (suggestion.endOffset > plainText.length) {
+              return false;
+            }
+            
+            const actualText = plainText.substring(
+              suggestion.startOffset,
+              suggestion.endOffset
+            );
+            
+            return actualText.toLowerCase() === suggestion.word.toLowerCase();
+          });
+          
+          if (validSuggestions.length !== currentSuggestions.length) {
+            setSuggestions(validSuggestions);
+          }
+        }, 50);
       }
     };
 
@@ -239,7 +279,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
     return () => {
       editor.view.dom.removeEventListener('keydown', keydownHandler);
     };
-  }, [editor, dismissedSuggestions]);
+  }, [editor, dismissedSuggestions, suggestions]);
 
   // Handle spell suggestion clicks
   useEffect(() => {

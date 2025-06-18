@@ -16,13 +16,13 @@ const spellCheckPluginKey = new PluginKey<SpellCheckState>('spellCheck');
 function offsetToPos(doc: any, offset: number): number | null {
   let textOffset = 0;
   let result: number | null = null;
-
+  
   try {
     doc.descendants((node: any, nodePos: number) => {
       if (node.isText) {
         const nodeStart = textOffset;
         const nodeEnd = textOffset + node.text.length;
-
+        
         if (offset >= nodeStart && offset <= nodeEnd) {
           result = nodePos + (offset - nodeStart);
           return false; // Stop iteration
@@ -31,7 +31,7 @@ function offsetToPos(doc: any, offset: number): number | null {
       }
       return true; // Continue iteration
     });
-
+    
     return result;
   } catch (error) {
     console.warn('Error converting offset to position:', error);
@@ -40,37 +40,40 @@ function offsetToPos(doc: any, offset: number): number | null {
 }
 
 /**
- * Create decorations from spell suggestions
+ * Create decorations from spell suggestions with better validation
  */
-function createDecorations(
-  doc: any,
-  suggestions: SpellingSuggestion[]
-): DecorationSet {
+function createDecorations(doc: any, suggestions: SpellingSuggestion[]): DecorationSet {
   const decorations: Decoration[] = [];
-
+  const validSuggestions: SpellingSuggestion[] = [];
+  
   for (const suggestion of suggestions) {
     const from = offsetToPos(doc, suggestion.startOffset);
     const to = offsetToPos(doc, suggestion.endOffset);
-
+    
     if (from !== null && to !== null && from < to && to <= doc.content.size) {
       // Validate that the text at these positions matches the expected word
       try {
         const actualText = doc.textBetween(from, to);
-        if (actualText === suggestion.word) {
+        if (actualText.toLowerCase() === suggestion.word.toLowerCase()) {
+          validSuggestions.push(suggestion);
           decorations.push(
             Decoration.inline(from, to, {
               class: 'spell-error',
               'data-suggestion-id': suggestion.id,
-              title: 'Click to see suggestions',
+              title: `Click to fix "${suggestion.word}" → "${suggestion.suggestions[0] || 'fix'}"`
             })
           );
+        } else {
+          console.warn(`Suggestion text mismatch: expected "${suggestion.word}", found "${actualText}" at ${from}-${to}`);
         }
       } catch (error) {
         console.warn('Error validating spell suggestion:', error);
       }
+    } else {
+      console.warn(`Invalid position for suggestion "${suggestion.word}": ${from}-${to} (doc size: ${doc.content.size})`);
     }
   }
-
+  
   return DecorationSet.create(doc, decorations);
 }
 
@@ -106,7 +109,7 @@ export const SpellCheckDecorations = Extension.create({
     return [
       new Plugin({
         key: spellCheckPluginKey,
-
+        
         state: {
           init(): SpellCheckState {
             return {
@@ -114,36 +117,51 @@ export const SpellCheckDecorations = Extension.create({
               decorations: DecorationSet.empty,
             };
           },
-
+          
           apply(tr, pluginState) {
             // Check if we have new suggestions from meta
             const meta = tr.getMeta(spellCheckPluginKey);
             if (meta) {
               return meta as SpellCheckState;
             }
-
+            
             // Map existing decorations through document changes
             if (tr.docChanged) {
-              const mappedDecorations = pluginState.decorations.map(
-                tr.mapping,
-                tr.doc
-              );
+              const mappedDecorations = pluginState.decorations.map(tr.mapping, tr.doc);
+              
+              // Filter out suggestions that no longer apply to valid text positions
+              const validSuggestions = pluginState.suggestions.filter(suggestion => {
+                const from = offsetToPos(tr.doc, suggestion.startOffset);
+                const to = offsetToPos(tr.doc, suggestion.endOffset);
+                
+                if (from === null || to === null || from >= to || to > tr.doc.content.size) {
+                  return false;
+                }
+                
+                try {
+                  const actualText = tr.doc.textBetween(from, to);
+                  return actualText.toLowerCase() === suggestion.word.toLowerCase();
+                } catch (error) {
+                  return false;
+                }
+              });
+              
               return {
-                ...pluginState,
+                suggestions: validSuggestions,
                 decorations: mappedDecorations,
               };
             }
-
+            
             return pluginState;
           },
         },
-
+        
         props: {
           decorations(state) {
             const pluginState = spellCheckPluginKey.getState(state);
             return pluginState?.decorations || DecorationSet.empty;
           },
-
+          
           handleClick(view, pos, event) {
             const target = event.target as HTMLElement;
             if (target?.classList.contains('spell-error')) {
@@ -151,7 +169,7 @@ export const SpellCheckDecorations = Extension.create({
               if (suggestionId) {
                 // Emit custom event that the component can listen to
                 const customEvent = new CustomEvent('spellSuggestionClick', {
-                  detail: { suggestionId, pos },
+                  detail: { suggestionId, pos }
                 });
                 view.dom.dispatchEvent(customEvent);
                 return true;
@@ -166,9 +184,6 @@ export const SpellCheckDecorations = Extension.create({
 });
 
 // Helper function to get suggestion by ID
-export function getSuggestionById(
-  suggestions: SpellingSuggestion[],
-  id: string
-): SpellingSuggestion | undefined {
+export function getSuggestionById(suggestions: SpellingSuggestion[], id: string): SpellingSuggestion | undefined {
   return suggestions.find(s => s.id === id);
-}
+} 
