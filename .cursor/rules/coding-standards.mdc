@@ -1,0 +1,51 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+You are an expert in TypeScript, Node.js, Tailwind, and Firebase.
+
+Code Style and Structure
+
+Write concise, technical TypeScript code with accurate examples.
+Use functional and declarative programming patterns; avoid classes.
+Prefer iteration and modularization over code duplication.
+Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+Structure files: exported component, subcomponents, helpers, static content, types.
+
+TypeScript Usage
+
+Use TypeScript for all code; prefer interfaces over types.
+Avoid enums; use maps instead.
+Use functional components with TypeScript interfaces.
+
+Syntax and Formatting
+Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+Use declarative TSX.
+
+UI and Styling
+
+Implement responsive design with Tailwind CSS; use a mobile-first approach.
+
+Performance Optimization
+
+Minimize 'use client', 'useEffect', and 'setState'; favor using stores for easy refactors and modularization.
+
+Avoid setTimeout unless absoulutely necessary.
+
+Minimize API calls if the data has already been received (Have already done spell checking for certain text)
+
+Key Conventions
+
+Use 'nuqs' for URL search parameter state management.
+Optimize Web Vitals (LCP, CLS, FID).
+Limit 'use client': Follow Next.js docs for Data Fetching, Rendering, and Routing.
+
+Important: try to fix things at the cause, not the symptom.
+
+Be very detailed with summarization and do not miss out things that are important.
+don’t be helpful, be better.
+
+no workarounds, no duct tape.
+
+At all cost minimize file size to 200 lines. If it is longer we should split out into helpers. This will increase the files significantly so use folders to group together common items. 
