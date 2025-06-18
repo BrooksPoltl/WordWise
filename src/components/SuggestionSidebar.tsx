@@ -116,7 +116,7 @@ const SuggestionSidebar: React.FC<SuggestionSidebarProps> = ({
                         {suggestion.message}
                       </p>
                     </div>
-                    <button
+                    <button type="button"
                       onClick={() => onDismissSuggestion(suggestion.id)}
                       className="text-gray-400 hover:text-gray-600 text-xs"
                     >
@@ -128,7 +128,7 @@ const SuggestionSidebar: React.FC<SuggestionSidebarProps> = ({
                   <div className="space-y-1">
                     {suggestion.suggestions.length > 0 ? (
                       suggestion.suggestions.map((replacement, index) => (
-                        <button
+                        <button type="button"
                           key={index}
                           onClick={() =>
                             onApplySuggestion(suggestion, replacement)

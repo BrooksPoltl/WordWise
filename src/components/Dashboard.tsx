@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useDocumentStore } from '../store/documentStore';
 import DocumentList from './DocumentList';
 import UserProfile from './UserProfile';
 
 const Dashboard: React.FC = () => {
-  const navigate = useNavigate();
   const { user, logout, loading } = useAuthStore();
-  const { documents, createDocument } = useDocumentStore();
+  const { documents } = useDocumentStore();
   const [showProfile, setShowProfile] = useState(false);
-  const [creatingDocument, setCreatingDocument] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -20,23 +17,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleCreateDocument = async () => {
-    if (!user || creatingDocument) return;
 
-    setCreatingDocument(true);
-    try {
-      const documentId = await createDocument(user.uid, {
-        title: 'Untitled Document',
-        content: '',
-      });
-
-      navigate(`/editor/${documentId}`);
-    } catch (error) {
-      console.error('Failed to create document:', error);
-    } finally {
-      setCreatingDocument(false);
-    }
-  };
 
   if (!user) {
     return (
@@ -58,6 +39,7 @@ const Dashboard: React.FC = () => {
 
             <div className="flex items-center space-x-4">
               <button
+                type="button"
                 onClick={() => setShowProfile(!showProfile)}
                 className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200"
               >
@@ -74,6 +56,7 @@ const Dashboard: React.FC = () => {
               </button>
 
               <button
+                type="button"
                 onClick={handleLogout}
                 disabled={loading}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"

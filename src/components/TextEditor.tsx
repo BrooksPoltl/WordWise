@@ -1,18 +1,17 @@
-import React, { useEffect, useCallback, useState, useRef } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Placeholder from '@tiptap/extension-placeholder';
 import CharacterCount from '@tiptap/extension-character-count';
-import { useDocumentStore } from '../store/documentStore';
-import { useAuthStore } from '../store/authStore';
-import { SpellingSuggestion, WritingMetrics, Tone } from '../types';
-import { spellChecker } from '../utils/spellChecker';
+import Placeholder from '@tiptap/extension-placeholder';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   SpellCheckDecorations,
   getSuggestionById,
 } from '../extensions/SpellCheckDecorations';
-import SuggestionSidebar from './SuggestionSidebar';
+import { useDocumentStore } from '../store/documentStore';
+import { SpellingSuggestion, Tone, WritingMetrics } from '../types';
+import { spellChecker } from '../utils/spellChecker';
 import { toneAnalyzer } from '../utils/toneAnalyzer';
+import SuggestionSidebar from './SuggestionSidebar';
 
 interface TextEditorProps {
   documentId: string;
@@ -25,7 +24,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
   onTitleChange,
   showSidebar = true,
 }) => {
-  const { user } = useAuthStore();
   const { currentDocument, updateDocument, loading } = useDocumentStore();
   const [suggestions, setSuggestions] = useState<SpellingSuggestion[]>([]);
   const [metrics, setMetrics] = useState<WritingMetrics>({
@@ -148,7 +146,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
       if (!editor) return;
 
       // Find and replace the word using ProseMirror positions
-      const plainText = editor.getText();
       const from = suggestion.startOffset + 1; // Convert to 1-based for Tiptap
       const to = suggestion.endOffset + 1;
 
@@ -420,7 +417,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
             {/* Formatting Toolbar */}
             <div className="flex items-center space-x-2">
-              <button
+              <button type="button"
                 onClick={() => editor.chain().focus().toggleBold().run()}
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   editor.isActive('bold')
@@ -430,7 +427,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
               >
                 B
               </button>
-              <button
+              <button type="button"
                 onClick={() => editor.chain().focus().toggleItalic().run()}
                 className={`px-3 py-1 rounded text-sm font-medium italic transition-colors ${
                   editor.isActive('italic')
@@ -440,7 +437,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
               >
                 I
               </button>
-              <button
+              <button type="button"
                 onClick={() => editor.chain().focus().toggleStrike().run()}
                 className={`px-3 py-1 rounded text-sm font-medium line-through transition-colors ${
                   editor.isActive('strike')
@@ -453,7 +450,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
               <div className="w-px h-6 bg-gray-300" />
 
-              <button
+              <button type="button"
                 onClick={() =>
                   editor.chain().focus().toggleHeading({ level: 1 }).run()
                 }
@@ -465,7 +462,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
               >
                 H1
               </button>
-              <button
+              <button type="button"
                 onClick={() =>
                   editor.chain().focus().toggleHeading({ level: 2 }).run()
                 }
@@ -477,7 +474,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
               >
                 H2
               </button>
-              <button
+              <button type="button"
                 onClick={() => editor.chain().focus().setParagraph().run()}
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   editor.isActive('paragraph')
@@ -490,7 +487,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
               <div className="w-px h-6 bg-gray-300" />
 
-              <button
+              <button type="button"
                 onClick={() => editor.chain().focus().toggleBulletList().run()}
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   editor.isActive('bulletList')
@@ -500,7 +497,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
               >
                 • List
               </button>
-              <button
+              <button type="button"
                 onClick={() => editor.chain().focus().toggleOrderedList().run()}
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   editor.isActive('orderedList')
@@ -568,13 +565,13 @@ const TextEditor: React.FC<TextEditorProps> = ({
               {refactoredContent}
             </div>
             <div className="flex justify-end space-x-2">
-              <button
+              <button type="button"
                 className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
                 onClick={closeToneModal}
               >
                 Cancel
               </button>
-              <button
+              <button type="button"
                 className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
                 onClick={applyRefactoredContent}
               >

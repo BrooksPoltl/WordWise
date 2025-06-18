@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDocumentStore } from '../store/documentStore';
 import { useAuthStore } from '../store/authStore';
-import { Document } from '../types';
+import { useDocumentStore } from '../store/documentStore';
 
 const DocumentList: React.FC = () => {
   const navigate = useNavigate();
@@ -105,7 +104,7 @@ const DocumentList: React.FC = () => {
           </p>
         </div>
 
-        <button
+        <button type="button"
           onClick={handleCreateDocument}
           disabled={creatingDocument}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -158,7 +157,7 @@ const DocumentList: React.FC = () => {
               <p className="text-sm text-red-800">{error}</p>
             </div>
             <div className="ml-auto pl-3">
-              <button
+              <button type="button"
                 onClick={clearError}
                 className="text-red-400 hover:text-red-600"
               >
@@ -191,7 +190,7 @@ const DocumentList: React.FC = () => {
           <p className="text-gray-600 mb-6">
             Create your first document to start writing with AI assistance.
           </p>
-          <button
+          <button type="button"
             onClick={handleCreateDocument}
             disabled={creatingDocument}
             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -234,7 +233,7 @@ const DocumentList: React.FC = () => {
                   <h3 className="text-lg font-medium text-gray-900 truncate flex-1 mr-3">
                     {doc.title || 'Untitled Document'}
                   </h3>
-                  <button
+                  <button type="button"
                     onClick={e => {
                       e.stopPropagation();
                       setShowDeleteModal(doc.id);
@@ -286,13 +285,13 @@ const DocumentList: React.FC = () => {
               be undone.
             </p>
             <div className="flex justify-end space-x-3">
-              <button
+              <button type="button"
                 onClick={() => setShowDeleteModal(null)}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Cancel
               </button>
-              <button
+              <button type="button"
                 onClick={() => handleDeleteDocument(showDeleteModal)}
                 className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >

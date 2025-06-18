@@ -90,7 +90,7 @@ const DocumentEditor: React.FC = () => {
             Document Not Found
           </h2>
           <p className="text-gray-600 mb-6">{error}</p>
-          <button
+          <button type="button"
             onClick={handleBackToDashboard}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
@@ -112,7 +112,7 @@ const DocumentEditor: React.FC = () => {
           <p className="text-gray-600 mb-6">
             The document you're looking for doesn't exist.
           </p>
-          <button
+          <button type="button"
             onClick={handleBackToDashboard}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
@@ -130,7 +130,7 @@ const DocumentEditor: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <button
+              <button type="button"
                 onClick={handleBackToDashboard}
                 className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >

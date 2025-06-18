@@ -66,21 +66,24 @@ module.exports = {
       { allowConstantExport: true },
     ],
 
-    // TypeScript specific rules
+    // TypeScript specific rules - STRICT MODE
     '@typescript-eslint/no-unused-vars': [
       'error',
       {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_',
+        ignoreRestSiblings: false,
       },
     ],
-    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-non-null-assertion': 'warn',
+    '@typescript-eslint/no-non-null-assertion': 'error',
+    '@typescript-eslint/no-shadow': 'error',
+    '@typescript-eslint/no-use-before-define': 'error',
 
-    // React specific rules
+    // React specific rules - STRICT MODE
     'react/react-in-jsx-scope': 'off', // Not needed with React 17+
     'react/jsx-uses-react': 'off', // Not needed with React 17+
     'react/function-component-definition': [
@@ -93,6 +96,14 @@ module.exports = {
     'react/jsx-props-no-spreading': 'off', // Useful for component composition
     'react/require-default-props': 'off', // Not needed with TypeScript
     'react/prop-types': 'off', // Not needed with TypeScript
+    'react/button-has-type': 'error',
+    'react/self-closing-comp': 'error',
+    'react/jsx-no-useless-fragment': 'error',
+    'react/no-unescaped-entities': 'error',
+    'react/jsx-boolean-value': 'error',
+    'react/no-array-index-key': 'error',
+    'react-hooks/rules-of-hooks': 'error',
+    'react-hooks/exhaustive-deps': 'error',
 
     // Import rules
     'import/extensions': [
@@ -108,11 +119,22 @@ module.exports = {
     'import/prefer-default-export': 'off',
     'import/no-default-export': 'off',
 
-    // General rules
-    'no-console': ['warn', { allow: ['warn', 'error'] }],
-    'no-debugger': 'warn',
+    // General rules - STRICT MODE
+    'no-console': ['error', { allow: ['warn', 'error'] }],
+    'no-debugger': 'error',
     'prefer-const': 'error',
     'no-var': 'error',
+    'no-unused-vars': 'off', // Using @typescript-eslint version
+    'consistent-return': 'error',
+    'no-else-return': 'error',
+    'prefer-template': 'error',
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector: 'ForInStatement',
+        message: 'for..in loops iterate over the entire prototype chain, which is virtually never what you want. Use Object.{keys,values,entries}, and iterate over the resulting array.',
+      },
+    ],
 
     // Firebase/Firestore related
     'no-param-reassign': [
@@ -142,6 +164,26 @@ module.exports = {
       rules: {
         '@typescript-eslint/no-explicit-any': 'off',
         'import/no-extraneous-dependencies': 'off',
+      },
+    },
+    {
+      files: ['src/utils/logger.ts'],
+      rules: {
+        'no-console': 'off', // Logger is designed to use console
+        '@typescript-eslint/no-explicit-any': 'off', // Logger needs flexible types
+      },
+    },
+    {
+      files: ['src/extensions/SpellCheckDecorations.ts'],
+      rules: {
+        'import/no-extraneous-dependencies': 'off', // Tiptap peer dependencies
+        '@typescript-eslint/no-explicit-any': 'off', // ProseMirror types are complex
+      },
+    },
+    {
+      files: ['src/utils/spellChecker.ts', 'src/utils/toneAnalyzer.ts'],
+      rules: {
+        'class-methods-use-this': 'off', // Utility classes with static-like methods
       },
     },
     {
