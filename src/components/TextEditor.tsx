@@ -1,9 +1,9 @@
 import {
-    autoUpdate,
-    flip,
-    offset,
-    shift,
-    useFloating,
+  autoUpdate,
+  flip,
+  offset,
+  shift,
+  useFloating,
 } from '@floating-ui/react';
 import { Editor, EditorContent } from '@tiptap/react';
 import React, { useCallback, useEffect, useState } from 'react';
