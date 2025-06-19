@@ -1,53 +1,79 @@
 import retextEnglish from 'retext-english';
 import retextEquality from 'retext-equality';
 import { unified } from 'unified';
-// eslint-disable-next-line import/no-extraneous-dependencies
+import { Point, Position } from 'unist';
 import { VFile } from 'vfile';
-import { ClaritySuggestion } from '../types';
-
-type VFileMessage = VFile['messages'][number];
-
-interface RetextMessageWithPosition extends VFileMessage {
-  position: {
-    start: { offset: number };
-    end: { offset: number };
-  };
-}
+import { VFileMessage } from 'vfile-message';
+import { ClaritySuggestion, SuggestionOption } from '../types';
+import { logger } from './logger';
 
 const processor = unified().use(retextEnglish).use(retextEquality);
 
-const hasPosition = (
+const isPosition = (place: Point | Position): place is Position =>
+  'start' in place && 'end' in place;
+
+const hasOffset = (
   message: VFileMessage,
-): message is RetextMessageWithPosition => {
-  const msg = message as RetextMessageWithPosition;
-  return (
-    msg.position !== undefined &&
-    typeof msg.position.start.offset === 'number' &&
-    typeof msg.position.end.offset === 'number'
-  );
+): message is VFileMessage & { place: Position | (Point & { offset: number }) } => {
+  if (!message.place) return false;
+  if (isPosition(message.place)) {
+    return (
+      message.place.start.offset !== undefined &&
+      message.place.end.offset !== undefined
+    );
+  }
+  return (message.place as Point & { offset: number }).offset !== undefined;
 };
 
 export const analyzeClarity = async (
   text: string,
 ): Promise<ClaritySuggestion[]> => {
   try {
-    const file = await processor.process(text);
+    const file = new VFile(text);
+    logger.info('Running clarity processor on text...', { text });
 
-    return file.messages.filter(hasPosition).map((msg, index) => {
-      const { start, end } = (msg as RetextMessageWithPosition).position;
+    const tree = processor.parse(file);
+    await processor.run(tree, file);
+
+    logger.info(
+      '[Clarity Analyzer] Raw messages from retext:',
+      file.messages,
+    );
+
+    const positionedMessages = file.messages.filter(hasOffset);
+
+    logger.info(
+      '[Clarity Analyzer] Filtered messages with position:',
+      positionedMessages,
+    );
+
+    const suggestions = positionedMessages.map((msg, index): ClaritySuggestion => {
+      let startOffset: number;
+      let endOffset: number;
+
+      if (isPosition(msg.place)) {
+        startOffset = msg.place.start.offset ?? 0;
+        endOffset = msg.place.end.offset ?? 0;
+      } else {
+        startOffset = msg.place.offset ?? 0;
+        // If there's no end, we assume it's a single point
+        endOffset = startOffset + (msg.actual?.length || 1);
+      }
 
       return {
-        id: `clarity-${start.offset}-${index}`,
-        text: text.slice(start.offset, end.offset),
-        startOffset: start.offset,
-        endOffset: end.offset,
-        suggestions: [], // retext-equality doesn't provide suggestions
+        id: `clarity-${startOffset}-${index}`,
+        text: text.slice(startOffset, endOffset),
+        startOffset,
+        endOffset,
+        suggestions: [] as SuggestionOption[],
         type: 'weasel_word',
         explanation: msg.message,
       };
     });
+
+    return suggestions;
   } catch (error) {
-    console.error('Error analyzing clarity:', error);
+    logger.error('Error in analyzeClarity:', error);
     return [];
   }
 }; 

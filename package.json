@@ -37,6 +37,7 @@
     "@types/node": "^24.0.3",
     "@types/nspell": "^2.1.6",
     "@types/react-router-dom": "^5.3.3",
+    "@types/unist": "^3.0.3",
     "dictionary-en": "^4.0.0",
     "firebase": "^10.7.1",
     "nspell": "^2.1.5",
@@ -51,6 +52,8 @@
     "retext-equality": "^7.1.0",
     "unified": "^11.0.5",
     "use-debounce": "^10.0.5",
+    "vfile": "^6.0.3",
+    "vfile-message": "^4.0.2",
     "zustand": "^4.4.7"
   },
   "devDependencies": {
