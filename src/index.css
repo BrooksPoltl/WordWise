@@ -9,9 +9,10 @@
   text-decoration-color: #ef4444; /* red-500 */
   text-decoration-style: wavy;
   text-decoration-thickness: 1px;
+  transition: background-color 0.2s ease-in-out;
 }
 
-.spell-error:hover {
+.spell-error.hovered {
   background-color: rgba(239, 68, 68, 0.3);
 }
 
@@ -150,6 +151,11 @@
   text-decoration-color: #3b82f6; /* blue-500 */
   text-decoration-style: wavy;
   text-decoration-thickness: 1px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.clarity-error.hovered {
+  background-color: rgba(59, 130, 246, 0.3); /* blue-500 with 30% opacity */
 }
 
 .conciseness-error {
@@ -158,6 +164,11 @@
   text-decoration-color: #10b981; /* green-500 */
   text-decoration-style: wavy;
   text-decoration-thickness: 1px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.conciseness-error.hovered {
+  background-color: rgba(16, 185, 129, 0.3); /* green-500 with 30% opacity */
 }
 
 .readability-error {
@@ -166,6 +177,35 @@
   text-decoration-color: #8b5cf6; /* purple-500 */
   text-decoration-style: wavy;
   text-decoration-thickness: 1px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.readability-error.hovered {
+  background-color: rgba(139, 92, 246, 0.3); /* purple-500 with 30% opacity */
+}
+
+/* --- Overlapping Suggestion Hover Fixes --- */
+/*
+  When hovering over a broader suggestion, ensure nested suggestions
+  also adopt the parent's hover color for a unified effect.
+*/
+
+/* When hovering readability (purple), force nested items to be purple */
+.readability-error:hover .clarity-error,
+.readability-error:hover .conciseness-error,
+.readability-error:hover .spell-error {
+  background-color: rgba(139, 92, 246, 0.3);
+}
+
+/* When hovering conciseness (green), force nested items to be green */
+.conciseness-error:hover .clarity-error,
+.conciseness-error:hover .spell-error {
+  background-color: rgba(16, 185, 129, 0.3);
+}
+
+/* When hovering clarity (blue), force nested items to be blue */
+.clarity-error:hover .spell-error {
+  background-color: rgba(59, 130, 246, 0.3);
 }
 
 h1,

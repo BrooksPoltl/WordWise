@@ -87,6 +87,9 @@ const TextEditor: React.FC<TextEditorProps> = ({
     from: 0,
     to: 0,
   });
+  const [hoveredSuggestionId, setHoveredSuggestionId] = useState<string | null>(
+    null,
+  );
 
   const visibilityRef = useRef(suggestionVisibility);
   useEffect(() => {
@@ -142,9 +145,10 @@ const TextEditor: React.FC<TextEditorProps> = ({
       editor.storage.suggestionDecorations.updateDecorations(
         editor,
         visibilityRef.current,
+        hoveredSuggestionId,
       );
     }
-  }, [editor, allSuggestionsFromStore]);
+  }, [editor, allSuggestionsFromStore, hoveredSuggestionId]);
 
   useEffect(() => {
     if (currentDocument?.content && !contentSetRef.current) {
@@ -226,6 +230,29 @@ const TextEditor: React.FC<TextEditorProps> = ({
       );
     };
   }, [editor, refs]);
+
+  useEffect(() => {
+    if (!editor?.view.dom) return undefined;
+
+    const editorDom = editor.view.dom;
+
+    const handleSuggestionHover = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      setHoveredSuggestionId(customEvent.detail.suggestionId);
+    };
+
+    const handleSuggestionLeave = () => {
+      setHoveredSuggestionId(null);
+    };
+
+    editorDom.addEventListener('suggestionHover', handleSuggestionHover);
+    editorDom.addEventListener('suggestionLeave', handleSuggestionLeave);
+
+    return () => {
+      editorDom.removeEventListener('suggestionHover', handleSuggestionHover);
+      editorDom.removeEventListener('suggestionLeave', handleSuggestionLeave);
+    };
+  }, [editor]);
 
   const handleAcceptSuggestion = (suggestion: AnySuggestion) => {
     if (!editor) return;

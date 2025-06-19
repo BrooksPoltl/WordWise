@@ -74,6 +74,7 @@ function offsetToPos(doc: Node, offset: number): number | null {
 function createPrioritizedDecorations(
   doc: Node,
   suggestions: AnySuggestion[],
+  hoveredSuggestionId: string | null,
 ): DecorationSet {
   const docSize = doc.content.size;
   const charToSuggestion = new Array<AnySuggestion | null>(docSize).fill(null);
@@ -118,7 +119,11 @@ function createPrioritizedDecorations(
       }
 
       const category = suggestionCategoryMap[suggestion.type];
-      const cssClass = suggestionClassMap[category];
+      let cssClass = suggestionClassMap[category];
+
+      if (suggestion.id === hoveredSuggestionId) {
+        cssClass += ' hovered';
+      }
 
       decorations.push(
         Decoration.inline(
@@ -127,6 +132,8 @@ function createPrioritizedDecorations(
           {
             class: cssClass,
             'data-suggestion-id': suggestion.id,
+            onmouseenter: `this.dispatchEvent(new CustomEvent('suggestionHover', { detail: { suggestionId: '${suggestion.id}' }, bubbles: true, composed: true }))`,
+            onmouseleave: `this.dispatchEvent(new CustomEvent('suggestionLeave', { bubbles: true, composed: true }))`,
           },
           { suggestion },
         ),
@@ -153,6 +160,7 @@ export const SuggestionDecorations = Extension.create({
       updateDecorations: (
         editor: Editor,
         visibility: { [key: string]: boolean },
+        hoveredSuggestionId: string | null,
       ) => {
         const { spelling, clarity, conciseness, readability } =
           useSuggestionStore.getState();
@@ -213,6 +221,7 @@ export const SuggestionDecorations = Extension.create({
         const decorations = createPrioritizedDecorations(
           editor.state.doc,
           validSuggestions,
+          hoveredSuggestionId,
         );
         const tr = editor.state.tr.setMeta(suggestionPluginKey, {
           suggestions: allSuggestions, // Store all suggestions
