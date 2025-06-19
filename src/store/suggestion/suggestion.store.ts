@@ -5,10 +5,12 @@ export const useSuggestionStore = create<SuggestionStore>((set) => ({
   spelling: [],
   clarity: [],
   conciseness: [],
+  readability: [],
   visibility: {
     spelling: true,
     clarity: true,
     conciseness: true,
+    readability: true,
   },
   setSuggestions: (category, suggestions) =>
     set((state) => ({

@@ -1,10 +1,13 @@
 import { Editor } from '@tiptap/react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+
 import { useSuggestionStore } from '../store/suggestion/suggestion.store';
 import { analyzeClarity } from '../utils/clarityAnalyzer';
 import { analyzeConciseness } from '../utils/concisenessAnalyzer';
 import { logger } from '../utils/logger';
+import { analyzeReadability } from '../utils/readabilityAnalyzer';
+import { useReadabilityRewrite } from './useReadabilityRewrite';
 
 interface UseSuggestionsProps {
   editor: Editor | null;
@@ -12,6 +15,8 @@ interface UseSuggestionsProps {
 
 export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
   const { setSuggestions } = useSuggestionStore();
+  const { rewriteSentence } = useReadabilityRewrite();
+  const [processedIds, setProcessedIds] = useState<Set<string>>(new Set());
 
   const handleAnalysis = useDebouncedCallback(async (text: string) => {
     logger.info('Analyzing text for suggestions...', { text });
@@ -19,6 +24,7 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
       logger.info('Text is empty, clearing suggestions.');
       setSuggestions('clarity', []);
       setSuggestions('conciseness', []);
+      setSuggestions('readability', []);
       return;
     }
 
@@ -29,14 +35,26 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
       const concisenessSuggestions = await analyzeConciseness(text);
       setSuggestions('conciseness', concisenessSuggestions);
 
+      const readabilitySuggestions = await analyzeReadability(text);
+      setSuggestions('readability', readabilitySuggestions);
+
+      readabilitySuggestions.forEach(suggestion => {
+        if (!processedIds.has(suggestion.id)) {
+          rewriteSentence(suggestion);
+          setProcessedIds(prev => new Set(prev).add(suggestion.id));
+        }
+      });
+
       logger.success('Analysis complete.', {
         clarity: claritySuggestions.length,
         conciseness: concisenessSuggestions.length,
+        readability: readabilitySuggestions.length,
       });
     } catch (error) {
       logger.error('Failed to analyze text for suggestions:', error);
       setSuggestions('clarity', []);
       setSuggestions('conciseness', []);
+      setSuggestions('readability', []);
     }
   }, 500);
 

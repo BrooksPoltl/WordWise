@@ -16,7 +16,12 @@ import {
   AnySuggestion,
   SuggestionCategory,
 } from '../store/suggestion/suggestion.types';
-import { ConcisenessSuggestion, SpellingSuggestion } from '../types';
+import {
+  ConcisenessSuggestion,
+  ReadabilitySuggestion,
+  SpellingSuggestion,
+  SuggestionOption,
+} from '../types';
 import EditorHeader from './editor/EditorHeader';
 import EditorToolbar from './editor/EditorToolbar';
 import SuggestionPopover from './editor/SuggestionPopover';
@@ -193,15 +198,19 @@ const TextEditor: React.FC<TextEditorProps> = ({
   const handleAcceptSuggestion = (suggestion: AnySuggestion) => {
     if (!editor) return;
 
-    const isSpellingOrConciseness = (
+    const isReplacementSuggestion = (
       s: AnySuggestion,
-    ): s is SpellingSuggestion | ConcisenessSuggestion =>
-      (s.type === 'spelling' || s.type === 'conciseness') &&
-      'suggestions' in s &&
-      Array.isArray(s.suggestions) &&
+    ): s is
+      | (SpellingSuggestion & { suggestions: SuggestionOption[] })
+      | (ConcisenessSuggestion & { suggestions: SuggestionOption[] })
+      | (ReadabilitySuggestion & { suggestions: SuggestionOption[] }) =>
+      (s.type === 'spelling' ||
+        s.type === 'conciseness' ||
+        s.type === 'readability') &&
+      s.suggestions !== undefined &&
       s.suggestions.length > 0;
 
-    if (isSpellingOrConciseness(suggestion)) {
+    if (isReplacementSuggestion(suggestion)) {
       const replacementText = suggestion.suggestions[0].text;
       editor
         .chain()

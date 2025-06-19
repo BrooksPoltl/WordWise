@@ -4,10 +4,12 @@ import { AnySuggestion } from '../../store/suggestion/suggestion.types';
 import {
   ClaritySuggestion,
   ConcisenessSuggestion,
+  ReadabilitySuggestion,
   SpellingSuggestion,
 } from '../../types';
 import ClaritySuggestionPopover from './ClaritySuggestionPopover';
 import ConcisenessSuggestionPopover from './ConcisenessSuggestionPopover';
+import ReadabilitySuggestionPopover from './ReadabilitySuggestionPopover';
 import SpellingSuggestionPopover from './SpellingSuggestionPopover';
 
 interface SuggestionPopoverProps {
@@ -31,6 +33,10 @@ const SuggestionPopover = React.forwardRef<
   const isConcisenessSuggestion = (
     s: AnySuggestion,
   ): s is ConcisenessSuggestion => s.type === 'conciseness';
+
+  const isReadabilitySuggestion = (
+    s: AnySuggestion,
+  ): s is ReadabilitySuggestion => s.type === 'readability';
 
   if (isSpellingSuggestion(suggestion)) {
     return (
@@ -60,6 +66,19 @@ const SuggestionPopover = React.forwardRef<
   if (isConcisenessSuggestion(suggestion)) {
     return (
       <ConcisenessSuggestionPopover
+        ref={ref}
+        suggestion={suggestion}
+        onAccept={onAccept}
+        onDismiss={onDismiss}
+        style={style}
+        context={context}
+      />
+    );
+  }
+
+  if (isReadabilitySuggestion(suggestion)) {
+    return (
+      <ReadabilitySuggestionPopover
         ref={ref}
         suggestion={suggestion}
         onAccept={onAccept}

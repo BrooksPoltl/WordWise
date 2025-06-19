@@ -24,10 +24,10 @@ We are moving away from the `SuggestionSidebar` to an inline, contextual model. 
     *   **Readability:** Purple underline.
     *   Interacting with an underline (hover on desktop, click on mobile/desktop) will trigger a **`SuggestionPopover`**. This pop-up will contain a brief explanation of the issue and a one-click button to accept the suggested fix.
 
-*   **Lazy-Loading LLM Suggestions:** To provide powerful suggestions without perceived latency, we will use a hybrid approach for passive voice.
-    *   **Instant Detection:** `retext-passive` will instantly detect a passive sentence and apply the blue "Clarity" underline.
+*   **Lazy-Loading LLM Suggestions:** To provide powerful suggestions without perceived latency, we will use a hybrid approach for complex suggestions like passive voice and readability improvements.
+    *   **Instant Detection:** A `retext` plugin (e.g., `retext-passive`, `retext-readability`) will instantly detect a potential issue and apply the appropriate underline.
     *   **Background Fetch:** The moment the underline appears, a non-blocking request will be sent to our backend.
-    *   **AI-Powered Rewrite:** The backend will use the `gpt-4o` model to rewrite the sentence in the active voice.
+    *   **AI-Powered Rewrite:** The backend will use the `gpt-4o` model to rewrite the sentence (e.g., in the active voice or as a simpler sentence).
     *   **Seamless UI Update:** The result will be sent back to the client. When the user clicks the underline, the `SuggestionPopover` will ideally already be populated with the high-quality AI suggestion. If the call is still in progress, a loading state will be shown.
 
 *   **Suggestion Category Toggles:** To give users control over the density of feedback, a new UI element will be added to the editor toolbar.
@@ -47,8 +47,7 @@ The Style Enhancement feature will be composed of the following checks, managed 
     *   **Wordy Phrase Simplification:** Using `retext-simplify`, we will find and offer simpler, more direct alternatives for common verbose phrases (e.g., suggest "use" for "utilize", "about" for "in regards to", "to" for "in order to"). These will be one-click replacements. ✅
 
 *   **Readability Enhancement (Purple - `#8B5CF6`)**
-    *   **Complex Sentence Flagging:** Using `retext-readability`, we will calculate readability scores (e.g., Flesch-Kincaid) on the fly. We will not expose the raw score to the user. Instead, sentences that fall below a certain readability threshold (indicating they are too long or complex) will be underlined. The suggestion will be instructional: "This sentence may be hard to read. Try splitting it into shorter sentences."
-    *   **Repeated Words:** Using `retext-repeated-words`, we will catch simple but common errors like "the the" or "and and".
+    *   **Complex Sentence Flagging & Simplification:** Using `retext-readability`, we will calculate readability scores (e.g., Flesch-Kincaid) on the fly. Sentences that fall below a certain readability threshold (indicating they are too long or complex) will be underlined. This serves as the trigger for a lazy-loaded LLM rewrite to offer a simpler, more readable version of the sentence. ✅
 
 ### 5. Implementation Plan
 
@@ -121,7 +120,7 @@ This section outlines the phased approach to implementing the Style Enhancement 
 
 | Priority | Task Description                       | Implementation Details                                                                                                                                                                             | Code Pointers                                                              | Dependencies      | Completion |
 | :------- | :------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------- | :---------------- | :--------- |
-| **High** | Extend Firebase Function for Style Correction | - Add a new route (`/style`) to the existing Express app in the main cloud function.<br>- This route will be handled by a new `style.ts` handler.<br>- Use the `gpt-4o` model via the OpenAI API to rewrite passive voice sentences into active voice.<br>- Ensure the route is protected by the existing authentication middleware. | `functions/src/index.ts`<br>`functions/src/handlers/style.ts` (new) | - OpenAI API Key  | ☐          |
+| **High** | Extend Firebase Function for Style Correction | - Add a new route (`/style`) to the existing Express app in the main cloud function.<br>- This route will be handled by a new `style.ts` handler.<br>- Use the `gpt-4o` model via the OpenAI API to rewrite passive voice sentences into active voice.<br>- Ensure the route is protected by the existing authentication middleware. | `functions/src/index.ts`<br>`functions/src/handlers/style.ts` (new) | - OpenAI API Key  | ✅          |
 
 ---
 
@@ -129,8 +128,8 @@ This section outlines the phased approach to implementing the Style Enhancement 
 
 | Priority | Task Description                               | Implementation Details                                                                                                                                                                                                                                                        | Code Pointers                                                                      | Dependencies          | Completion |
 | :------- | :--------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------- | :-------------------- | :--------- |
-| **High**   | **Setup: Install Style Dependencies**          | Install the necessary `retext` packages: `retext`, `retext-english`, `retext-simplify`, `retext-equality`, `retext-readability`, `retext-passive`.                                                                                                                              | `package.json`                                                                     | -                     | ☐          |
-| **High**   | **Core: Create Unified `useSuggestions` Hook** | - Create a new hook to be the single source for all text suggestions, running after the initial refactor is complete.<br>- It will run `retext` for style/clarity/etc., and incorporate the existing spell-check logic from the `suggestionStore`.<br>- For `retext-passive` detections, it will trigger a lazy-loaded call to the `/style` backend endpoint. | `src/hooks/useSuggestions.ts` (new)<br>`src/hooks/useSpellCheck.ts` (to be deprecated) | - `retext` packages | ☐          |
+| **High**   | **Setup: Install Style Dependencies**          | Install the necessary `retext` packages: `retext`, `retext-english`, `retext-passive`, `retext-readability`.                                                                                                                                                                    | `package.json`                                                                     | -                     | ✅          |
+| **High**   | **Core: Create Unified `useSuggestions` Hook** | - Create a new hook to be the single source for all text suggestions, running after the initial refactor is complete.<br>- It will run `retext` for style/clarity/etc., and incorporate the existing spell-check logic from the `suggestionStore`.<br>- For `retext-passive` and `retext-readability` detections, it will trigger a lazy-loaded call to the `/style` backend endpoint. | `src/hooks/useSuggestions.ts` (new)<br>`src/hooks/useSpellCheck.ts` (to be deprecated) | - `retext` packages | ☐          |
 | **Medium** | **UI: Create `SuggestionToggles` Component**   | - Create the new component for filtering suggestions (`Spelling`, `Clarity`, etc.).<br>- Each toggle has a color-coded dot, category name, and suggestion count.<br>- Clicking a toggle updates the `suggestionStore` to filter suggestions in the editor.                      | `src/components/editor/SuggestionToggles.tsx` (new)                                | - `suggestionStore`   | ✅          |
 
 ---

@@ -160,6 +160,14 @@
   text-decoration-thickness: 1px;
 }
 
+.readability-error {
+  @apply bg-purple-200 bg-opacity-50 rounded-sm px-0.5;
+  text-decoration: underline;
+  text-decoration-color: #8b5cf6; /* purple-500 */
+  text-decoration-style: wavy;
+  text-decoration-thickness: 1px;
+}
+
 h1,
 h2,
 h3,

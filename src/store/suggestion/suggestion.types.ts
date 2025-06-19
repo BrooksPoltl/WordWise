@@ -1,6 +1,7 @@
 import {
     ClaritySuggestion,
     ConcisenessSuggestion,
+    ReadabilitySuggestion,
     SpellingSuggestion,
 } from '../../types';
 
@@ -17,6 +18,10 @@ export const SUGGESTION_CATEGORIES = {
     label: 'Conciseness',
     color: '#10B981', // Green-500
   },
+  readability: {
+    label: 'Readability',
+    color: '#8B5CF6', // Purple-500
+  },
 } as const;
 
 export type SuggestionCategory = keyof typeof SUGGESTION_CATEGORIES;
@@ -24,12 +29,14 @@ export type SuggestionCategory = keyof typeof SUGGESTION_CATEGORIES;
 export type AnySuggestion =
   | SpellingSuggestion
   | ClaritySuggestion
-  | ConcisenessSuggestion;
+  | ConcisenessSuggestion
+  | ReadabilitySuggestion;
 
 export interface SuggestionState {
   spelling: SpellingSuggestion[];
   clarity: ClaritySuggestion[];
   conciseness: ConcisenessSuggestion[];
+  readability: ReadabilitySuggestion[];
   visibility: Record<SuggestionCategory, boolean>;
 }
 

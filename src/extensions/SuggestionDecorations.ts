@@ -35,6 +35,7 @@ function offsetToPos(doc: Node, offset: number): number | null {
     
     return result;
   } catch (error) {
+    // This is a developer-facing error, console.warn is appropriate
     console.warn('Error converting offset to position:', error);
     return null;
   }
@@ -60,6 +61,8 @@ function createDecorations(
       cssClass = 'clarity-error';
     } else if (suggestion.type === 'conciseness') {
       cssClass = 'conciseness-error';
+    } else if (suggestion.type === 'readability') {
+      cssClass = 'readability-error';
     }
 
     return Decoration.inline(
@@ -100,6 +103,8 @@ export const SuggestionDecorations = Extension.create({
             return visibleSuggestionTypes.includes('clarity');
           if (s.type === 'conciseness')
             return visibleSuggestionTypes.includes('conciseness');
+          if (s.type === 'readability')
+            return visibleSuggestionTypes.includes('readability');
           return visibleSuggestionTypes.includes('spelling');
         });
 
@@ -116,11 +121,20 @@ export const SuggestionDecorations = Extension.create({
           ) {
             return false;
           }
+
+          // For readability suggestions, the offsets are the source of truth,
+          // as direct text comparison of long sentences is brittle.
+          if (suggestion.type === 'readability') {
+            return true;
+          }
+
           try {
             const actualText = editor.state.doc.textBetween(from, to);
             const suggestionText =
               'word' in suggestion ? suggestion.word : suggestion.text;
+            
             return actualText.toLowerCase() === suggestionText.toLowerCase();
+
           } catch (e) {
             return false;
           }
@@ -189,7 +203,7 @@ export const SuggestionDecorations = Extension.create({
             const target = event.target as HTMLElement;
             if (
               target.closest(
-                '.spell-error, .clarity-error, .conciseness-error',
+                '.spell-error, .clarity-error, .conciseness-error, .readability-error',
               )
             ) {
               const decorations =

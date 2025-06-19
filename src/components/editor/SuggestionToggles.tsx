@@ -14,6 +14,7 @@ export const SuggestionToggles = () => {
     spelling: useSuggestionStore((state) => state.spelling.length),
     clarity: useSuggestionStore((state) => state.clarity.length),
     conciseness: useSuggestionStore((state) => state.conciseness.length),
+    readability: useSuggestionStore((state) => state.readability.length),
   };
 
   const categories = Object.keys(suggestionCounts) as SuggestionCategory[];

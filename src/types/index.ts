@@ -91,6 +91,16 @@ export interface ConcisenessSuggestion {
   explanation: string;
 }
 
+export interface ReadabilitySuggestion {
+  id: string;
+  text: string;
+  startOffset: number;
+  endOffset: number;
+  type: 'readability';
+  explanation: string;
+  suggestions?: SuggestionOption[];
+}
+
 export interface WritingMetrics {
   wordCount: number;
   characterCount: number;
