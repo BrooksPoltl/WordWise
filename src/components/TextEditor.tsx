@@ -6,12 +6,19 @@ import {
   useFloating,
 } from '@floating-ui/react';
 import { Editor, EditorContent } from '@tiptap/react';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useAutoSave } from '../hooks/useAutoSave';
-import { useSpellCheck } from '../hooks/useSpellCheck';
+import { useSuggestions } from '../hooks/useSuggestions';
 import { useTextEditor } from '../hooks/useTextEditor';
 import { useToneAnalysis } from '../hooks/useToneAnalysis';
 import { useDocumentStore } from '../store/document/document.store';
+import { useSuggestionStore } from '../store/suggestion/suggestion.store';
 import {
   AnySuggestion,
   SuggestionCategory,
@@ -31,7 +38,6 @@ interface TextEditorProps {
   documentId: string;
   onTitleChange: (title: string) => void;
   setEditor: (editor: Editor | null) => void;
-  suggestions: AnySuggestion[];
   suggestionVisibility: Record<SuggestionCategory, boolean>;
 }
 
@@ -46,11 +52,11 @@ const TextEditor: React.FC<TextEditorProps> = ({
   documentId,
   onTitleChange,
   setEditor,
-  suggestions,
   suggestionVisibility,
 }) => {
   const { currentDocument, loading } = useDocumentStore();
   const { debouncedSave } = useAutoSave(documentId);
+  const contentSetRef = useRef(false);
   const {
     editor,
     title,
@@ -62,7 +68,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
   } = useTextEditor({
     initialContent: currentDocument?.content || '',
   });
-  useSpellCheck({ editor });
   const {
     detectedTone,
     selectedTone,
@@ -74,6 +79,8 @@ const TextEditor: React.FC<TextEditorProps> = ({
     closeToneModal,
   } = useToneAnalysis({ editor });
 
+  useSuggestions({ editor });
+
   const [popoverState, setPopoverState] = useState<PopoverState>({
     isOpen: false,
     suggestionId: null,
@@ -81,8 +88,29 @@ const TextEditor: React.FC<TextEditorProps> = ({
     to: 0,
   });
 
+  const visibilityRef = useRef(suggestionVisibility);
+  useEffect(() => {
+    visibilityRef.current = suggestionVisibility;
+  }, [suggestionVisibility]);
+
+  const { spelling, clarity, conciseness, readability } = useSuggestionStore(
+    state => ({
+      spelling: state.spelling,
+      clarity: state.clarity,
+      conciseness: state.conciseness,
+      readability: state.readability,
+    }),
+    (oldState, newState) =>
+      JSON.stringify(oldState) === JSON.stringify(newState),
+  );
+
+  const allSuggestionsFromStore = useMemo(
+    () => [...spelling, ...clarity, ...conciseness, ...readability],
+    [spelling, clarity, conciseness, readability],
+  );
+
   const activeSuggestion = popoverState.suggestionId
-    ? suggestions.find(s => s.id === popoverState.suggestionId)
+    ? allSuggestionsFromStore.find(s => s.id === popoverState.suggestionId)
     : null;
 
   const { refs, floatingStyles, context } = useFloating({
@@ -113,15 +141,15 @@ const TextEditor: React.FC<TextEditorProps> = ({
     if (editor) {
       editor.storage.suggestionDecorations.updateDecorations(
         editor,
-        suggestions,
-        suggestionVisibility,
+        visibilityRef.current,
       );
     }
-  }, [editor, suggestions, suggestionVisibility]);
+  }, [editor, allSuggestionsFromStore]);
 
   useEffect(() => {
-    if (currentDocument?.content) {
+    if (currentDocument?.content && !contentSetRef.current) {
       updateContent(currentDocument.content);
+      contentSetRef.current = true;
     }
   }, [currentDocument?.content, updateContent]);
 

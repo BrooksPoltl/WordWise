@@ -2,12 +2,37 @@ import { Editor, Extension } from '@tiptap/core';
 import { Node } from 'prosemirror-model';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
+import { useSuggestionStore } from '../store/suggestion/suggestion.store';
 import {
   AnySuggestion,
   SuggestionCategory,
 } from '../store/suggestion/suggestion.types';
 
 type SuggestionType = SuggestionCategory | 'weasel_word' | 'grammar' | 'style';
+
+const suggestionCategoryMap: Record<SuggestionType, SuggestionCategory> = {
+  spelling: 'spelling',
+  grammar: 'spelling',
+  style: 'spelling',
+  weasel_word: 'clarity',
+  conciseness: 'conciseness',
+  readability: 'readability',
+  clarity: 'clarity',
+};
+
+const suggestionClassMap: Record<SuggestionCategory, string> = {
+  spelling: 'spell-error',
+  clarity: 'clarity-error',
+  conciseness: 'conciseness-error',
+  readability: 'readability-error',
+};
+
+const suggestionPriority: SuggestionCategory[] = [
+  'readability',
+  'clarity',
+  'conciseness',
+  'spelling',
+];
 
 interface SuggestionState {
   suggestions: AnySuggestion[];
@@ -46,18 +71,6 @@ function offsetToPos(doc: Node, offset: number): number | null {
   }
 }
 
-function getSuggestionType(suggestion: AnySuggestion): SuggestionType {
-  return suggestion.type;
-}
-
-const suggestionPriority: SuggestionType[] = [
-  'readability',
-  'clarity', // Generic clarity
-  'weasel_word', // Specific clarity
-  'conciseness',
-  'spelling',
-];
-
 function createPrioritizedDecorations(
   doc: Node,
   suggestions: AnySuggestion[],
@@ -72,13 +85,15 @@ function createPrioritizedDecorations(
     const to = offsetToPos(doc, suggestion.endOffset);
     if (from === null || to === null) return;
 
-    const currentPriority = priorityMap.get(getSuggestionType(suggestion)) ?? -1;
+    const category = suggestionCategoryMap[suggestion.type];
+    const currentPriority = priorityMap.get(category) ?? -1;
 
     for (let i = from; i < to; i += 1) {
       const existingSuggestion = charToSuggestion[i];
       if (existingSuggestion) {
-        const existingPriority =
-          priorityMap.get(getSuggestionType(existingSuggestion)) ?? -1;
+        const existingCategory =
+          suggestionCategoryMap[existingSuggestion.type];
+        const existingPriority = priorityMap.get(existingCategory) ?? -1;
         if (currentPriority > existingPriority) {
           charToSuggestion[i] = suggestion;
         }
@@ -102,21 +117,19 @@ function createPrioritizedDecorations(
         j += 1;
       }
 
-      let cssClass = 'spell-error'; // Default
-      const type = getSuggestionType(suggestion);
-      if (type === 'weasel_word') {
-        cssClass = 'clarity-error';
-      } else if (type === 'conciseness') {
-        cssClass = 'conciseness-error';
-      } else if (type === 'readability') {
-        cssClass = 'readability-error';
-      }
+      const category = suggestionCategoryMap[suggestion.type];
+      const cssClass = suggestionClassMap[category];
 
       decorations.push(
-        Decoration.inline(i, j, {
-          class: cssClass,
-          'data-suggestion-id': suggestion.id,
-        }, { suggestion }),
+        Decoration.inline(
+          i,
+          j,
+          {
+            class: cssClass,
+            'data-suggestion-id': suggestion.id,
+          },
+          { suggestion },
+        ),
       );
       i = j;
     } else {
@@ -139,14 +152,23 @@ export const SuggestionDecorations = Extension.create({
       suggestions: [] as AnySuggestion[],
       updateDecorations: (
         editor: Editor,
-        suggestions: AnySuggestion[],
         visibility: { [key: string]: boolean },
       ) => {
+        const { spelling, clarity, conciseness, readability } =
+          useSuggestionStore.getState();
+
+        const allSuggestions = [
+          ...spelling,
+          ...clarity,
+          ...conciseness,
+          ...readability,
+        ];
+
         const visibleSuggestionTypes = Object.entries(visibility)
           .filter(([, isVisible]) => isVisible)
           .map(([type]) => type);
 
-        const visibleSuggestions = suggestions.filter(s => {
+        const visibleSuggestions = allSuggestions.filter(s => {
           if (s.type === 'weasel_word')
             return visibleSuggestionTypes.includes('clarity');
           if (s.type === 'conciseness')
@@ -193,7 +215,7 @@ export const SuggestionDecorations = Extension.create({
           validSuggestions,
         );
         const tr = editor.state.tr.setMeta(suggestionPluginKey, {
-          suggestions, // Store all suggestions
+          suggestions: allSuggestions, // Store all suggestions
           decorations,
         });
         editor.view.dispatch(tr);
