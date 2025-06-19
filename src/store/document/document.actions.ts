@@ -270,18 +270,19 @@ export const applySuggestion = (
   suggestionId: string,
   replacement: string,
 ): void => {
-  const { currentDocument, suggestions } = get();
+  const { suggestions, currentDocument } = get();
   if (!currentDocument) return;
 
   const targetSuggestion = suggestions.find(s => s.id === suggestionId);
   if (!targetSuggestion) return;
 
-  const { updatedText, updatedSuggestions } = BrowserSpellChecker.applySuggestion(
-    currentDocument.content,
-    suggestions,
-    targetSuggestion,
-    replacement,
-  );
+  const { updatedText, updatedSuggestions } =
+    BrowserSpellChecker.applySuggestion(
+      currentDocument.content,
+      suggestions,
+      targetSuggestion,
+      replacement,
+    );
 
   set({
     currentDocument: { ...currentDocument, content: updatedText },
@@ -322,9 +323,9 @@ export const checkSpelling = async (
       return;
     }
 
-    const uniqueWords = [...new Set(textToCheck.match(/\b\w+\b/g) || [])].filter(
-      word => !/^\d+$/.test(word),
-    );
+    const uniqueWords = [
+      ...new Set(textToCheck.match(/\b[\w'’]+\b/g) || []),
+    ].filter(word => !/^\d+$/.test(word));
     const misspelledWords = (
       await Promise.all(
         uniqueWords.map(async word => {
