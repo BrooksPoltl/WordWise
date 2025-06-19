@@ -16,10 +16,9 @@ interface ReadabilityVFileMessage {
 const processor = retext()
   .use(retextEnglish)
   .use(retextReadability, {
-    // Using a more reasonable but still sensitive configuration.
     age: 14,
     minWords: 10,
-    threshold: 5 / 7,
+    threshold: 1 / 7,
   });
 
 export const analyzeReadability = async (

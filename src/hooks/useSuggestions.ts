@@ -1,11 +1,12 @@
 import { Editor } from '@tiptap/react';
 import { useEffect, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
+import { ReadabilitySuggestion, SpellingSuggestion } from '../types';
+import { browserSpellChecker } from '../utils/browserSpellChecker';
 
 import { useSuggestionStore } from '../store/suggestion/suggestion.store';
 import { analyzeClarity } from '../utils/clarityAnalyzer';
 import { analyzeConciseness } from '../utils/concisenessAnalyzer';
-import { logger } from '../utils/logger';
 import { analyzeReadability } from '../utils/readabilityAnalyzer';
 import { useReadabilityRewrite } from './useReadabilityRewrite';
 
@@ -23,30 +24,61 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
       setSuggestions('clarity', []);
       setSuggestions('conciseness', []);
       setSuggestions('readability', []);
+      setSuggestions('spelling', []);
       return;
     }
 
     try {
-      const claritySuggestions = await analyzeClarity(text);
+      const [
+        claritySuggestions,
+        concisenessSuggestions,
+        readabilitySuggestions,
+      ] = await Promise.all([
+        analyzeClarity(text),
+        analyzeConciseness(text),
+        analyzeReadability(text),
+      ]);
+
+      const words = text.match(/\b\w+\b/g) || [];
+      const suggestionPromises = words.map(async word => {
+        const isCorrect = await browserSpellChecker.correct(word);
+        if (!isCorrect) {
+          const suggestions = await browserSpellChecker.suggest(word);
+          const wordStartIndex = text.indexOf(word);
+          return {
+            id: `spell-${wordStartIndex}`,
+            word,
+            startOffset: wordStartIndex,
+            endOffset: wordStartIndex + word.length,
+            type: 'spelling',
+            suggestions: suggestions.slice(0, 5).map(s => ({ id: s, text: s })),
+          };
+        }
+        return null;
+      });
+
+      const spellCheckResults = await Promise.all(suggestionPromises);
+      const spellSuggestions = spellCheckResults.filter(
+        (s): s is SpellingSuggestion => s !== null,
+      );
+
       setSuggestions('clarity', claritySuggestions);
-
-      const concisenessSuggestions = await analyzeConciseness(text);
       setSuggestions('conciseness', concisenessSuggestions);
-
-      const readabilitySuggestions = await analyzeReadability(text);
+      setSuggestions('spelling', spellSuggestions);
       setSuggestions('readability', readabilitySuggestions);
 
-      readabilitySuggestions.forEach(suggestion => {
+      readabilitySuggestions.forEach((suggestion: ReadabilitySuggestion) => {
         if (!processedIds.has(suggestion.id)) {
           rewriteSentence(suggestion);
           setProcessedIds(prev => new Set(prev).add(suggestion.id));
         }
       });
     } catch (error) {
-      logger.error('Failed to analyze text for suggestions:', error);
+      console.error('Failed to analyze text for suggestions:', error);
       setSuggestions('clarity', []);
       setSuggestions('conciseness', []);
       setSuggestions('readability', []);
+      setSuggestions('spelling', []);
     }
   }, 500);
 

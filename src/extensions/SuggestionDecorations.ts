@@ -2,7 +2,12 @@ import { Editor, Extension } from '@tiptap/core';
 import { Node } from 'prosemirror-model';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
-import { AnySuggestion } from '../store/suggestion/suggestion.types';
+import {
+  AnySuggestion,
+  SuggestionCategory,
+} from '../store/suggestion/suggestion.types';
+
+type SuggestionType = SuggestionCategory | 'weasel_word' | 'grammar' | 'style';
 
 interface SuggestionState {
   suggestions: AnySuggestion[];
@@ -41,40 +46,83 @@ function offsetToPos(doc: Node, offset: number): number | null {
   }
 }
 
-/**
- * Create decorations from spell suggestions with better validation
- */
-function createDecorations(
+function getSuggestionType(suggestion: AnySuggestion): SuggestionType {
+  return suggestion.type;
+}
+
+const suggestionPriority: SuggestionType[] = [
+  'readability',
+  'clarity', // Generic clarity
+  'weasel_word', // Specific clarity
+  'conciseness',
+  'spelling',
+];
+
+function createPrioritizedDecorations(
   doc: Node,
   suggestions: AnySuggestion[],
 ): DecorationSet {
-  const decorations = suggestions.flatMap(suggestion => {
+  const docSize = doc.content.size;
+  const charToSuggestion = new Array<AnySuggestion | null>(docSize).fill(null);
+  const priorityMap = new Map(suggestionPriority.map((s, i) => [s, i]));
+
+  // 1. "Paint" the character map with the highest priority suggestion for each spot
+  suggestions.forEach(suggestion => {
     const from = offsetToPos(doc, suggestion.startOffset);
     const to = offsetToPos(doc, suggestion.endOffset);
+    if (from === null || to === null) return;
 
-    if (from === null || to === null) {
-      return [];
+    const currentPriority = priorityMap.get(getSuggestionType(suggestion)) ?? -1;
+
+    for (let i = from; i < to; i += 1) {
+      const existingSuggestion = charToSuggestion[i];
+      if (existingSuggestion) {
+        const existingPriority =
+          priorityMap.get(getSuggestionType(existingSuggestion)) ?? -1;
+        if (currentPriority > existingPriority) {
+          charToSuggestion[i] = suggestion;
+        }
+      } else {
+        charToSuggestion[i] = suggestion;
+      }
     }
-
-    let cssClass = 'spell-error'; // Default
-    if (suggestion.type === 'weasel_word') {
-      cssClass = 'clarity-error';
-    } else if (suggestion.type === 'conciseness') {
-      cssClass = 'conciseness-error';
-    } else if (suggestion.type === 'readability') {
-      cssClass = 'readability-error';
-    }
-
-    return Decoration.inline(
-      from,
-      to,
-      {
-        class: cssClass,
-        'data-suggestion-id': suggestion.id,
-      },
-      { suggestion },
-    );
   });
+
+  // 2. Merge consecutive characters with the same suggestion into decorations
+  const decorations: Decoration[] = [];
+  let i = 0;
+  while (i < docSize) {
+    const suggestion = charToSuggestion[i];
+    if (suggestion) {
+      let j = i;
+      while (
+        j < docSize &&
+        charToSuggestion[j]?.id === suggestion.id
+      ) {
+        j += 1;
+      }
+
+      let cssClass = 'spell-error'; // Default
+      const type = getSuggestionType(suggestion);
+      if (type === 'weasel_word') {
+        cssClass = 'clarity-error';
+      } else if (type === 'conciseness') {
+        cssClass = 'conciseness-error';
+      } else if (type === 'readability') {
+        cssClass = 'readability-error';
+      }
+
+      decorations.push(
+        Decoration.inline(i, j, {
+          class: cssClass,
+          'data-suggestion-id': suggestion.id,
+        }, { suggestion }),
+      );
+      i = j;
+    } else {
+      i += 1;
+    }
+  }
 
   return DecorationSet.create(doc, decorations);
 }
@@ -140,7 +188,7 @@ export const SuggestionDecorations = Extension.create({
           }
         });
 
-        const decorations = createDecorations(
+        const decorations = createPrioritizedDecorations(
           editor.state.doc,
           validSuggestions,
         );
@@ -206,11 +254,10 @@ export const SuggestionDecorations = Extension.create({
                 '.spell-error, .clarity-error, .conciseness-error, .readability-error',
               )
             ) {
-              const decorations =
-                suggestionPluginKey.getState(view.state)?.decorations;
-              if (!decorations) return false;
+              const pluginState = suggestionPluginKey.getState(view.state);
+              if (!pluginState) return false;
 
-              const clickedDecorations = decorations.find(pos, pos);
+              const clickedDecorations = pluginState.decorations.find(pos, pos);
 
               if (clickedDecorations.length > 0) {
                 const clickedDeco = clickedDecorations[0];
