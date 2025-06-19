@@ -52,27 +52,82 @@ The Style Enhancement feature will be composed of the following checks, managed 
 
 ### 5. Implementation Plan
 
+### 6. Refactor Notes & Incremental Implementation Strategy
+
+This section outlines the phased approach to implementing the Style Enhancement and UX Overhaul, focusing on incremental delivery and minimizing disruption.
+
+**Key Principle for Refactor:** The initial phase of this refactor focuses *only* on changing the User Interface and User Experience for how suggestions are presented. The underlying logic for *how* spell-checking suggestions are generated (i.e., the `useSpellCheck.ts` hook and its dependencies) **will not be changed** in the initial increments. The existing `nspell` implementation is working well and will be retained. We are swapping out the presentation layer first.
+
+---
+
+**Increment 1: Foundational UX Replacement (Spelling Only - Phased)**
+
+*   **Goal:** Completely replace the existing spell-check sidebar and score with the new inline, popover-based UX, focusing *only* on spelling errors. This ensures a direct feature swap with a new UI, without changing the underlying spell-check logic itself.
+*   **Phased Tasks for this Increment:**
+    1.  **Deprecate and Remove Old UI (Easiest First):**
+        *   Task: Remove the `SuggestionSidebar` component from `DocumentEditor.tsx`.
+            *   Details: Delete component import and usage.
+            *   Code Pointers: `src/components/DocumentEditor.tsx`
+        *   Task: Delete the `SuggestionSidebar.tsx` file.
+            *   Details: Remove the file and any associated CSS or utility files specific to it.
+            *   Code Pointers: `src/components/SuggestionSidebar.tsx`
+        *   Task: Remove the "Spell Score" UI element.
+            *   Details: Identify and remove the JSX and logic for displaying the spell score.
+            *   Code Pointers: `src/components/editor/EditorHeader.tsx` (likely)
+    2.  **Build and Test Core New UI for Spelling (Using Existing Logic):**
+        *   Task: Create the `SuggestionPopover.tsx` component.
+            *   Details: Build the reusable popover UI that will display suggestion details and actions. Initially, it will handle spelling suggestions.
+            *   Code Pointers: `src/components/editor/SuggestionPopover.tsx` (new)
+        *   Task: Create the `SuggestionDecorations.ts` Tiptap extension.
+            *   Details: Develop the Tiptap extension to apply underlines to text based on suggestion data.
+            *   Code Pointers: `src/extensions/SuggestionDecorations.ts` (new)
+        *   Task: Integrate Popover and Decorations for Spell Check.
+            *   Details: In `TextEditor.tsx`, use `useSpellCheck.ts` directly to get spelling errors. Use `SuggestionDecorations.ts` to underline these errors. Trigger `SuggestionPopover` on interaction to display correction options. **Crucially, do not modify the spell-checking logic in `useSpellCheck.ts` itself.**
+            *   Code Pointers: `src/components/TextEditor.tsx`, `src/hooks/useSpellCheck.ts` (read-only usage)
+    3.  **Introduce State Management for Scalability (`suggestionStore`):**
+        *   Task: Create the `suggestion.store.ts` (Zustand).
+            *   Details: Define the store structure to hold suggestion data. Initially, it will be populated with spelling errors from `useSpellCheck.ts`.
+            *   Code Pointers: `src/store/suggestion/suggestion.store.ts` (new), `src/store/suggestion/suggestion.types.ts` (new)
+        *   Task: Refactor `TextEditor` to use `suggestionStore`.
+            *   Details: Modify `TextEditor.tsx` (and potentially `DocumentEditor.tsx` or a relevant hook) to populate the `suggestionStore` with spell check results and read from the store to display suggestions. This ensures the store is correctly integrated.
+            *   Code Pointers: `src/components/TextEditor.tsx`, `src/hooks/useSpellCheck.ts` (for populating the store)
+    4.  **Final Editor Integration Review:**
+        *   Task: Ensure `DocumentEditor.tsx` and `TextEditor.tsx` are correctly and efficiently using the `suggestionStore` and the new UI components (`SuggestionPopover`, `SuggestionDecorations.ts`) for a seamless inline spell-checking experience.
+        *   Code Pointers: `src/components/DocumentEditor.tsx`, `src/components/TextEditor.tsx`
+
+---
+
+### Initial Refactor (Increment 1 - Spelling UX Replacement)
+
+| Priority | Task Description                                     | Implementation Details                                                                                                                                                                                                                            | Code Pointers                                                                                                                                                              | Dependencies                                     | Completion |
+| :------- | :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------- | :--------- |
+| **High** | **1.1: Remove `SuggestionSidebar` from UI**          | Delete component import and usage from `DocumentEditor`.                                                                                                                                                                                          | `src/components/DocumentEditor.tsx`                                                                                                                                        | -                                                | ☐          |
+| **High** | **1.2: Delete `SuggestionSidebar.tsx` file**         | Remove the file and any associated CSS or utility files specific to it.                                                                                                                                                                           | `src/components/SuggestionSidebar.tsx`                                                                                                                                     | -                                                | ☐          |
+| **High** | **1.3: Remove "Spell Score" UI element**             | Identify and remove the JSX and logic for displaying the spell score.                                                                                                                                                                             | `src/components/editor/EditorHeader.tsx` (likely)                                                                                                                          | -                                                | ☐          |
+| **High** | **1.4: Create `SuggestionPopover.tsx` component**    | Build the reusable popover UI to display suggestion details and actions (initially for spelling).                                                                                                                                                 | `src/components/editor/SuggestionPopover.tsx` (new)                                                                                                                        | Radix UI for Popover, Tailwind CSS             | ☐          |
+| **High** | **1.5: Create `SuggestionDecorations.ts` extension** | Develop the Tiptap extension to apply underlines to text based on suggestion data.                                                                                                                                                                | `src/extensions/SuggestionDecorations.ts` (new)                                                                                                                            | Tiptap                                           | ☐          |
+| **High** | **1.6: Integrate Popover & Decorations (Spell Check)** | In `TextEditor.tsx`, use `useSpellCheck.ts` (read-only) for spelling errors. Use `SuggestionDecorations.ts` to underline errors. Trigger `SuggestionPopover` on interaction. **Do not modify `useSpellCheck.ts` logic.**                         | `src/components/TextEditor.tsx`<br>`src/hooks/useSpellCheck.ts` (read-only)                                                                                               | `SuggestionPopover`, `SuggestionDecorations.ts` | ☐          |
+| **High** | **1.7: Create `suggestion.store.ts` (Zustand)**      | Define store structure for suggestion data. Initially populate with spelling errors from `useSpellCheck.ts`.                                                                                                                                    | `src/store/suggestion/suggestion.store.ts` (new)<br>`src/store/suggestion/suggestion.types.ts` (new)                                                                  | Zustand                                          | ☐          |
+| **High** | **1.8: Refactor `TextEditor` to use `suggestionStore`**| Modify `TextEditor.tsx` (and relevant calling components/hooks) to populate and read from `suggestionStore` for spell check results.                                                                                                                  | `src/components/TextEditor.tsx`<br>`src/hooks/useSpellCheck.ts` (for populating store)                                                                                    | `suggestion.store.ts`                            | ☐          |
+| **High** | **1.9: Final Editor Integration Review**             | Ensure `DocumentEditor.tsx` & `TextEditor.tsx` correctly use `suggestionStore` & new UI components for a seamless inline spell-checking experience.                                                                                              | `src/components/DocumentEditor.tsx`<br>`src/components/TextEditor.tsx`                                                                                                    | All tasks in Increment 1                         | ☐          |
+
 ---
 
 ### Backend
 
-| Priority | Task Description | Implementation Details | Code Pointers | Dependencies | Completion |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **High** | Extend Firebase Function for Style Correction | - Add a new route (`/style`) to the existing Express app in the main cloud function.<br>- This route will be handled by a new `style.ts` handler.<br>- Use the `gpt-4o` model via the OpenAI API to rewrite passive voice sentences into active voice.<br>- Ensure the route is protected by the existing authentication middleware. | `functions/src/index.ts`<br>`functions/src/handlers/style.ts` (new) | - OpenAI API Key | ☐ |
+| Priority | Task Description                       | Implementation Details                                                                                                                                                                             | Code Pointers                                                              | Dependencies      | Completion |
+| :------- | :------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------- | :---------------- | :--------- |
+| **High** | Extend Firebase Function for Style Correction | - Add a new route (`/style`) to the existing Express app in the main cloud function.<br>- This route will be handled by a new `style.ts` handler.<br>- Use the `gpt-4o` model via the OpenAI API to rewrite passive voice sentences into active voice.<br>- Ensure the route is protected by the existing authentication middleware. | `functions/src/index.ts`<br>`functions/src/handlers/style.ts` (new) | - OpenAI API Key  | ☐          |
 
 ---
 
-### Frontend
+### Future Frontend Increments (Post-Refactor)
 
-| Priority | Task Description | Implementation Details | Code Pointers | Dependencies | Completion |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **High** | **Setup: Install Dependencies** | Install the necessary `retext` packages: `retext`, `retext-english`, `retext-simplify`, `retext-equality`, `retext-readability`, `retext-passive`. | `package.json` | - | ☐ |
-| **High** | **Core: Create Unified `useSuggestions` Hook** | - Create a new hook to be the single source for all text suggestions.<br>- It will run `retext` for style/clarity/etc., and incorporate the existing spell-check logic.<br>- It must return a unified array of suggestion objects for both spelling and style.<br>- For `retext-passive` detections, it will trigger a lazy-loaded call to the `/style` backend endpoint. | `src/hooks/useSuggestions.ts` (new)<br>`src/hooks/useSpellCheck.ts` (deprecate) | - `retext` packages | ☐ |
-| **High** | **UI: Create `SuggestionPopover` Component** | - Build a new reusable pop-over component triggered by hover/click.<br>- Displays a color-coded reason and a one-click "Accept" button.<br>- Will show a loading state while waiting for LLM-based suggestions. | `src/components/editor/SuggestionPopover.tsx` (new) | - Radix UI for Popover<br>- Tailwind CSS | ☐ |
-| **High** | **Refactor: Deprecate `SuggestionSidebar`** | - Remove the `SuggestionSidebar` component from the `DocumentEditor`.<br>- Delete the component file and any associated state or styles. | `src/components/SuggestionSidebar.tsx` (delete)<br>`src/components/DocumentEditor.tsx` | - | ☐ |
-| **High** | **Refactor: Remove Spell Score** | - Remove the "Spell Score" UI element as its functionality is replaced by the new toggles. | `src/components/editor/EditorHeader.tsx` (likely location) | - | ☐ |
-| **Medium** | **UI: Create `SuggestionToggles` Component** | - Create the new component for filtering suggestions (`Spelling`, `Clarity`, etc.).<br>- Each toggle has a color-coded dot, category name, and suggestion count.<br>- Clicking a toggle updates a Zustand store to filter suggestions in the editor. | `src/components/editor/SuggestionToggles.tsx` (new) | - Zustand store | ☐ |
-| **Medium** | **State: Create `suggestionStore`** | - Create a new Zustand store to manage suggestion state.<br>- Will hold the raw list of suggestions from the `useSuggestions` hook.<br>- Will also hold the filter states for each category (e.g., `isClarityVisible: true`). | `src/store/suggestion/suggestion.store.ts` (new) | - | ☐ |
-| **Medium** | **Integration: Update `DocumentEditor`** | - Integrate the new `useSuggestions` hook.<br>- Pass the raw suggestions to the new `suggestionStore`.<br>- Render the new `SuggestionToggles` component in the toolbar area. | `src/components/DocumentEditor.tsx` | - `useSuggestions`<br>- `SuggestionToggles` | ☐ |
-| **Medium** | **Integration: Update `TextEditor` & Decorations** | - Read filtered suggestions from the `suggestionStore`.<br>- Use a custom Tiptap `Decoration` to apply underlines with the correct color based on the suggestion's category.<br>- Wire the `SuggestionPopover` to appear on interaction with these decorations. | `src/components/TextEditor.tsx`<br>`src/extensions/SuggestionDecorations.ts` (new) | - `SuggestionPopover`<br>- `suggestionStore` | ☐ |
+| Priority | Task Description                               | Implementation Details                                                                                                                                                                                                                                                        | Code Pointers                                                                      | Dependencies          | Completion |
+| :------- | :--------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------- | :-------------------- | :--------- |
+| **High**   | **Setup: Install Style Dependencies**          | Install the necessary `retext` packages: `retext`, `retext-english`, `retext-simplify`, `retext-equality`, `retext-readability`, `retext-passive`.                                                                                                                              | `package.json`                                                                     | -                     | ☐          |
+| **High**   | **Core: Create Unified `useSuggestions` Hook** | - Create a new hook to be the single source for all text suggestions, running after the initial refactor is complete.<br>- It will run `retext` for style/clarity/etc., and incorporate the existing spell-check logic from the `suggestionStore`.<br>- For `retext-passive` detections, it will trigger a lazy-loaded call to the `/style` backend endpoint. | `src/hooks/useSuggestions.ts` (new)<br>`src/hooks/useSpellCheck.ts` (to be deprecated) | - `retext` packages | ☐          |
+| **Medium** | **UI: Create `SuggestionToggles` Component**   | - Create the new component for filtering suggestions (`Spelling`, `Clarity`, etc.).<br>- Each toggle has a color-coded dot, category name, and suggestion count.<br>- Clicking a toggle updates the `suggestionStore` to filter suggestions in the editor.                      | `src/components/editor/SuggestionToggles.tsx` (new)                                | - `suggestionStore`   | ☐          |
+
+---
 

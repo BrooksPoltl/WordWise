@@ -7,13 +7,6 @@ type AuthenticatedHandler<T, U> = (
   auth: admin.auth.DecodedIdToken,
 ) => Promise<U> | U;
 
-const allowedOrigins: string[] = (
-  process.env.CORS_ORIGIN || "http://localhost:3000,http://localhost:5173"
-)
-  .split(",")
-  .map((o) => o.trim())
-  .filter(Boolean);
-
 export const createApiHandler = <T, U>(
   handler: AuthenticatedHandler<T, U>,
 ) => {
