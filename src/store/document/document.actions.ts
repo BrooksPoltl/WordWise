@@ -339,15 +339,20 @@ export const checkSpelling = async (
       const suggestions = allSuggestions.slice(0, 3);
       if (suggestions.length === 0) return [];
 
+      const suggestionOptions = suggestions.map((suggestionText: string, i: number) => ({
+        id: crypto.randomUUID(),
+        text: suggestionText,
+      }));
+
       const regex = new RegExp(`\\b${word}\\b`, 'gi');
       const newSuggestions: SpellingSuggestion[] = [];
       let match = regex.exec(text);
       while (match) {
         const startOffset = match.index;
         newSuggestions.push({
-          id: `${word}-${startOffset}`,
+          id: crypto.randomUUID(),
           word,
-          suggestions,
+          suggestions: suggestionOptions,
           startOffset,
           endOffset: startOffset + word.length,
           type: 'spelling',

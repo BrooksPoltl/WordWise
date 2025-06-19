@@ -57,12 +57,17 @@ export interface DocumentUpdatePayload {
 }
 
 // Spell checking types
+export interface SuggestionOption {
+  id: string;
+  text: string;
+}
+
 export interface SpellingSuggestion {
   id: string;
   word: string;
   startOffset: number;
   endOffset: number;
-  suggestions: string[];
+  suggestions: SuggestionOption[];
   type: 'spelling' | 'grammar' | 'style';
 }
 

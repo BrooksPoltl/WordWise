@@ -1,16 +1,27 @@
 import { Editor, EditorContent } from '@tiptap/react';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useAutoSave } from '../hooks/useAutoSave';
+import { useSpellCheck } from '../hooks/useSpellCheck';
 import { useTextEditor } from '../hooks/useTextEditor';
 import { useToneAnalysis } from '../hooks/useToneAnalysis';
 import { useDocumentStore } from '../store/document/document.store';
+import { SpellingSuggestion } from '../types';
 import EditorHeader from './editor/EditorHeader';
 import EditorToolbar from './editor/EditorToolbar';
+import SuggestionPopover from './editor/SuggestionPopover';
 import ToneModal from './editor/ToneModal';
 
 interface TextEditorProps {
   documentId: string;
   onTitleChange: (title: string) => void;
+}
+
+interface PopoverState {
+  isOpen: boolean;
+  position: { top: number; left: number };
+  suggestion: SpellingSuggestion | null;
+  from: number;
+  to: number;
 }
 
 const TextEditor: React.FC<TextEditorProps> = ({
@@ -30,6 +41,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
   } = useTextEditor({
     initialContent: currentDocument?.content || '',
   });
+  const { suggestions } = useSpellCheck({ editor });
   const {
     detectedTone,
     selectedTone,
@@ -40,6 +52,14 @@ const TextEditor: React.FC<TextEditorProps> = ({
     applyRefactoredContent,
     closeToneModal,
   } = useToneAnalysis({ editor });
+
+  const [popoverState, setPopoverState] = useState<PopoverState>({
+    isOpen: false,
+    position: { top: 0, left: 0 },
+    suggestion: null,
+    from: 0,
+    to: 0,
+  });
 
   const handleTitleChange = useCallback(
     (newTitle: string) => {
@@ -89,6 +109,65 @@ const TextEditor: React.FC<TextEditorProps> = ({
     detectTone,
   ]);
 
+  useEffect(() => {
+    if (!editor?.view.dom) return undefined;
+
+    const handleSuggestionClick = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { suggestion, from, to } = customEvent.detail;
+
+      if (!suggestion) return;
+
+      const start = editor.view.coordsAtPos(from);
+      const end = editor.view.coordsAtPos(to);
+
+      const popoverTop = start.bottom + 10;
+      const popoverLeft = (start.left + end.right) / 2;
+
+      setPopoverState({
+        isOpen: true,
+        position: { top: popoverTop, left: popoverLeft },
+        suggestion,
+        from,
+        to,
+      });
+    };
+
+    const editorDom = editor.view.dom;
+    editorDom.addEventListener('spellSuggestionClick', handleSuggestionClick);
+
+    return () => {
+      editorDom.removeEventListener(
+        'spellSuggestionClick',
+        handleSuggestionClick,
+      );
+    };
+  }, [editor]);
+
+  const handleAcceptSuggestion = (suggestion: SpellingSuggestion) => {
+    if (!editor || !suggestion.suggestions.length) return;
+
+    const replacement = suggestion.suggestions[0].text;
+    const { from, to } = popoverState;
+
+    editor
+      .chain()
+      .focus()
+      .command(({ tr }) => {
+        tr.replaceWith(from, to, editor.schema.text(replacement));
+        return true;
+      })
+      .run();
+
+    setPopoverState({
+      isOpen: false,
+      position: { top: 0, left: 0 },
+      suggestion: null,
+      from: 0,
+      to: 0,
+    });
+  };
+
   if (!editor) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -99,7 +178,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   return (
     <div className="flex h-full">
-      <div className="flex-1">
+      <div className="flex-1 relative">
         <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden h-full">
           <div className="border-b border-gray-200 p-4">
             <EditorHeader
@@ -124,6 +203,16 @@ const TextEditor: React.FC<TextEditorProps> = ({
             <EditorContent editor={editor} />
           </div>
         </div>
+        {popoverState.isOpen && popoverState.suggestion && (
+          <SuggestionPopover
+            suggestion={popoverState.suggestion}
+            position={popoverState.position}
+            onAccept={handleAcceptSuggestion}
+            onDismiss={() =>
+              setPopoverState(prev => ({ ...prev, isOpen: false }))
+            }
+          />
+        )}
       </div>
 
       <ToneModal

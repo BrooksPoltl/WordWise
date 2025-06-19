@@ -57,11 +57,15 @@ function createDecorations(doc: any, suggestions: SpellingSuggestion[]): Decorat
         if (actualText.toLowerCase() === suggestion.word.toLowerCase()) {
           validSuggestions.push(suggestion);
           decorations.push(
-            Decoration.inline(from, to, {
-              class: 'spell-error',
-              'data-suggestion-id': suggestion.id,
-              title: `Click to fix "${suggestion.word}" → "${suggestion.suggestions[0] || 'fix'}"`
-            })
+            Decoration.inline(
+              from,
+              to,
+              {
+                class: 'spell-error',
+                'data-suggestion-id': suggestion.id,
+              },
+              { suggestion },
+            ),
           );
         } else {
           console.warn(`Suggestion text mismatch: expected "${suggestion.word}", found "${actualText}" at ${from}-${to}`);
@@ -164,18 +168,30 @@ export const SpellCheckDecorations = Extension.create({
           
           handleClick(view, pos, event) {
             const target = event.target as HTMLElement;
-            if (target?.classList.contains('spell-error')) {
-              const suggestionId = target.getAttribute('data-suggestion-id');
-              if (suggestionId) {
-                // Emit custom event that the component can listen to
-                const customEvent = new CustomEvent('spellSuggestionClick', {
-                  detail: { suggestionId, pos }
-                });
-                view.dom.dispatchEvent(customEvent);
-                return true;
+            if (target.closest('.spell-error')) {
+              const decorations = spellCheckPluginKey.getState(view.state)?.decorations;
+              if (!decorations) return false;
+
+              const clickedDecorations = decorations.find(pos, pos);
+
+              if (clickedDecorations.length > 0) {
+                const clickedDeco = clickedDecorations[0];
+                const suggestion = clickedDeco.spec.suggestion as SpellingSuggestion;
+
+                if (suggestion) {
+                  const customEvent = new CustomEvent('spellSuggestionClick', {
+                    detail: {
+                      suggestion,
+                      from: clickedDeco.from,
+                      to: clickedDeco.to,
+                    },
+                  });
+                  view.dom.dispatchEvent(customEvent);
+                  return true; // We handled the click
+                }
               }
             }
-            return false;
+            return false; // Click not handled
           },
         },
       }),
