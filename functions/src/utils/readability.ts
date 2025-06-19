@@ -2,8 +2,17 @@ import { logger } from 'firebase-functions/v1';
 import { OpenAI } from 'openai';
 
 const createPrompt = (text: string): string => {
-  return `Rewrite the following sentence to make it simpler and easier to read. Aim for a grade 6 reading level. Only return the rewritten sentence, without any additional explanation or pleasantries.
-Sentence: "${text}"`;
+  return `Rewrite the following sentence to improve its readability.
+
+**Instructions:**
+1.  **Simplify Vocabulary:** Replace complex words with simpler alternatives.
+2.  **Shorten Sentences:** Break down long sentences into shorter, more direct ones.
+3.  **Use Active Voice:** Convert any passive voice constructions to active voice.
+4.  **Target Readability Score:** The final text should have a Flesch-Kincaid grade level of 8 or lower.
+5.  **Output:** Return only the rewritten sentence, with no additional commentary.
+
+**Original Sentence:**
+"${text}"`;
 };
 
 export const rewriteForReadability = async (

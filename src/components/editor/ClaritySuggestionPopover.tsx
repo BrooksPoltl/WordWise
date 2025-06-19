@@ -5,6 +5,7 @@ import {
     useInteractions,
 } from '@floating-ui/react';
 import React from 'react';
+import { SUGGESTION_CATEGORIES } from '../../store/suggestion/suggestion.types';
 import { ClaritySuggestion } from '../../types';
 
 interface ClaritySuggestionPopoverProps {
@@ -26,10 +27,13 @@ const ClaritySuggestionPopover = React.forwardRef<
   return (
     <div
       ref={ref}
-      className="absolute z-10 bg-white border border-gray-200 rounded-md shadow-lg p-2 max-w-xs"
-      style={style}
+      className="absolute z-10 w-64 max-w-xs rounded-md border border-gray-200 bg-white p-3 shadow-lg border-t-4"
+      style={{ ...style, borderColor: SUGGESTION_CATEGORIES.clarity.color }}
       {...getFloatingProps()}
     >
+      <div className="mb-2 text-sm font-semibold text-gray-800">
+        Clarity Note
+      </div>
       <div className="text-sm text-gray-700">{suggestion.explanation}</div>
       <div className="border-t border-gray-200 mt-2 pt-2 flex justify-end">
         <button

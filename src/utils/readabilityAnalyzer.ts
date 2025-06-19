@@ -19,7 +19,7 @@ const processor = retext()
     // Using a more reasonable but still sensitive configuration.
     age: 14,
     minWords: 10,
-    threshold: 4 / 7,
+    threshold: 5 / 7,
   });
 
 export const analyzeReadability = async (

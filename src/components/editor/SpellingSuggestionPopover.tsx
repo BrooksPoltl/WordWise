@@ -5,6 +5,7 @@ import {
     useInteractions,
 } from '@floating-ui/react';
 import React from 'react';
+import { SUGGESTION_CATEGORIES } from '../../store/suggestion/suggestion.types';
 import { SpellingSuggestion } from '../../types';
 
 interface SpellingSuggestionPopoverProps {
@@ -35,12 +36,17 @@ const SpellingSuggestionPopover = React.forwardRef<
   return (
     <div
       ref={ref}
-      className="absolute z-10 bg-white border border-gray-200 rounded-md shadow-lg p-2 max-w-xs"
-      style={style}
+      className="absolute z-10 w-64 max-w-xs rounded-md border border-gray-200 bg-white p-3 shadow-lg border-t-4"
+      style={{ ...style, borderColor: SUGGESTION_CATEGORIES.spelling.color }}
       {...getFloatingProps()}
     >
-      <div className="text-sm text-gray-600 mb-2">Did you mean:</div>
-      <div className="flex flex-col space-y-1">
+      <div className="mb-2 text-sm font-semibold text-gray-800">
+        Spelling Error
+      </div>
+      <p className="mb-3 text-sm text-gray-600">
+        Did you mean one of these?
+      </p>
+      <div className="flex flex-wrap gap-2">
         {suggestion.suggestions.slice(0, 3).map(option => (
           <button
             key={option.id}

@@ -37,7 +37,7 @@ interface TextEditorProps {
 
 interface PopoverState {
   isOpen: boolean;
-  suggestion: AnySuggestion | null;
+  suggestionId: string | null;
   from: number;
   to: number;
 }
@@ -76,10 +76,14 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   const [popoverState, setPopoverState] = useState<PopoverState>({
     isOpen: false,
-    suggestion: null,
+    suggestionId: null,
     from: 0,
     to: 0,
   });
+
+  const activeSuggestion = popoverState.suggestionId
+    ? suggestions.find(s => s.id === popoverState.suggestionId)
+    : null;
 
   const { refs, floatingStyles, context } = useFloating({
     placement: 'top',
@@ -178,7 +182,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
       setPopoverState({
         isOpen: true,
-        suggestion,
+        suggestionId: suggestion.id,
         from,
         to,
       });
@@ -223,14 +227,14 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
       setPopoverState({
         isOpen: false,
-        suggestion: null,
+        suggestionId: null,
         from: 0,
         to: 0,
       });
     }
   };
 
-  if (!editor) {
+  if (loading || !editor) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
@@ -265,14 +269,12 @@ const TextEditor: React.FC<TextEditorProps> = ({
             <EditorContent editor={editor} />
           </div>
         </div>
-        {popoverState.isOpen && popoverState.suggestion && (
+        {popoverState.isOpen && activeSuggestion && (
           <SuggestionPopover
             ref={refs.setFloating}
-            suggestion={popoverState.suggestion}
+            suggestion={activeSuggestion}
             onAccept={handleAcceptSuggestion}
-            onDismiss={() =>
-              setPopoverState(p => ({ ...p, isOpen: false, suggestion: null }))
-            }
+            onDismiss={() => setPopoverState(p => ({ ...p, isOpen: false }))}
             style={floatingStyles}
             context={context}
           />
@@ -281,10 +283,10 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
       <ToneModal
         isOpen={isToneModalOpen}
-        selectedTone={selectedTone}
+        onClose={closeToneModal}
         refactoredContent={refactoredContent}
         onApply={applyRefactoredContent}
-        onClose={closeToneModal}
+        selectedTone={selectedTone}
       />
     </div>
   );
