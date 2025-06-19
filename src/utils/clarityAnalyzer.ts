@@ -6,6 +6,7 @@ import { VFile } from 'vfile';
 import { VFileMessage } from 'vfile-message';
 import { ClaritySuggestion, SuggestionOption } from '../types';
 import { logger } from './logger';
+import { weaselWordExplanations } from './weaselWordExplanations';
 
 const processor = unified().use(retextEnglish).use(retextEquality);
 
@@ -60,6 +61,9 @@ export const analyzeClarity = async (
         endOffset = startOffset + (msg.actual?.length || 1);
       }
 
+      const explanation =
+        weaselWordExplanations[msg.ruleId as string] || msg.message;
+
       return {
         id: `clarity-${startOffset}-${index}`,
         text: text.slice(startOffset, endOffset),
@@ -67,7 +71,7 @@ export const analyzeClarity = async (
         endOffset,
         suggestions: [] as SuggestionOption[],
         type: 'weasel_word',
-        explanation: msg.message,
+        explanation,
       };
     });
 
