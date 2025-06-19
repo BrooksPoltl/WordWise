@@ -9,10 +9,12 @@ import { Editor, EditorContent } from '@tiptap/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { useSpellCheck } from '../hooks/useSpellCheck';
+import { useSuggestions } from '../hooks/useSuggestions';
 import { useTextEditor } from '../hooks/useTextEditor';
 import { useToneAnalysis } from '../hooks/useToneAnalysis';
 import { useDocumentStore } from '../store/document/document.store';
 import { useSuggestionStore } from '../store/suggestion/suggestion.store';
+import { AnySuggestion } from '../store/suggestion/suggestion.types';
 import { SpellingSuggestion } from '../types';
 import { logger } from '../utils/logger';
 import EditorHeader from './editor/EditorHeader';
@@ -50,7 +52,12 @@ const TextEditor: React.FC<TextEditorProps> = ({
     initialContent: currentDocument?.content || '',
   });
   useSpellCheck({ editor });
-  const { spelling: spellingSuggestions, visibility } = useSuggestionStore();
+  useSuggestions({ editor });
+  const {
+    spelling: spellingSuggestions,
+    clarity: claritySuggestions,
+    visibility,
+  } = useSuggestionStore();
   const {
     detectedTone,
     selectedTone,
@@ -91,13 +98,14 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   useEffect(() => {
     if (editor) {
-      editor.storage.spellCheckDecorations.updateDecorations(
+      const allSuggestions = [...spellingSuggestions, ...claritySuggestions];
+      editor.storage.suggestionDecorations.updateDecorations(
         editor,
-        spellingSuggestions,
-        visibility.spelling,
+        allSuggestions,
+        visibility,
       );
     }
-  }, [editor, spellingSuggestions, visibility.spelling]);
+  }, [editor, spellingSuggestions, claritySuggestions, visibility]);
 
   useEffect(() => {
     if (currentDocument?.content) {
@@ -170,20 +178,26 @@ const TextEditor: React.FC<TextEditorProps> = ({
     };
 
     const editorDom = editor.view.dom;
-    editorDom.addEventListener('spellSuggestionClick', handleSuggestionClick);
+    editorDom.addEventListener('suggestionClick', handleSuggestionClick);
 
     return () => {
       editorDom.removeEventListener(
-        'spellSuggestionClick',
+        'suggestionClick',
         handleSuggestionClick,
       );
     };
   }, [editor, refs]);
 
-  const handleAcceptSuggestion = (suggestion: SpellingSuggestion) => {
-    if (!editor || !suggestion.suggestions.length) return;
+  const handleAcceptSuggestion = (suggestion: AnySuggestion) => {
+    if (
+      !editor ||
+      !('suggestions' in suggestion) ||
+      !suggestion.suggestions.length
+    )
+      return;
 
-    const replacement = suggestion.suggestions[0].text;
+    const spellingSuggestion = suggestion as SpellingSuggestion;
+    const replacement = spellingSuggestion.suggestions[0].text;
     const { from, to } = popoverState;
 
     editor

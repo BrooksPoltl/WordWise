@@ -5,10 +5,11 @@ import {
 } from '../../store/suggestion/suggestion.types';
 
 export const SuggestionToggles = () => {
-  const { spelling, visibility, toggleVisibility } = useSuggestionStore();
+  const { spelling, clarity, visibility, toggleVisibility } = useSuggestionStore();
 
   const suggestionCounts: Record<SuggestionCategory, number> = {
     spelling: spelling.length,
+    clarity: clarity.length,
   };
 
   return (

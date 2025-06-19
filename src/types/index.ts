@@ -71,6 +71,16 @@ export interface SpellingSuggestion {
   type: 'spelling' | 'grammar' | 'style';
 }
 
+export interface ClaritySuggestion {
+  id: string;
+  text: string;
+  startOffset: number;
+  endOffset: number;
+  suggestions: SuggestionOption[];
+  type: 'weasel_word';
+  explanation: string;
+}
+
 export interface WritingMetrics {
   wordCount: number;
   characterCount: number;

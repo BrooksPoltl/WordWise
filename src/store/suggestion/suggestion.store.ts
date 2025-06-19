@@ -3,11 +3,16 @@ import { SuggestionStore } from './suggestion.types';
 
 export const useSuggestionStore = create<SuggestionStore>((set) => ({
   spelling: [],
+  clarity: [],
   visibility: {
     spelling: true,
+    clarity: true,
   },
-  setSpellingSuggestions: (suggestions) => set({ spelling: suggestions }),
-  clearSpellingSuggestions: () => set({ spelling: [] }),
+  setSuggestions: (category, suggestions) =>
+    set((state) => ({
+      ...state,
+      [category]: suggestions,
+    })),
   toggleVisibility: (category) =>
     set((state) => ({
       visibility: {
@@ -15,4 +20,7 @@ export const useSuggestionStore = create<SuggestionStore>((set) => ({
         [category]: !state.visibility[category],
       },
     })),
+  // Kept for backward compatibility with the old spell-check flow
+  setSpellingSuggestions: (suggestions) => set({ spelling: suggestions }),
+  clearSpellingSuggestions: () => set({ spelling: [] }),
 })); 

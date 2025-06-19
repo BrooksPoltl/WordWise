@@ -3,7 +3,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useCallback, useRef, useState } from 'react';
-import { SpellCheckDecorations } from '../extensions/SpellCheckDecorations';
+import { SuggestionDecorations } from '../extensions/SuggestionDecorations';
 
 interface UseTextEditorProps {
   initialContent?: string;
@@ -20,7 +20,7 @@ export const useTextEditor = ({ initialContent = '' }: UseTextEditorProps) => {
         placeholder: 'Start writing your document...',
       }),
       CharacterCount,
-      SpellCheckDecorations,
+      SuggestionDecorations,
     ],
     content: initialContent,
     editorProps: {

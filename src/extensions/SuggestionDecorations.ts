@@ -1,25 +1,26 @@
-import { Extension } from '@tiptap/core';
+import { Editor, Extension } from '@tiptap/core';
+import { Node } from 'prosemirror-model';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
-import { SpellingSuggestion } from '../types';
+import { AnySuggestion } from '../store/suggestion/suggestion.types';
 
-interface SpellCheckState {
-  suggestions: SpellingSuggestion[];
+interface SuggestionState {
+  suggestions: AnySuggestion[];
   decorations: DecorationSet;
 }
 
-const spellCheckPluginKey = new PluginKey<SpellCheckState>('spellCheck');
+const suggestionPluginKey = new PluginKey<SuggestionState>('suggestions');
 
 /**
  * Convert plain text offset to ProseMirror document position
  */
-function offsetToPos(doc: any, offset: number): number | null {
+function offsetToPos(doc: Node, offset: number): number | null {
   let textOffset = 0;
   let result: number | null = null;
   
   try {
-    doc.descendants((node: any, nodePos: number) => {
-      if (node.isText) {
+    doc.descendants((node: Node, nodePos: number) => {
+      if (node.isText && typeof node.text === 'string') {
         const nodeStart = textOffset;
         const nodeEnd = textOffset + node.text.length;
         
@@ -42,9 +43,12 @@ function offsetToPos(doc: any, offset: number): number | null {
 /**
  * Create decorations from spell suggestions with better validation
  */
-function createDecorations(doc: any, suggestions: SpellingSuggestion[]): DecorationSet {
+function createDecorations(
+  doc: Node,
+  suggestions: AnySuggestion[],
+): DecorationSet {
   const decorations: Decoration[] = [];
-  const validSuggestions: SpellingSuggestion[] = [];
+  const validSuggestions: AnySuggestion[] = [];
   
   for (const suggestion of suggestions) {
     const from = offsetToPos(doc, suggestion.startOffset);
@@ -54,27 +58,36 @@ function createDecorations(doc: any, suggestions: SpellingSuggestion[]): Decorat
       // Validate that the text at these positions matches the expected word
       try {
         const actualText = doc.textBetween(from, to);
-        if (actualText.toLowerCase() === suggestion.word.toLowerCase()) {
+        const suggestionText = 'word' in suggestion ? suggestion.word : suggestion.text;
+        if (actualText.toLowerCase() === suggestionText.toLowerCase()) {
           validSuggestions.push(suggestion);
+          const cssClass =
+            suggestion.type === 'weasel_word' ? 'clarity-error' : 'spell-error';
           decorations.push(
             Decoration.inline(
               from,
               to,
               {
-                class: 'spell-error',
+                class: cssClass,
                 'data-suggestion-id': suggestion.id,
               },
               { suggestion },
             ),
           );
         } else {
-          console.warn(`Suggestion text mismatch: expected "${suggestion.word}", found "${actualText}" at ${from}-${to}`);
+          console.warn(
+            `Suggestion text mismatch: expected "${suggestionText}", found "${actualText}" at ${from}-${to}`,
+          );
         }
       } catch (error) {
-        console.warn('Error validating spell suggestion:', error);
+        console.warn('Error validating suggestion:', error);
       }
     } else {
-      console.warn(`Invalid position for suggestion "${suggestion.word}": ${from}-${to} (doc size: ${doc.content.size})`);
+      console.warn(
+        `Invalid position for suggestion "${
+          'word' in suggestion ? suggestion.word : suggestion.text
+        }": ${from}-${to} (doc size: ${doc.content.size})`,
+      );
     }
   }
   
@@ -82,31 +95,37 @@ function createDecorations(doc: any, suggestions: SpellingSuggestion[]): Decorat
 }
 
 /**
- * Spell Check Decorations Extension
- * Uses ProseMirror's decoration system for robust spell checking highlights
+ * Suggestion Decorations Extension
+ * Uses ProseMirror's decoration system for robust suggestion highlights
  */
-export const SpellCheckDecorations = Extension.create({
-  name: 'spellCheckDecorations',
+export const SuggestionDecorations = Extension.create({
+  name: 'suggestionDecorations',
 
   addStorage() {
     return {
-      suggestions: [] as SpellingSuggestion[],
+      suggestions: [] as AnySuggestion[],
       updateDecorations: (
-        editor: any,
-        suggestions: SpellingSuggestion[],
-        isVisible: boolean,
+        editor: Editor,
+        suggestions: AnySuggestion[],
+        visibility: { [key: string]: boolean },
       ) => {
-        const decorations = isVisible
-          ? createDecorations(editor.state.doc, suggestions)
-          : DecorationSet.empty;
-        const tr = editor.state.tr.setMeta(spellCheckPluginKey, {
-          suggestions,
-          decorations,
+        const visibleSuggestions = suggestions.filter((s) => {
+          if (s.type === 'weasel_word') return visibility.clarity;
+          return visibility.spelling; // Default for spelling/grammar/style
+        });
+
+        const decorations = createDecorations(
+          editor.state.doc,
+          visibleSuggestions,
+        );
+        const tr = editor.state.tr.setMeta(suggestionPluginKey, {
+          suggestions, // Store all suggestions
+          decorations, // But only decorate visible ones
         });
         editor.view.dispatch(tr);
       },
-      clearDecorations: (editor: any) => {
-        const tr = editor.state.tr.setMeta(spellCheckPluginKey, {
+      clearDecorations: (editor: Editor) => {
+        const tr = editor.state.tr.setMeta(suggestionPluginKey, {
           suggestions: [],
           decorations: DecorationSet.empty,
         });
@@ -118,10 +137,10 @@ export const SpellCheckDecorations = Extension.create({
   addProseMirrorPlugins() {
     return [
       new Plugin({
-        key: spellCheckPluginKey,
+        key: suggestionPluginKey,
         
         state: {
-          init(): SpellCheckState {
+          init(): SuggestionState {
             return {
               suggestions: [],
               decorations: DecorationSet.empty,
@@ -130,9 +149,9 @@ export const SpellCheckDecorations = Extension.create({
           
           apply(tr, pluginState) {
             // Check if we have new suggestions from meta
-            const meta = tr.getMeta(spellCheckPluginKey);
+            const meta = tr.getMeta(suggestionPluginKey);
             if (meta) {
-              return meta as SpellCheckState;
+              return meta as SuggestionState;
             }
             
             // Map existing decorations through document changes
@@ -150,7 +169,8 @@ export const SpellCheckDecorations = Extension.create({
                 
                 try {
                   const actualText = tr.doc.textBetween(from, to);
-                  return actualText.toLowerCase() === suggestion.word.toLowerCase();
+                  const suggestionText = 'word' in suggestion ? suggestion.word : suggestion.text;
+                  return actualText.toLowerCase() === suggestionText.toLowerCase();
                 } catch (error) {
                   return false;
                 }
@@ -168,24 +188,24 @@ export const SpellCheckDecorations = Extension.create({
         
         props: {
           decorations(state) {
-            const pluginState = spellCheckPluginKey.getState(state);
+            const pluginState = suggestionPluginKey.getState(state);
             return pluginState?.decorations || DecorationSet.empty;
           },
           
           handleClick(view, pos, event) {
             const target = event.target as HTMLElement;
-            if (target.closest('.spell-error')) {
-              const decorations = spellCheckPluginKey.getState(view.state)?.decorations;
+            if (target.closest('.spell-error') || target.closest('.clarity-error')) {
+              const decorations = suggestionPluginKey.getState(view.state)?.decorations;
               if (!decorations) return false;
 
               const clickedDecorations = decorations.find(pos, pos);
 
               if (clickedDecorations.length > 0) {
                 const clickedDeco = clickedDecorations[0];
-                const suggestion = clickedDeco.spec.suggestion as SpellingSuggestion;
+                const suggestion = clickedDeco.spec.suggestion as AnySuggestion;
 
                 if (suggestion) {
-                  const customEvent = new CustomEvent('spellSuggestionClick', {
+                  const customEvent = new CustomEvent('suggestionClick', {
                     detail: {
                       suggestion,
                       from: clickedDeco.from,
@@ -206,6 +226,9 @@ export const SpellCheckDecorations = Extension.create({
 });
 
 // Helper function to get suggestion by ID
-export function getSuggestionById(suggestions: SpellingSuggestion[], id: string): SpellingSuggestion | undefined {
+export function getSuggestionById(
+  suggestions: AnySuggestion[],
+  id: string,
+): AnySuggestion | undefined {
   return suggestions.find(s => s.id === id);
 } 
