@@ -91,8 +91,14 @@ export const SpellCheckDecorations = Extension.create({
   addStorage() {
     return {
       suggestions: [] as SpellingSuggestion[],
-      updateDecorations: (editor: any, suggestions: SpellingSuggestion[]) => {
-        const decorations = createDecorations(editor.state.doc, suggestions);
+      updateDecorations: (
+        editor: any,
+        suggestions: SpellingSuggestion[],
+        isVisible: boolean,
+      ) => {
+        const decorations = isVisible
+          ? createDecorations(editor.state.doc, suggestions)
+          : DecorationSet.empty;
         const tr = editor.state.tr.setMeta(spellCheckPluginKey, {
           suggestions,
           decorations,

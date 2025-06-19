@@ -1,9 +1,9 @@
 import {
-  autoUpdate,
-  flip,
-  offset,
-  shift,
-  useFloating,
+    autoUpdate,
+    flip,
+    offset,
+    shift,
+    useFloating,
 } from '@floating-ui/react';
 import { Editor, EditorContent } from '@tiptap/react';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -50,7 +50,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
     initialContent: currentDocument?.content || '',
   });
   useSpellCheck({ editor });
-  const spellingSuggestions = useSuggestionStore(state => state.spelling);
+  const { spelling: spellingSuggestions, visibility } = useSuggestionStore();
   const {
     detectedTone,
     selectedTone,
@@ -94,9 +94,10 @@ const TextEditor: React.FC<TextEditorProps> = ({
       editor.storage.spellCheckDecorations.updateDecorations(
         editor,
         spellingSuggestions,
+        visibility.spelling,
       );
     }
-  }, [editor, spellingSuggestions]);
+  }, [editor, spellingSuggestions, visibility.spelling]);
 
   useEffect(() => {
     if (currentDocument?.content) {

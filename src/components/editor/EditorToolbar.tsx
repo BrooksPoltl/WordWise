@@ -2,6 +2,7 @@ import { Editor } from '@tiptap/react';
 import React from 'react';
 import { TONE_OPTIONS } from '../../constants/editorConstants';
 import { Tone } from '../../types';
+import { SuggestionToggles } from './SuggestionToggles';
 
 interface EditorToolbarProps {
   editor: Editor;
@@ -117,6 +118,10 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         >
           1. List
         </button>
+
+        <div className="w-px h-6 bg-gray-300" />
+
+        <SuggestionToggles />
       </div>
 
       {/* Tone selection dropdown */}
