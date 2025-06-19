@@ -9,11 +9,9 @@ import { Editor, EditorContent } from '@tiptap/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { useSpellCheck } from '../hooks/useSpellCheck';
-import { useSuggestions } from '../hooks/useSuggestions';
 import { useTextEditor } from '../hooks/useTextEditor';
 import { useToneAnalysis } from '../hooks/useToneAnalysis';
 import { useDocumentStore } from '../store/document/document.store';
-import { useSuggestionStore } from '../store/suggestion/suggestion.store';
 import { AnySuggestion } from '../store/suggestion/suggestion.types';
 import { SpellingSuggestion } from '../types';
 import { logger } from '../utils/logger';
@@ -25,11 +23,17 @@ import ToneModal from './editor/ToneModal';
 interface TextEditorProps {
   documentId: string;
   onTitleChange: (title: string) => void;
+  setEditor: (editor: Editor | null) => void;
+  suggestions: AnySuggestion[];
+  suggestionVisibility: {
+    spelling: boolean;
+    clarity: boolean;
+  };
 }
 
 interface PopoverState {
   isOpen: boolean;
-  suggestion: SpellingSuggestion | null;
+  suggestion: AnySuggestion | null;
   from: number;
   to: number;
 }
@@ -37,6 +41,9 @@ interface PopoverState {
 const TextEditor: React.FC<TextEditorProps> = ({
   documentId,
   onTitleChange,
+  setEditor,
+  suggestions,
+  suggestionVisibility,
 }) => {
   const { currentDocument, loading } = useDocumentStore();
   const { debouncedSave } = useAutoSave(documentId);
@@ -52,12 +59,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
     initialContent: currentDocument?.content || '',
   });
   useSpellCheck({ editor });
-  useSuggestions({ editor });
-  const {
-    spelling: spellingSuggestions,
-    clarity: claritySuggestions,
-    visibility,
-  } = useSuggestionStore();
   const {
     detectedTone,
     selectedTone,
@@ -93,19 +94,22 @@ const TextEditor: React.FC<TextEditorProps> = ({
   );
 
   useEffect(() => {
+    setEditor(editor);
+  }, [editor, setEditor]);
+
+  useEffect(() => {
     setTitle(currentDocument?.title || '');
   }, [currentDocument?.title, setTitle]);
 
   useEffect(() => {
     if (editor) {
-      const allSuggestions = [...spellingSuggestions, ...claritySuggestions];
       editor.storage.suggestionDecorations.updateDecorations(
         editor,
-        allSuggestions,
-        visibility,
+        suggestions,
+        suggestionVisibility,
       );
     }
-  }, [editor, spellingSuggestions, claritySuggestions, visibility]);
+  }, [editor, suggestions, suggestionVisibility]);
 
   useEffect(() => {
     if (currentDocument?.content) {
@@ -255,12 +259,12 @@ const TextEditor: React.FC<TextEditorProps> = ({
         {popoverState.isOpen && popoverState.suggestion && (
           <SuggestionPopover
             ref={refs.setFloating}
-            style={floatingStyles}
             suggestion={popoverState.suggestion}
             onAccept={handleAcceptSuggestion}
             onDismiss={() =>
-              setPopoverState(prev => ({ ...prev, isOpen: false }))
+              setPopoverState(p => ({ ...p, isOpen: false, suggestion: null }))
             }
+            style={floatingStyles}
             context={context}
           />
         )}

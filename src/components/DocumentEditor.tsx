@@ -1,7 +1,10 @@
+import { Editor } from '@tiptap/react';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useSuggestions } from '../hooks/useSuggestions';
 import { useAuthStore } from '../store/auth/auth.store';
 import { useDocumentStore } from '../store/document/document.store';
+import { useSuggestionStore } from '../store/suggestion/suggestion.store';
 import TextEditor from './TextEditor';
 
 const DocumentEditor: React.FC = () => {
@@ -16,6 +19,17 @@ const DocumentEditor: React.FC = () => {
     error,
     clearError,
   } = useDocumentStore();
+  const { spelling, clarity, visibility } = useSuggestionStore(state => ({
+    spelling: state.spelling,
+    clarity: state.clarity,
+    visibility: state.visibility,
+  }));
+
+  const [editor, setEditor] = useState<Editor | null>(null);
+
+  useSuggestions({ editor });
+
+  const allSuggestions = [...spelling, ...clarity];
 
   const [titleChangeTimeout, setTitleChangeTimeout] =
     useState<NodeJS.Timeout | null>(null);
@@ -180,6 +194,9 @@ const DocumentEditor: React.FC = () => {
             <TextEditor
               documentId={documentId}
               onTitleChange={handleTitleChange}
+              setEditor={setEditor}
+              suggestions={allSuggestions}
+              suggestionVisibility={visibility}
             />
           )}
         </div>
