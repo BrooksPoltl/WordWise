@@ -47,50 +47,27 @@ function createDecorations(
   doc: Node,
   suggestions: AnySuggestion[],
 ): DecorationSet {
-  const decorations: Decoration[] = [];
-  const validSuggestions: AnySuggestion[] = [];
-  
-  for (const suggestion of suggestions) {
+  const decorations = suggestions.flatMap(suggestion => {
     const from = offsetToPos(doc, suggestion.startOffset);
     const to = offsetToPos(doc, suggestion.endOffset);
-    
-    if (from !== null && to !== null && from < to && to <= doc.content.size) {
-      // Validate that the text at these positions matches the expected word
-      try {
-        const actualText = doc.textBetween(from, to);
-        const suggestionText = 'word' in suggestion ? suggestion.word : suggestion.text;
-        if (actualText.toLowerCase() === suggestionText.toLowerCase()) {
-          validSuggestions.push(suggestion);
-          const cssClass =
-            suggestion.type === 'weasel_word' ? 'clarity-error' : 'spell-error';
-          decorations.push(
-            Decoration.inline(
-              from,
-              to,
-              {
-                class: cssClass,
-                'data-suggestion-id': suggestion.id,
-              },
-              { suggestion },
-            ),
-          );
-        } else {
-          console.warn(
-            `Suggestion text mismatch: expected "${suggestionText}", found "${actualText}" at ${from}-${to}`,
-          );
-        }
-      } catch (error) {
-        console.warn('Error validating suggestion:', error);
-      }
-    } else {
-      console.warn(
-        `Invalid position for suggestion "${
-          'word' in suggestion ? suggestion.word : suggestion.text
-        }": ${from}-${to} (doc size: ${doc.content.size})`,
-      );
+
+    if (from === null || to === null) {
+      return [];
     }
-  }
-  
+
+    const cssClass =
+      suggestion.type === 'weasel_word' ? 'clarity-error' : 'spell-error';
+    return Decoration.inline(
+      from,
+      to,
+      {
+        class: cssClass,
+        'data-suggestion-id': suggestion.id,
+      },
+      { suggestion },
+    );
+  });
+
   return DecorationSet.create(doc, decorations);
 }
 
@@ -123,7 +100,23 @@ export const SuggestionDecorations = Extension.create({
         const validSuggestions = visibleSuggestions.filter(suggestion => {
           const from = offsetToPos(editor.state.doc, suggestion.startOffset);
           const to = offsetToPos(editor.state.doc, suggestion.endOffset);
-          return from !== null && to !== null && from < to;
+
+          if (
+            from === null ||
+            to === null ||
+            from >= to ||
+            to > editor.state.doc.content.size
+          ) {
+            return false;
+          }
+          try {
+            const actualText = editor.state.doc.textBetween(from, to);
+            const suggestionText =
+              'word' in suggestion ? suggestion.word : suggestion.text;
+            return actualText.toLowerCase() === suggestionText.toLowerCase();
+          } catch (e) {
+            return false;
+          }
         });
 
         const decorations = createDecorations(
