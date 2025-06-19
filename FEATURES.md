@@ -15,21 +15,13 @@ The spell checking feature is designed to be a seamless and intuitive part of th
 
 ### Triggering Spell Check
 
--   **On-the-fly Word Check**: Spell check shall be triggered automatically on the last typed word immediately after the user types a space character. This provides instant feedback during the writing process.
--   **Full Check on Paste**: When a user pastes content into the editor, a spell check shall be performed on the entire document. This ensures that potentially large blocks of new text are validated.
--   **Initial Load**: When a document is first loaded, a full spell check is performed to highlight any existing errors.
+-   **On-the-fly Document Check**: Spell check is triggered automatically on every change to the document content. This provides instant, real-time feedback as the user types, pastes, or edits text.
 
 ### Technical Requirements
 
--   **Backend Service**: Spell checking is powered by a dedicated `spellCheck` Firebase Function.
-    -   The function accepts an array of unique words from the document.
-    -   It uses the OpenAI API to generate a map of misspelled words to their suggested corrections.
-    -   The function is protected and requires user authentication.
--   **Client-Side Logic**:
-    -   The client is responsible for identifying unique words in the document content to send to the backend.
-    -   Upon receiving the suggestion map from the backend, the client must find all occurrences of each misspelled word in the text.
-    -   For each occurrence, the client will calculate the precise start and end character offsets to apply the visual decorations correctly.
+-   **Client-Side Engine**: Spell checking is powered by `nspell`, a Hunspell-compatible engine that runs entirely in the user's browser.
+    -   It uses local English dictionary files (`.aff` and `.dic`) for fast, offline spell checking.
+    -   This approach ensures user privacy as no content is sent to a server for spell checking.
 -   **Performance**:
-    -   To avoid excessive API calls on every keystroke, the primary spell-checking mechanism is targeted at specific user actions (space press, paste).
-    -   A full-document check is reserved for initial load and paste events, which are less frequent.
--   **State Management**: The list of active spelling suggestions and the set of dismissed suggestion IDs shall be managed by the global `documentStore` (Zustand). This ensures a single source of truth and allows for easy updates from different parts of the application. 
+    -   The client-side engine is highly performant, allowing for a full document re-check on each keystroke without noticeable delay.
+-   **State Management**: The list of active spelling suggestions and the set of dismissed suggestion IDs are managed by the global `documentStore` (Zustand). This ensures a single source of truth and allows for easy updates from different parts of the application. 

@@ -1,8 +1,6 @@
 import { Transaction } from '@tiptap/pm/state';
-import { ReplaceStep } from '@tiptap/pm/transform';
 import { Editor, EditorContent } from '@tiptap/react';
 import React, { useCallback, useEffect } from 'react';
-import { EDITOR_CONFIG } from '../constants/editorConstants';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { useSpellCheck } from '../hooks/useSpellCheck';
 import { useTextEditor } from '../hooks/useTextEditor';
@@ -40,7 +38,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
   const {
     suggestions,
     metrics,
-    checkWord,
     handleApplySuggestion,
     handleDismissSuggestion,
     checkText,
@@ -95,49 +92,18 @@ const TextEditor: React.FC<TextEditorProps> = ({
       const text = editorInstance.getText();
       debouncedSave(text);
       detectTone(text);
-
-      if (transaction.docChanged && transaction.steps.length > 0) {
-        const lastStep = transaction.steps[transaction.steps.length - 1];
-        if (lastStep instanceof ReplaceStep && lastStep.slice.size > 0) {
-          const insertedText = lastStep.slice.content.textBetween(
-            0,
-            lastStep.slice.content.size,
-            '',
-          );
-          if (insertedText.trim() === '' && insertedText.includes(' ')) {
-            const cursorPosition = lastStep.from;
-            const textBeforeCursor = text.slice(0, cursorPosition);
-            const match = textBeforeCursor.match(/(\w+)$/);
-            if (match) {
-              const word = match[1];
-              const startOffset = cursorPosition - word.length;
-              checkWord(word, startOffset);
-            }
-          }
-        }
-      }
     };
 
     editor.on('transaction', handleUpdate);
 
-    const pasteHandler = () => {
-      setTimeout(() => {
-        checkText(editor.getText());
-      }, EDITOR_CONFIG.PASTE_CHECK_DELAY);
-    };
-    editor.view.dom.addEventListener('paste', pasteHandler);
-
     return () => {
       editor.off('transaction', handleUpdate);
-      editor.view.dom.removeEventListener('paste', pasteHandler);
     };
   }, [
     editor,
     isProgrammaticUpdate,
     debouncedSave,
     detectTone,
-    checkWord,
-    checkText,
   ]);
 
   if (!editor) {

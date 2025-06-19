@@ -1,9 +1,7 @@
 import { Editor } from '@tiptap/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDocumentStore } from '../store/document/document.store';
 import { SpellingSuggestion, WritingMetrics } from '../types';
-import { logger } from '../utils/logger';
-import spellChecker from '../utils/spellChecker';
 
 interface UseSpellCheckProps {
   editor: Editor | null;
@@ -17,7 +15,6 @@ export const useSpellCheck = ({ editor, documentId }: UseSpellCheckProps) => {
     applySuggestion,
     dismissSuggestion,
     checkSpelling,
-    addSuggestion,
   } = useDocumentStore();
 
   const [metrics, setMetrics] = useState<WritingMetrics>({
@@ -25,23 +22,6 @@ export const useSpellCheck = ({ editor, documentId }: UseSpellCheckProps) => {
     characterCount: 0,
     spellingErrors: 0,
   });
-  const [isChecking, setIsChecking] = useState(false);
-  const isCheckingRef = useRef(isChecking);
-  isCheckingRef.current = isChecking;
-
-  const checkWord = useCallback(
-    async (word: string, startOffset: number) => {
-      try {
-        const newSuggestion = await spellChecker.checkWord(word, startOffset);
-        if (newSuggestion) {
-          addSuggestion(newSuggestion);
-        }
-      } catch (error) {
-        logger.error('Single word spell check failed', error);
-      }
-    },
-    [addSuggestion],
-  );
 
   // Handle applying suggestions
   const handleApplySuggestion = useCallback(
@@ -63,12 +43,7 @@ export const useSpellCheck = ({ editor, documentId }: UseSpellCheckProps) => {
   // Main spell check function, now connected to the store
   const checkText = useCallback(
     (content: string) => {
-      if (isCheckingRef.current) return;
-
-      setIsChecking(true);
-      checkSpelling(content).finally(() => {
-        setIsChecking(false);
-      });
+      checkSpelling(content);
     },
     [checkSpelling],
   );
@@ -81,23 +56,23 @@ export const useSpellCheck = ({ editor, documentId }: UseSpellCheckProps) => {
       s => !dismissedSuggestionIds.has(s.id),
     );
 
-    if (filteredSuggestions.length > 0) {
-      editor.storage.spellCheckDecorations.updateDecorations(
-        editor,
-        filteredSuggestions,
-      );
-    } else {
-      editor.storage.spellCheckDecorations.clearDecorations(editor);
-    }
+    editor.storage.spellCheckDecorations.updateDecorations(
+      editor,
+      filteredSuggestions,
+    );
   }, [editor, suggestions, dismissedSuggestionIds]);
   
-  // Initial spell check on load
   useEffect(() => {
-    if (editor && documentId) {
-      const initialContent = editor.getText();
-      if (initialContent.trim().length > 0) {
-        checkText(initialContent);
-      }
+    if (editor) {
+      const handleUpdate = () => {
+        const text = editor.getText();
+        checkText(text);
+      };
+      editor.on('update', handleUpdate);
+      handleUpdate();
+      return () => {
+        editor.off('update', handleUpdate);
+      };
     }
   }, [editor, documentId, checkText]);
 
@@ -116,7 +91,6 @@ export const useSpellCheck = ({ editor, documentId }: UseSpellCheckProps) => {
   return {
     suggestions,
     metrics,
-    checkWord,
     handleApplySuggestion,
     handleDismissSuggestion,
     checkText,
