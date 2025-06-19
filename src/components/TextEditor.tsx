@@ -1,25 +1,21 @@
 import { Editor, EditorContent } from '@tiptap/react';
 import React, { useCallback, useEffect } from 'react';
 import { useAutoSave } from '../hooks/useAutoSave';
-import { useSpellCheck } from '../hooks/useSpellCheck';
 import { useTextEditor } from '../hooks/useTextEditor';
 import { useToneAnalysis } from '../hooks/useToneAnalysis';
 import { useDocumentStore } from '../store/document/document.store';
 import EditorHeader from './editor/EditorHeader';
 import EditorToolbar from './editor/EditorToolbar';
 import ToneModal from './editor/ToneModal';
-import SuggestionSidebar from './SuggestionSidebar';
 
 interface TextEditorProps {
   documentId: string;
   onTitleChange: (title: string) => void;
-  showSidebar?: boolean;
 }
 
 const TextEditor: React.FC<TextEditorProps> = ({
   documentId,
   onTitleChange,
-  showSidebar = true,
 }) => {
   const { currentDocument, loading } = useDocumentStore();
   const { debouncedSave } = useAutoSave(documentId);
@@ -33,16 +29,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
     isProgrammaticUpdate,
   } = useTextEditor({
     initialContent: currentDocument?.content || '',
-  });
-  const {
-    suggestions,
-    metrics,
-    handleApplySuggestion,
-    handleDismissSuggestion,
-  } = useSpellCheck({
-    editor,
-    documentId,
-    content: currentDocument?.content,
   });
   const {
     detectedTone,
@@ -113,14 +99,13 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   return (
     <div className="flex h-full">
-      <div className={`flex-1 ${showSidebar ? 'mr-4' : ''}`}>
+      <div className="flex-1">
         <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden h-full">
           <div className="border-b border-gray-200 p-4">
             <EditorHeader
               title={title}
               onTitleChange={handleTitleChange}
               loading={loading}
-              suggestionsCount={suggestions.length}
               detectedTone={detectedTone}
               wordCount={wordCount}
               characterCount={characterCount}
@@ -140,17 +125,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
           </div>
         </div>
       </div>
-
-      {showSidebar && (
-        <div className="h-full">
-          <SuggestionSidebar
-            suggestions={suggestions}
-            metrics={metrics}
-            onApplySuggestion={handleApplySuggestion}
-            onDismissSuggestion={handleDismissSuggestion}
-          />
-        </div>
-      )}
 
       <ToneModal
         isOpen={isToneModalOpen}

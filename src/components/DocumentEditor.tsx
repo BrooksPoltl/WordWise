@@ -180,7 +180,6 @@ const DocumentEditor: React.FC = () => {
             <TextEditor
               documentId={documentId}
               onTitleChange={handleTitleChange}
-              showSidebar
             />
           )}
         </div>

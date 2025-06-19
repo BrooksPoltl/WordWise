@@ -6,7 +6,6 @@ interface EditorHeaderProps {
   title: string;
   onTitleChange: (title: string) => void;
   loading: boolean;
-  suggestionsCount: number;
   detectedTone: Tone | null;
   wordCount: number;
   characterCount: number;
@@ -17,7 +16,6 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
   title,
   onTitleChange,
   loading,
-  suggestionsCount,
   detectedTone,
   wordCount,
   characterCount,
@@ -37,14 +35,6 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
           <div className="flex items-center space-x-1">
             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600" />
             <span>Saving...</span>
-          </div>
-        )}
-        {suggestionsCount > 0 && (
-          <div className="flex items-center space-x-1 text-red-600">
-            <span className="w-2 h-2 bg-red-500 rounded-full" />
-            <span>
-              {suggestionsCount} suggestion{suggestionsCount !== 1 ? 's' : ''}
-            </span>
           </div>
         )}
         {detectedTone && (
