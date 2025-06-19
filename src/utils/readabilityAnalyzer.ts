@@ -19,7 +19,7 @@ const processor = retext()
     // Using a more reasonable but still sensitive configuration.
     age: 14,
     minWords: 10,
-    threshold: 1 / 7,
+    threshold: 4 / 7,
   });
 
 export const analyzeReadability = async (
@@ -27,8 +27,6 @@ export const analyzeReadability = async (
 ): Promise<ReadabilitySuggestion[]> => {
   try {
     const file = await processor.process(text);
-
-    logger.debug('[ReadabilityAnalyzer] VFile messages:', file.messages);
 
     const suggestions: ReadabilitySuggestion[] = file.messages
       .map((message): ReadabilitySuggestion | null => {

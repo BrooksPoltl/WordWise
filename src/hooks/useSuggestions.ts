@@ -19,9 +19,7 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
   const [processedIds, setProcessedIds] = useState<Set<string>>(new Set());
 
   const handleAnalysis = useDebouncedCallback(async (text: string) => {
-    logger.info('Analyzing text for suggestions...', { text });
     if (!text.trim()) {
-      logger.info('Text is empty, clearing suggestions.');
       setSuggestions('clarity', []);
       setSuggestions('conciseness', []);
       setSuggestions('readability', []);
@@ -43,12 +41,6 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
           rewriteSentence(suggestion);
           setProcessedIds(prev => new Set(prev).add(suggestion.id));
         }
-      });
-
-      logger.success('Analysis complete.', {
-        clarity: claritySuggestions.length,
-        conciseness: concisenessSuggestions.length,
-        readability: readabilitySuggestions.length,
       });
     } catch (error) {
       logger.error('Failed to analyze text for suggestions:', error);
