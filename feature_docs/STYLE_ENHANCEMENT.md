@@ -76,4 +76,3 @@ The Style Enhancement feature will be composed of the following checks, managed 
 | **Medium** | **Integration: Update `DocumentEditor`** | - Integrate the new `useSuggestions` hook.<br>- Pass the raw suggestions to the new `suggestionStore`.<br>- Render the new `SuggestionToggles` component in the toolbar area. | `src/components/DocumentEditor.tsx` | - `useSuggestions`<br>- `SuggestionToggles` | ☐ |
 | **Medium** | **Integration: Update `TextEditor` & Decorations** | - Read filtered suggestions from the `suggestionStore`.<br>- Use a custom Tiptap `Decoration` to apply underlines with the correct color based on the suggestion's category.<br>- Wire the `SuggestionPopover` to appear on interaction with these decorations. | `src/components/TextEditor.tsx`<br>`src/extensions/SuggestionDecorations.ts` (new) | - `SuggestionPopover`<br>- `suggestionStore` | ☐ |
 
-</rewritten_file> 
