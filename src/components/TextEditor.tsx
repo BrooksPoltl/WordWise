@@ -1,4 +1,3 @@
-import { Transaction } from '@tiptap/pm/state';
 import { Editor, EditorContent } from '@tiptap/react';
 import React, { useCallback, useEffect } from 'react';
 import { useAutoSave } from '../hooks/useAutoSave';
@@ -40,10 +39,10 @@ const TextEditor: React.FC<TextEditorProps> = ({
     metrics,
     handleApplySuggestion,
     handleDismissSuggestion,
-    checkText,
   } = useSpellCheck({
     editor,
     documentId,
+    content: currentDocument?.content,
   });
   const {
     detectedTone,
@@ -80,10 +79,8 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
     const handleUpdate = ({
       editor: editorInstance,
-      transaction,
     }: {
       editor: Editor;
-      transaction: Transaction;
     }) => {
       if (isProgrammaticUpdate.current) {
         isProgrammaticUpdate.current = false;

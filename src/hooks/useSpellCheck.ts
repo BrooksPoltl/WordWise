@@ -6,9 +6,10 @@ import { SpellingSuggestion, WritingMetrics } from '../types';
 interface UseSpellCheckProps {
   editor: Editor | null;
   documentId?: string;
+  content?: string;
 }
 
-export const useSpellCheck = ({ editor, documentId }: UseSpellCheckProps) => {
+export const useSpellCheck = ({ editor, documentId, content }: UseSpellCheckProps) => {
   const {
     suggestions,
     dismissedSuggestionIds,
@@ -42,8 +43,8 @@ export const useSpellCheck = ({ editor, documentId }: UseSpellCheckProps) => {
 
   // Main spell check function, now connected to the store
   const checkText = useCallback(
-    (content: string) => {
-      checkSpelling(content);
+    (text: string) => {
+      checkSpelling(text);
     },
     [checkSpelling],
   );
@@ -62,19 +63,31 @@ export const useSpellCheck = ({ editor, documentId }: UseSpellCheckProps) => {
     );
   }, [editor, suggestions, dismissedSuggestionIds]);
   
+  // Spell check on document change
   useEffect(() => {
     if (editor) {
       const handleUpdate = () => {
         const text = editor.getText();
         checkText(text);
       };
+
       editor.on('update', handleUpdate);
+
+      // Initial check
       handleUpdate();
+
       return () => {
         editor.off('update', handleUpdate);
       };
     }
+    return undefined;
   }, [editor, documentId, checkText]);
+
+  useEffect(() => {
+    if (content) {
+      checkText(content);
+    }
+  }, [content, checkText]);
 
   // Update metrics when suggestions change
   useEffect(() => {

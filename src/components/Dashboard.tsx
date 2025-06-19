@@ -13,7 +13,6 @@ const Dashboard: React.FC = () => {
     setLoading(true);
     try {
       await logout();
-    } catch (error) {
     } finally {
       setLoading(false);
     }

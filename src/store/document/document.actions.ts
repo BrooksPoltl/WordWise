@@ -322,7 +322,9 @@ export const checkSpelling = async (
       return;
     }
 
-    const uniqueWords = [...new Set(textToCheck.match(/\b\w+\b/g) || [])];
+    const uniqueWords = [...new Set(textToCheck.match(/\b\w+\b/g) || [])].filter(
+      word => !/^\d+$/.test(word),
+    );
     const misspelledWords = (
       await Promise.all(
         uniqueWords.map(async word => {
@@ -333,7 +335,8 @@ export const checkSpelling = async (
     ).filter((word): word is string => word !== null);
 
     const suggestionPromises = misspelledWords.map(async word => {
-      const suggestions = await browserSpellChecker.suggest(word);
+      const allSuggestions = await browserSpellChecker.suggest(word);
+      const suggestions = allSuggestions.slice(0, 3);
       if (suggestions.length === 0) return [];
 
       const regex = new RegExp(`\\b${word}\\b`, 'gi');

@@ -10,8 +10,8 @@ export class BrowserSpellChecker {
     this.initializationPromise = this.init();
   }
 
-  private async init(): Promise<void> {
-    try {
+  private init(): Promise<void> {
+    return (async () => {
       const [affResponse, dicResponse] = await Promise.all([
         fetch('/dictionaries/index.aff'),
         fetch('/dictionaries/index.dic'),
@@ -27,9 +27,11 @@ export class BrowserSpellChecker {
       ]);
 
       this.spell = nspell({ aff, dic });
-    } catch (error) {
+    })().catch(error => {
+      // It's still useful to log initialization errors
+      console.error('Failed to initialize nspell:', error);
       throw error;
-    }
+    });
   }
 
   public async isReady(): Promise<boolean> {
