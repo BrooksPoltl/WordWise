@@ -109,18 +109,30 @@ export const SuggestionDecorations = Extension.create({
         suggestions: AnySuggestion[],
         visibility: { [key: string]: boolean },
       ) => {
-        const visibleSuggestions = suggestions.filter((s) => {
-          if (s.type === 'weasel_word') return visibility.clarity;
-          return visibility.spelling; // Default for spelling/grammar/style
+        const visibleSuggestionTypes = Object.entries(visibility)
+          .filter(([, isVisible]) => isVisible)
+          .map(([type]) => type);
+
+        const visibleSuggestions = suggestions.filter(s => {
+          if (s.type === 'weasel_word')
+            return visibleSuggestionTypes.includes('clarity');
+          return visibleSuggestionTypes.includes('spelling');
+        });
+
+        // Validate suggestions against the current document
+        const validSuggestions = visibleSuggestions.filter(suggestion => {
+          const from = offsetToPos(editor.state.doc, suggestion.startOffset);
+          const to = offsetToPos(editor.state.doc, suggestion.endOffset);
+          return from !== null && to !== null && from < to;
         });
 
         const decorations = createDecorations(
           editor.state.doc,
-          visibleSuggestions,
+          validSuggestions,
         );
         const tr = editor.state.tr.setMeta(suggestionPluginKey, {
           suggestions, // Store all suggestions
-          decorations, // But only decorate visible ones
+          decorations,
         });
         editor.view.dispatch(tr);
       },
@@ -153,35 +165,16 @@ export const SuggestionDecorations = Extension.create({
             if (meta) {
               return meta as SuggestionState;
             }
-            
+
             // Map existing decorations through document changes
             if (tr.docChanged) {
-              const mappedDecorations = pluginState.decorations.map(tr.mapping, tr.doc);
-              
-              // Filter out suggestions that no longer apply to valid text positions
-              const validSuggestions = pluginState.suggestions.filter(suggestion => {
-                const from = offsetToPos(tr.doc, suggestion.startOffset);
-                const to = offsetToPos(tr.doc, suggestion.endOffset);
-                
-                if (from === null || to === null || from >= to || to > tr.doc.content.size) {
-                  return false;
-                }
-                
-                try {
-                  const actualText = tr.doc.textBetween(from, to);
-                  const suggestionText = 'word' in suggestion ? suggestion.word : suggestion.text;
-                  return actualText.toLowerCase() === suggestionText.toLowerCase();
-                } catch (error) {
-                  return false;
-                }
-              });
-              
-              return {
-                suggestions: validSuggestions,
-                decorations: mappedDecorations,
-              };
+              const decorations = pluginState.decorations.map(
+                tr.mapping,
+                tr.doc,
+              );
+              return { ...pluginState, decorations };
             }
-            
+
             return pluginState;
           },
         },
