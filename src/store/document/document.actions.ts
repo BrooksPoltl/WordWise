@@ -1,15 +1,15 @@
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where,
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    orderBy,
+    query,
+    serverTimestamp,
+    updateDoc,
+    where,
 } from "firebase/firestore";
 import { db } from "../../config";
 import { Document, DocumentCreatePayload, DocumentUpdatePayload, SpellingSuggestion } from "../../types";
@@ -152,7 +152,6 @@ export const updateDocument = async (
   get: () => DocumentState,
   payload: DocumentUpdatePayload,
 ): Promise<void> => {
-  set({ loading: true, error: null });
   try {
     const docRef = doc(db, 'documents', payload.id);
     const updateData: {
@@ -179,39 +178,12 @@ export const updateDocument = async (
 
     await updateDoc(docRef, updateData);
 
-    // Update local state
-    const { documents, currentDocument } = get();
-    const updatedDocuments = documents.map(document =>
-      document.id === payload.id
-        ? {
-            ...document,
-            ...updateData,
-            updatedAt: new Date(),
-            wordCount: updateData.wordCount || document.wordCount,
-            characterCount: updateData.characterCount || document.characterCount,
-          }
-                    : document
-    );
-
-    set({
-      documents: updatedDocuments,
-      currentDocument:
-        currentDocument?.id === payload.id
-          ? {
-              ...currentDocument,
-              ...updateData,
-              updatedAt: new Date(),
-              wordCount: updateData.wordCount || currentDocument.wordCount,
-              characterCount:
-                updateData.characterCount || currentDocument.characterCount,
-            }
-          : currentDocument,
-      loading: false,
-    });
+    // No longer need to update local state optimistically,
+    // as the editor is the source of truth during an editing session.
+    // The main document list will be updated on the next full fetch.
   } catch (error) {
     set({
       error: getFriendlyErrorMessage(error, 'Failed to update document'),
-      loading: false,
     });
     throw error;
   }
