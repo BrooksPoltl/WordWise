@@ -19,17 +19,20 @@ const DocumentEditor: React.FC = () => {
     error,
     clearError,
   } = useDocumentStore();
-  const { spelling, clarity, visibility } = useSuggestionStore(state => ({
-    spelling: state.spelling,
-    clarity: state.clarity,
-    visibility: state.visibility,
-  }));
+  const { spelling, clarity, conciseness, visibility } = useSuggestionStore(
+    state => ({
+      spelling: state.spelling,
+      clarity: state.clarity,
+      conciseness: state.conciseness,
+      visibility: state.visibility,
+    }),
+  );
 
   const [editor, setEditor] = useState<Editor | null>(null);
 
   useSuggestions({ editor });
 
-  const allSuggestions = [...spelling, ...clarity];
+  const allSuggestions = [...spelling, ...clarity, ...conciseness];
 
   const [titleChangeTimeout, setTitleChangeTimeout] =
     useState<NodeJS.Timeout | null>(null);

@@ -50,6 +50,7 @@
     "retext": "^9.0.0",
     "retext-english": "^5.0.0",
     "retext-equality": "^7.1.0",
+    "retext-simplify": "^8.0.0",
     "unified": "^11.0.5",
     "use-debounce": "^10.0.5",
     "vfile": "^6.0.3",

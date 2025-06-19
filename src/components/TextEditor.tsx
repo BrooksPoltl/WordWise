@@ -12,9 +12,11 @@ import { useSpellCheck } from '../hooks/useSpellCheck';
 import { useTextEditor } from '../hooks/useTextEditor';
 import { useToneAnalysis } from '../hooks/useToneAnalysis';
 import { useDocumentStore } from '../store/document/document.store';
-import { AnySuggestion } from '../store/suggestion/suggestion.types';
-import { SpellingSuggestion } from '../types';
-import { logger } from '../utils/logger';
+import {
+  AnySuggestion,
+  SuggestionCategory,
+} from '../store/suggestion/suggestion.types';
+import { ConcisenessSuggestion, SpellingSuggestion } from '../types';
 import EditorHeader from './editor/EditorHeader';
 import EditorToolbar from './editor/EditorToolbar';
 import SuggestionPopover from './editor/SuggestionPopover';
@@ -25,10 +27,7 @@ interface TextEditorProps {
   onTitleChange: (title: string) => void;
   setEditor: (editor: Editor | null) => void;
   suggestions: AnySuggestion[];
-  suggestionVisibility: {
-    spelling: boolean;
-    clarity: boolean;
-  };
+  suggestionVisibility: Record<SuggestionCategory, boolean>;
 }
 
 interface PopoverState {
@@ -172,7 +171,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
         }),
       });
 
-      logger.debug('Setting popover state', { from, to, suggestion });
       setPopoverState({
         isOpen: true,
         suggestion,
@@ -193,32 +191,34 @@ const TextEditor: React.FC<TextEditorProps> = ({
   }, [editor, refs]);
 
   const handleAcceptSuggestion = (suggestion: AnySuggestion) => {
-    if (
-      !editor ||
-      !('suggestions' in suggestion) ||
-      !suggestion.suggestions.length
-    )
-      return;
+    if (!editor) return;
 
-    const spellingSuggestion = suggestion as SpellingSuggestion;
-    const replacement = spellingSuggestion.suggestions[0].text;
-    const { from, to } = popoverState;
+    const isSpellingOrConciseness = (
+      s: AnySuggestion,
+    ): s is SpellingSuggestion | ConcisenessSuggestion =>
+      (s.type === 'spelling' || s.type === 'conciseness') &&
+      'suggestions' in s &&
+      Array.isArray(s.suggestions) &&
+      s.suggestions.length > 0;
 
-    editor
-      .chain()
-      .focus()
-      .command(({ tr }) => {
-        tr.replaceWith(from, to, editor.schema.text(replacement));
-        return true;
-      })
-      .run();
+    if (isSpellingOrConciseness(suggestion)) {
+      const replacementText = suggestion.suggestions[0].text;
+      editor
+        .chain()
+        .focus()
+        .command(({ tr }) => {
+          tr.replaceWith(popoverState.from, popoverState.to, editor.schema.text(replacementText));
+          return true;
+        })
+        .run();
 
-    setPopoverState({
-      isOpen: false,
-      suggestion: null,
-      from: 0,
-      to: 0,
-    });
+      setPopoverState({
+        isOpen: false,
+        suggestion: null,
+        from: 0,
+        to: 0,
+      });
+    }
   };
 
   if (!editor) {

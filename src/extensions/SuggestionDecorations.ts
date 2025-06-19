@@ -55,8 +55,13 @@ function createDecorations(
       return [];
     }
 
-    const cssClass =
-      suggestion.type === 'weasel_word' ? 'clarity-error' : 'spell-error';
+    let cssClass = 'spell-error'; // Default
+    if (suggestion.type === 'weasel_word') {
+      cssClass = 'clarity-error';
+    } else if (suggestion.type === 'conciseness') {
+      cssClass = 'conciseness-error';
+    }
+
     return Decoration.inline(
       from,
       to,
@@ -93,6 +98,8 @@ export const SuggestionDecorations = Extension.create({
         const visibleSuggestions = suggestions.filter(s => {
           if (s.type === 'weasel_word')
             return visibleSuggestionTypes.includes('clarity');
+          if (s.type === 'conciseness')
+            return visibleSuggestionTypes.includes('conciseness');
           return visibleSuggestionTypes.includes('spelling');
         });
 
@@ -180,8 +187,13 @@ export const SuggestionDecorations = Extension.create({
           
           handleClick(view, pos, event) {
             const target = event.target as HTMLElement;
-            if (target.closest('.spell-error') || target.closest('.clarity-error')) {
-              const decorations = suggestionPluginKey.getState(view.state)?.decorations;
+            if (
+              target.closest(
+                '.spell-error, .clarity-error, .conciseness-error',
+              )
+            ) {
+              const decorations =
+                suggestionPluginKey.getState(view.state)?.decorations;
               if (!decorations) return false;
 
               const clickedDecorations = decorations.find(pos, pos);

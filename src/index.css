@@ -5,7 +5,7 @@
 /* Spell check error styling */
 .spell-error {
   @apply bg-red-200 bg-opacity-50 rounded-sm px-0.5;
-  text-decoration-line: underline;
+  text-decoration: underline;
   text-decoration-color: #ef4444; /* red-500 */
   text-decoration-style: wavy;
   text-decoration-thickness: 1px;
@@ -146,8 +146,26 @@
 
 .clarity-error {
   @apply bg-blue-200 bg-opacity-50 rounded-sm px-0.5;
-  text-decoration-line: underline;
+  text-decoration: underline;
   text-decoration-color: #3b82f6; /* blue-500 */
   text-decoration-style: wavy;
   text-decoration-thickness: 1px;
+}
+
+.conciseness-error {
+  @apply bg-green-200 bg-opacity-50 rounded-sm px-0.5;
+  text-decoration: underline;
+  text-decoration-color: #10b981; /* green-500 */
+  text-decoration-style: wavy;
+  text-decoration-thickness: 1px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
 }

@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { useSuggestionStore } from '../store/suggestion/suggestion.store';
 import { analyzeClarity } from '../utils/clarityAnalyzer';
+import { analyzeConciseness } from '../utils/concisenessAnalyzer';
 import { logger } from '../utils/logger';
 
 interface UseSuggestionsProps {
@@ -15,21 +16,27 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
   const handleAnalysis = useDebouncedCallback(async (text: string) => {
     logger.info('Analyzing text for suggestions...', { text });
     if (!text.trim()) {
-      logger.info('Text is empty, clearing clarity suggestions.');
+      logger.info('Text is empty, clearing suggestions.');
       setSuggestions('clarity', []);
+      setSuggestions('conciseness', []);
       return;
     }
 
     try {
       const claritySuggestions = await analyzeClarity(text);
-      logger.success('Clarity analysis complete.', {
-        count: claritySuggestions.length,
-        suggestions: claritySuggestions,
-      });
       setSuggestions('clarity', claritySuggestions);
+
+      const concisenessSuggestions = await analyzeConciseness(text);
+      setSuggestions('conciseness', concisenessSuggestions);
+
+      logger.success('Analysis complete.', {
+        clarity: claritySuggestions.length,
+        conciseness: concisenessSuggestions.length,
+      });
     } catch (error) {
       logger.error('Failed to analyze text for suggestions:', error);
       setSuggestions('clarity', []);
+      setSuggestions('conciseness', []);
     }
   }, 500);
 

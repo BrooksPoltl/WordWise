@@ -4,9 +4,11 @@ import { SuggestionStore } from './suggestion.types';
 export const useSuggestionStore = create<SuggestionStore>((set) => ({
   spelling: [],
   clarity: [],
+  conciseness: [],
   visibility: {
     spelling: true,
     clarity: true,
+    conciseness: true,
   },
   setSuggestions: (category, suggestions) =>
     set((state) => ({

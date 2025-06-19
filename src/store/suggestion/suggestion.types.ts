@@ -1,4 +1,8 @@
-import { ClaritySuggestion, SpellingSuggestion } from '../../types';
+import {
+    ClaritySuggestion,
+    ConcisenessSuggestion,
+    SpellingSuggestion,
+} from '../../types';
 
 export const SUGGESTION_CATEGORIES = {
   spelling: {
@@ -9,15 +13,23 @@ export const SUGGESTION_CATEGORIES = {
     label: 'Clarity',
     color: '#3B82F6', // Blue-500
   },
+  conciseness: {
+    label: 'Conciseness',
+    color: '#10B981', // Green-500
+  },
 } as const;
 
 export type SuggestionCategory = keyof typeof SUGGESTION_CATEGORIES;
 
-export type AnySuggestion = SpellingSuggestion | ClaritySuggestion;
+export type AnySuggestion =
+  | SpellingSuggestion
+  | ClaritySuggestion
+  | ConcisenessSuggestion;
 
 export interface SuggestionState {
   spelling: SpellingSuggestion[];
   clarity: ClaritySuggestion[];
+  conciseness: ConcisenessSuggestion[];
   visibility: Record<SuggestionCategory, boolean>;
 }
 

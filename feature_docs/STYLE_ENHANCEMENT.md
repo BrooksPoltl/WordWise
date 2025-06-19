@@ -44,7 +44,7 @@ The Style Enhancement feature will be composed of the following checks, managed 
     *   **Weasel Word Detection:** Using `retext-equality`, we will flag weak, hedging, or overly assertive words that undermine the writer's message (e.g., "obviously," "basically," "in my opinion," "perhaps"). The suggestion will typically be to remove the word for a stronger statement.
 
 *   **Conciseness Enhancement (Green - `#10B981`)**
-    *   **Wordy Phrase Simplification:** Using `retext-simplify`, we will find and offer simpler, more direct alternatives for common verbose phrases (e.g., suggest "use" for "utilize", "about" for "in regards to", "to" for "in order to"). These will be one-click replacements.
+    *   **Wordy Phrase Simplification:** Using `retext-simplify`, we will find and offer simpler, more direct alternatives for common verbose phrases (e.g., suggest "use" for "utilize", "about" for "in regards to", "to" for "in order to"). These will be one-click replacements. ✅
 
 *   **Readability Enhancement (Purple - `#8B5CF6`)**
     *   **Complex Sentence Flagging:** Using `retext-readability`, we will calculate readability scores (e.g., Flesch-Kincaid) on the fly. We will not expose the raw score to the user. Instead, sentences that fall below a certain readability threshold (indicating they are too long or complex) will be underlined. The suggestion will be instructional: "This sentence may be hard to read. Try splitting it into shorter sentences."
@@ -134,4 +134,3 @@ This section outlines the phased approach to implementing the Style Enhancement 
 | **Medium** | **UI: Create `SuggestionToggles` Component**   | - Create the new component for filtering suggestions (`Spelling`, `Clarity`, etc.).<br>- Each toggle has a color-coded dot, category name, and suggestion count.<br>- Clicking a toggle updates the `suggestionStore` to filter suggestions in the editor.                      | `src/components/editor/SuggestionToggles.tsx` (new)                                | - `suggestionStore`   | ✅          |
 
 ---
-

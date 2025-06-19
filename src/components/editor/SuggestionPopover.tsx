@@ -1,8 +1,13 @@
 import { FloatingContext } from '@floating-ui/react';
 import React from 'react';
 import { AnySuggestion } from '../../store/suggestion/suggestion.types';
-import { ClaritySuggestion, SpellingSuggestion } from '../../types';
+import {
+  ClaritySuggestion,
+  ConcisenessSuggestion,
+  SpellingSuggestion,
+} from '../../types';
 import ClaritySuggestionPopover from './ClaritySuggestionPopover';
+import ConcisenessSuggestionPopover from './ConcisenessSuggestionPopover';
 import SpellingSuggestionPopover from './SpellingSuggestionPopover';
 
 interface SuggestionPopoverProps {
@@ -23,6 +28,10 @@ const SuggestionPopover = React.forwardRef<
   const isClaritySuggestion = (s: AnySuggestion): s is ClaritySuggestion =>
     s.type === 'weasel_word';
 
+  const isConcisenessSuggestion = (
+    s: AnySuggestion,
+  ): s is ConcisenessSuggestion => s.type === 'conciseness';
+
   if (isSpellingSuggestion(suggestion)) {
     return (
       <SpellingSuggestionPopover
@@ -41,6 +50,19 @@ const SuggestionPopover = React.forwardRef<
       <ClaritySuggestionPopover
         ref={ref}
         suggestion={suggestion}
+        onDismiss={onDismiss}
+        style={style}
+        context={context}
+      />
+    );
+  }
+
+  if (isConcisenessSuggestion(suggestion)) {
+    return (
+      <ConcisenessSuggestionPopover
+        ref={ref}
+        suggestion={suggestion}
+        onAccept={onAccept}
         onDismiss={onDismiss}
         style={style}
         context={context}

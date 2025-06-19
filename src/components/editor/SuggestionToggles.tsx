@@ -1,20 +1,26 @@
 import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import {
-    SUGGESTION_CATEGORIES,
-    SuggestionCategory,
+  SUGGESTION_CATEGORIES,
+  SuggestionCategory,
 } from '../../store/suggestion/suggestion.types';
 
 export const SuggestionToggles = () => {
-  const { spelling, clarity, visibility, toggleVisibility } = useSuggestionStore();
+  const { visibility, toggleVisibility } = useSuggestionStore((state) => ({
+    visibility: state.visibility,
+    toggleVisibility: state.toggleVisibility,
+  }));
 
   const suggestionCounts: Record<SuggestionCategory, number> = {
-    spelling: spelling.length,
-    clarity: clarity.length,
+    spelling: useSuggestionStore((state) => state.spelling.length),
+    clarity: useSuggestionStore((state) => state.clarity.length),
+    conciseness: useSuggestionStore((state) => state.conciseness.length),
   };
+
+  const categories = Object.keys(suggestionCounts) as SuggestionCategory[];
 
   return (
     <div className="flex items-center space-x-2">
-      {(Object.keys(SUGGESTION_CATEGORIES) as SuggestionCategory[]).map(
+      {categories.map(
         (category) => {
           const count = suggestionCounts[category];
           const categoryInfo = SUGGESTION_CATEGORIES[category];
