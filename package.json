@@ -27,6 +27,7 @@
     "lint:summary": "./scripts/lint-summary.sh"
   },
   "dependencies": {
+    "@tiptap/core": "^2.14.0",
     "@tiptap/extension-character-count": "^2.14.0",
     "@tiptap/extension-placeholder": "^2.14.0",
     "@tiptap/pm": "^2.14.0",
