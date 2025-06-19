@@ -1,3 +1,10 @@
+import {
+  autoUpdate,
+  flip,
+  offset,
+  shift,
+  useFloating,
+} from '@floating-ui/react';
 import { Editor, EditorContent } from '@tiptap/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAutoSave } from '../hooks/useAutoSave';
@@ -5,7 +12,9 @@ import { useSpellCheck } from '../hooks/useSpellCheck';
 import { useTextEditor } from '../hooks/useTextEditor';
 import { useToneAnalysis } from '../hooks/useToneAnalysis';
 import { useDocumentStore } from '../store/document/document.store';
+import { useSuggestionStore } from '../store/suggestion/suggestion.store';
 import { SpellingSuggestion } from '../types';
+import { logger } from '../utils/logger';
 import EditorHeader from './editor/EditorHeader';
 import EditorToolbar from './editor/EditorToolbar';
 import SuggestionPopover from './editor/SuggestionPopover';
@@ -18,7 +27,6 @@ interface TextEditorProps {
 
 interface PopoverState {
   isOpen: boolean;
-  position: { top: number; left: number };
   suggestion: SpellingSuggestion | null;
   from: number;
   to: number;
@@ -41,7 +49,8 @@ const TextEditor: React.FC<TextEditorProps> = ({
   } = useTextEditor({
     initialContent: currentDocument?.content || '',
   });
-  const { suggestions } = useSpellCheck({ editor });
+  useSpellCheck({ editor });
+  const spellingSuggestions = useSuggestionStore(state => state.spelling);
   const {
     detectedTone,
     selectedTone,
@@ -55,10 +64,17 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
   const [popoverState, setPopoverState] = useState<PopoverState>({
     isOpen: false,
-    position: { top: 0, left: 0 },
     suggestion: null,
     from: 0,
     to: 0,
+  });
+
+  const { refs, floatingStyles, context } = useFloating({
+    placement: 'top',
+    whileElementsMounted: autoUpdate,
+    middleware: [offset(10), flip(), shift()],
+    open: popoverState.isOpen,
+    onOpenChange: open => setPopoverState(p => ({ ...p, isOpen: open })),
   });
 
   const handleTitleChange = useCallback(
@@ -72,6 +88,15 @@ const TextEditor: React.FC<TextEditorProps> = ({
   useEffect(() => {
     setTitle(currentDocument?.title || '');
   }, [currentDocument?.title, setTitle]);
+
+  useEffect(() => {
+    if (editor) {
+      editor.storage.spellCheckDecorations.updateDecorations(
+        editor,
+        spellingSuggestions,
+      );
+    }
+  }, [editor, spellingSuggestions]);
 
   useEffect(() => {
     if (currentDocument?.content) {
@@ -121,12 +146,22 @@ const TextEditor: React.FC<TextEditorProps> = ({
       const start = editor.view.coordsAtPos(from);
       const end = editor.view.coordsAtPos(to);
 
-      const popoverTop = start.bottom + 10;
-      const popoverLeft = (start.left + end.right) / 2;
+      refs.setPositionReference({
+        getBoundingClientRect: () => ({
+          width: end.left - start.left,
+          height: end.bottom - start.top,
+          x: start.left,
+          y: start.top,
+          top: start.top,
+          left: start.left,
+          right: end.right,
+          bottom: end.bottom,
+        }),
+      });
 
+      logger.debug('Setting popover state', { from, to, suggestion });
       setPopoverState({
         isOpen: true,
-        position: { top: popoverTop, left: popoverLeft },
         suggestion,
         from,
         to,
@@ -142,7 +177,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
         handleSuggestionClick,
       );
     };
-  }, [editor]);
+  }, [editor, refs]);
 
   const handleAcceptSuggestion = (suggestion: SpellingSuggestion) => {
     if (!editor || !suggestion.suggestions.length) return;
@@ -161,7 +196,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
     setPopoverState({
       isOpen: false,
-      position: { top: 0, left: 0 },
       suggestion: null,
       from: 0,
       to: 0,
@@ -205,12 +239,14 @@ const TextEditor: React.FC<TextEditorProps> = ({
         </div>
         {popoverState.isOpen && popoverState.suggestion && (
           <SuggestionPopover
+            ref={refs.setFloating}
+            style={floatingStyles}
             suggestion={popoverState.suggestion}
-            position={popoverState.position}
             onAccept={handleAcceptSuggestion}
             onDismiss={() =>
               setPopoverState(prev => ({ ...prev, isOpen: false }))
             }
+            context={context}
           />
         )}
       </div>

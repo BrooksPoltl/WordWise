@@ -339,7 +339,7 @@ export const checkSpelling = async (
       const suggestions = allSuggestions.slice(0, 3);
       if (suggestions.length === 0) return [];
 
-      const suggestionOptions = suggestions.map((suggestionText: string, i: number) => ({
+      const suggestionOptions = suggestions.map((suggestionText: string) => ({
         id: crypto.randomUUID(),
         text: suggestionText,
       }));

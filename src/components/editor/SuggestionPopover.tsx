@@ -1,19 +1,29 @@
+import {
+    FloatingContext,
+    useClick,
+    useDismiss,
+    useInteractions,
+} from '@floating-ui/react';
 import React from 'react';
 import { SpellingSuggestion, SuggestionOption } from '../../types';
 
 interface SuggestionPopoverProps {
   suggestion: SpellingSuggestion;
-  position: { top: number; left: number };
   onAccept: (suggestion: SpellingSuggestion) => void;
   onDismiss: () => void;
+  style: React.CSSProperties;
+  context: FloatingContext;
 }
 
-const SuggestionPopover: React.FC<SuggestionPopoverProps> = ({
-  suggestion,
-  position,
-  onAccept,
-  onDismiss,
-}) => {
+const SuggestionPopover = React.forwardRef<
+  HTMLDivElement,
+  SuggestionPopoverProps
+>(({ suggestion, onAccept, onDismiss, style, context }, ref) => {
+  const { getFloatingProps } = useInteractions([
+    useClick(context),
+    useDismiss(context),
+  ]);
+
   if (!suggestion.suggestions.length) {
     return null;
   }
@@ -27,8 +37,10 @@ const SuggestionPopover: React.FC<SuggestionPopoverProps> = ({
 
   return (
     <div
+      ref={ref}
       className="absolute z-10 bg-white border border-gray-200 rounded-md shadow-lg p-2"
-      style={{ top: position.top, left: position.left, transform: 'translateX(-50%)' }}
+      style={style}
+      {...getFloatingProps()}
     >
       <div className="text-sm text-gray-600 mb-2">
         Did you mean:
@@ -56,6 +68,8 @@ const SuggestionPopover: React.FC<SuggestionPopoverProps> = ({
       </div>
     </div>
   );
-};
+});
+
+SuggestionPopover.displayName = 'SuggestionPopover';
 
 export default SuggestionPopover; 
