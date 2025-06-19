@@ -45,6 +45,10 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.6.2",
+    "retext": "^9.0.0",
+    "retext-english": "^5.0.0",
+    "retext-equality": "^7.1.0",
+    "unified": "^11.0.5",
     "zustand": "^4.4.7"
   },
   "devDependencies": {

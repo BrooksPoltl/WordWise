@@ -18,32 +18,23 @@ export const SuggestionToggles = () => {
           const count = suggestionCounts[category];
           const categoryInfo = SUGGESTION_CATEGORIES[category];
           const isVisible = visibility[category];
-          const hasSuggestions = count > 0;
 
           return (
             <button
               key={category}
               type="button"
-              onClick={() => hasSuggestions && toggleVisibility(category)}
-              className={`flex items-center space-x-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                hasSuggestions
-                  ? isVisible
-                    ? 'opacity-100 hover:opacity-80'
-                    : 'opacity-50 hover:opacity-80'
-                  : 'cursor-not-allowed opacity-40'
+              onClick={() => toggleVisibility(category)}
+              className={`flex items-center space-x-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors hover:opacity-80 ${
+                isVisible ? 'opacity-100' : 'opacity-60'
               }`}
               style={{
-                backgroundColor:
-                  hasSuggestions && isVisible
-                    ? categoryInfo.color
-                    : '#A1A1AA', // zinc-400 for disabled/inactive
+                backgroundColor: isVisible ? categoryInfo.color : '#A1A1AA', // zinc-400 for inactive
               }}
-              disabled={!hasSuggestions}
             >
               <span className="text-white">{categoryInfo.label}</span>
               <span
                 className={`flex h-4 w-4 items-center justify-center rounded-full bg-white text-xs font-bold ${
-                  hasSuggestions ? 'text-gray-700' : 'text-gray-400'
+                  count > 0 ? 'text-gray-700' : 'text-gray-400'
                 }`}
               >
                 {count}
