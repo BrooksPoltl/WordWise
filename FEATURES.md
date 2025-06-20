@@ -1,6 +1,6 @@
-# Feature Requirements
+# WiseWord Feature Requirements
 
-This document outlines the requirements for the key features of WordWise.
+This document outlines the requirements for the key features of WiseWord.
 
 ## Spell Checking
 
@@ -24,4 +24,8 @@ The spell checking feature is designed to be a seamless and intuitive part of th
     -   This approach ensures user privacy as no content is sent to a server for spell checking.
 -   **Performance**:
     -   The client-side engine is highly performant, allowing for a full document re-check on each keystroke without noticeable delay.
--   **State Management**: The list of active spelling suggestions and the set of dismissed suggestion IDs are managed by the global `documentStore` (Zustand). This ensures a single source of truth and allows for easy updates from different parts of the application. 
+-   **State Management**: The list of active spelling suggestions and the set of dismissed suggestion IDs are managed by the global `documentStore` (Zustand). This ensures a single source of truth and allows for easy updates from different parts of the application.
+
+## 1. User Authentication
+
+// ... existing code ... 

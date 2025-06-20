@@ -10,9 +10,9 @@ const Navbar: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">W</span>
+              <span className="text-white font-bold text-sm">A</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">WiseWord</span>
+            <span className="text-xl font-bold text-gray-900">AlignWrite</span>
           </div>
 
           {/* Desktop Navigation */}

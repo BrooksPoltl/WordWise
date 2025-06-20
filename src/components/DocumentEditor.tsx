@@ -156,7 +156,7 @@ const DocumentEditor: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -184,7 +184,7 @@ const DocumentEditor: React.FC = () => {
               </button>
               <div className="h-6 w-px bg-gray-300" />
               <h1 className="text-xl font-semibold text-gray-900">
-                WordWise Editor
+                AlignWrite Editor
               </h1>
             </div>
 

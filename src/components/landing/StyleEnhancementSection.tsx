@@ -93,7 +93,7 @@ const StyleEnhancementSection: React.FC = () => (
                 Five Types of Intelligence
               </h3>
               <p className="text-gray-600 text-lg leading-relaxed">
-                WordWise analyzes your writing across multiple dimensions, providing 
+                AlignWrite analyzes your writing across multiple dimensions, providing 
                 targeted suggestions that make your documents clearer and more impactful.
               </p>
             </div>

@@ -1,106 +1,72 @@
 import React from 'react';
 
-const TestimonialsSection: React.FC = () => {
-  const testimonials = [
-    {
-      id: 'testimonial-1',
-      name: 'Sarah Chen',
-      role: 'Senior Product Manager',
-      company: 'TechFlow',
-      content: 'WordWise transformed how our team writes PRDs. The AI suggestions help us catch unclear requirements before they reach engineering. Our development cycles are 30% faster now.',
-      avatar: 'SC'
-    },
-    {
-      id: 'testimonial-2',
-      name: 'Marcus Rodriguez',
-      role: 'Staff Software Engineer',
-      company: 'DataStream',
-      content: 'Finally, a writing tool that understands technical documentation. The passive voice detection and clarity suggestions make my architecture docs actually readable.',
-      avatar: 'MR'
-    },
-    {
-      id: 'testimonial-3',
-      name: 'Emily Watson',
-      role: 'VP of Product',
-      company: 'CloudScale',
-      content: 'The strategic advisory comments are game-changing. WordWise helps me strengthen my arguments and present clearer roadmaps to executives.',
-      avatar: 'EW'
-    },
-    {
-      id: 'testimonial-4',
-      name: 'David Kim',
-      role: 'Principal Engineer',
-      company: 'DevTools Inc',
-      content: 'Code reviews used to be painful because of unclear descriptions. WordWise helps me write better PR comments and technical explanations.',
-      avatar: 'DK'
-    },
-    {
-      id: 'testimonial-5',
-      name: 'Lisa Thompson',
-      role: 'Product Manager',
-      company: 'StartupCo',
-      content: 'As a PM at a fast-growing startup, clear communication is critical. WordWise ensures my feature specs are understood by everyone on the team.',
-      avatar: 'LT'
-    },
-    {
-      id: 'testimonial-6',
-      name: 'Alex Patel',
-      role: 'Senior Engineer',
-      company: 'FinTech Solutions',
-      content: 'The AI rewrites are incredibly helpful for simplifying complex technical concepts. My documentation is now accessible to both technical and non-technical stakeholders.',
-      avatar: 'AP'
-    }
-  ];
+const DocumentIcon = () => (
+  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  </svg>
+);
 
+const CodeIcon = () => (
+  <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+  </svg>
+);
+
+const UsersIcon = () => (
+  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+  </svg>
+);
+
+const benefits = [
+  {
+    id: 'benefit-1',
+    title: 'Write PRDs Engineers Love',
+    description: 'Eliminate ambiguity with suggestions for clarity, completeness, and technical accuracy that help you ship faster.',
+    icon: <DocumentIcon />,
+  },
+  {
+    id: 'benefit-2',
+    title: 'Make Technical Docs Readable',
+    description: 'Simplify complex concepts and improve readability without losing technical precision, making your docs accessible to all.',
+    icon: <CodeIcon />,
+  },
+  {
+    id: 'benefit-3',
+    title: 'Strengthen Stakeholder Buy-in',
+    description: 'Build stronger arguments with data-driven suggestions and present clearer roadmaps that get executive approval.',
+    icon: <UsersIcon />,
+  }
+];
+
+const TestimonialsSection: React.FC = () => {
   return (
     <section className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Loved by Product and Engineering Teams
+            Unlock New Levels of Clarity and Speed
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            See how WordWise is helping teams write better, ship faster, and communicate more effectively.
+            AlignWrite helps you translate complex ideas into clear, compelling documents that drive results.
           </p>
         </div>
 
-        {/* Testimonials Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-          {testimonials.map((testimonial) => (
-            <div key={testimonial.id} className="bg-white rounded-xl shadow-lg p-6 border">
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm">{testimonial.avatar}</span>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
-                  <p className="text-sm text-gray-600">{testimonial.role}</p>
-                  <p className="text-sm text-gray-500">{testimonial.company}</p>
+        {/* Benefits Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {benefits.map((benefit) => (
+            <div key={benefit.id} className="bg-white rounded-xl shadow-lg p-8 border text-center hover:shadow-xl transition-shadow duration-300">
+              <div className="flex justify-center items-center mb-6">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                  {benefit.icon}
                 </div>
               </div>
-              <p className="text-gray-700 leading-relaxed">
-                &ldquo;{testimonial.content}&rdquo;
+              <h3 className="text-xl font-bold text-gray-900 mb-3">{benefit.title}</h3>
+              <p className="text-gray-600 leading-relaxed">
+                {benefit.description}
               </p>
             </div>
           ))}
-        </div>
-
-        {/* Stats Section */}
-        <div className="bg-white rounded-xl shadow-lg p-8 border">
-          <div className="grid md:grid-cols-3 gap-8 text-center">
-            <div>
-              <div className="text-3xl font-bold text-blue-600 mb-2">50K+</div>
-              <div className="text-gray-600">Documents Enhanced</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-purple-600 mb-2">2.5M+</div>
-              <div className="text-gray-600">Suggestions Applied</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-green-600 mb-2">89%</div>
-              <div className="text-gray-600">Faster Review Cycles</div>
-            </div>
-          </div>
         </div>
       </div>
     </section>

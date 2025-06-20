@@ -81,7 +81,7 @@ This document has been updated to reflect the significant progress made in refac
 
 ### 1. Feature Summary & Context
 
-This document outlines the plan for implementing a new **Style Enhancement** feature in WordWise and a concurrent **UX Overhaul** for how all suggestions (including existing spell-checking) are presented to the user.
+This document outlines the plan for implementing a new **Style Enhancement** feature in WiseWord and a concurrent **UX Overhaul** for how all suggestions (including existing spell-checking) are presented to the user.
 
 The primary goal is to provide users with real-time, actionable suggestions to improve the **clarity**, **conciseness**, and **readability** of their writing, while simultaneously modernizing the application's core user interaction model for suggestions.
 

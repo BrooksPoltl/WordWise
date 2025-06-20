@@ -116,8 +116,9 @@ const AIAdvisorySection: React.FC = () => (
                 Beyond Grammar: Strategic Feedback
               </h3>
               <p className="text-gray-600 text-lg leading-relaxed">
-                While other tools focus on grammar and spelling, WordWise provides high-level 
+                While other tools focus on grammar and spelling, AlignWrite provides high-level 
                 strategic feedback to strengthen your arguments and improve document impact.
+                It's like having an expert editor looking over your shoulder.
               </p>
             </div>
 

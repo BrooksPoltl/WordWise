@@ -1,8 +1,7 @@
-# Feature: Professional Marketing Landing Page
+# Feature Plan: Professional Marketing Landing Page
 
-## 1. Overview & Goal
-
-The goal is to create a professional, engaging marketing landing page for WordWise. This page will serve as the primary entry point for new, unauthenticated users. It will showcase the app's powerful features, target specific user personas (Product Managers and Software Engineers), and drive user sign-ups.
+## 1. Overview
+The goal is to create a professional, engaging marketing landing page for WiseWord. This page will serve as the primary entry point for new, unauthenticated users. It will showcase the app's powerful features, target specific user personas (Product Managers and Software Engineers), and have a clear call-to-action (CTA) to encourage sign-ups.
 
 ## 2. Target Audience
 

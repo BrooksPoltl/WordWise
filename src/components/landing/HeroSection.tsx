@@ -40,18 +40,20 @@ const HeroSection: React.FC = () => (
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-          <button
-            type="button"
+          <a
+            href="/auth"
             className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 shadow-lg"
           >
             Sign up for free
-          </button>
-          <button
-            type="button"
+          </a>
+          <a
+            href="https://www.loom.com/share/f07377caa29549b99c9d2567e1e5db7a?sid=0bca35ec-f1ad-4b7a-a44d-77e66bbfc506"
+            target="_blank"
+            rel="noopener noreferrer"
             className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg font-semibold text-lg hover:border-gray-400 hover:bg-gray-50 transition-colors"
           >
             Watch Demo
-          </button>
+          </a>
         </div>
 
         {/* Trust Indicators */}

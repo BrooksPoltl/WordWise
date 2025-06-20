@@ -16,11 +16,9 @@ const FeatureShowcaseSection: React.FC = () => {
   return (
     <div className="bg-white overflow-hidden shadow rounded-lg mb-6">
       <div className="px-4 py-5 sm:p-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-medium text-gray-900">
-            Discover WordWise Features
-          </h3>
-          <p className="text-sm text-gray-600">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Discover AlignWrite Features</h2>
+          <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
             {getPersonalizedSubtitle()}
           </p>
         </div>

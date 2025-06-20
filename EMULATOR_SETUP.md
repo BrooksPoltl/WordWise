@@ -1,6 +1,6 @@
-# 🔥 Firebase Emulator Setup Guide
+# 🔥 WiseWord Emulator Setup Guide
 
-This guide will help you set up and run WordWise entirely on Firebase emulators for local development. No real Firebase project required!
+This guide will help you set up and run WiseWord entirely on Firebase emulators for local development. No real Firebase project required!
 
 ## 🚀 Quick Start
 
@@ -63,10 +63,10 @@ npm run emulator
 
 ## 🏗️ Architecture
 
-WordWise is now a **frontend-only** application that connects directly to Firebase services:
+WiseWord is now a **frontend-only** application that connects directly to Firebase services:
 
 ```
-WordWise/
+WiseWord/
 ├── src/                 # React application source
 │   ├── components/      # React components  
 │   ├── store/          # Zustand state management

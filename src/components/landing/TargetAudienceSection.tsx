@@ -8,7 +8,7 @@ const TargetAudienceSection: React.FC = () => (
           Built for Technical Teams
         </h2>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Whether you&apos;re writing PRDs, technical specs, or documentation, WordWise understands 
+          Whether you&apos;re writing PRDs, technical specs, or documentation, AlignWrite understands 
           the unique challenges of technical communication.
         </p>
       </div>
@@ -141,32 +141,6 @@ const TargetAudienceSection: React.FC = () => (
               <div>• Architecture Proposals</div>
               <div>• Code Review Comments</div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom CTA */}
-      <div className="text-center mt-12">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-2xl mx-auto border">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
-            Ready to Write Better Technical Documents?
-          </h3>
-          <p className="text-gray-600 mb-6">
-            Join teams who&apos;ve improved their documentation quality and reduced review cycles.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              type="button"
-              className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-600 transition-all"
-            >
-              Start Free Trial
-            </button>
-            <button
-              type="button"
-              className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:border-gray-400 hover:bg-gray-50 transition-colors"
-            >
-              See Examples
-            </button>
           </div>
         </div>
       </div>
