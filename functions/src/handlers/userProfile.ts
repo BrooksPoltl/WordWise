@@ -7,13 +7,7 @@ import { withValidation } from "../utils/validation";
 const USER_ROLES = [
   'Product Manager',
   'Software Engineer',
-  'Technical Writer',
-  'UX/UI Designer',
-  'Data Scientist',
-  'Marketing Manager',
-  'QA Engineer',
-  'Engineering Manager',
-  'Business Analyst',
+  'Data Science',
   'Tech Sales',
 ] as const;
 

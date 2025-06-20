@@ -11,13 +11,7 @@ The feature also includes the creation of a new User Profile page, allowing user
 The following roles will be presented to the user during onboarding. This list will be stored in a constants file and validated on the backend.
 -   Product Manager
 -   Software Engineer
--   Technical Writer
--   UX/UI Designer
--   Data Scientist
--   Marketing Manager
--   QA Engineer
--   Engineering Manager
--   Business Analyst
+-   Data Science
 -   Tech Sales
 
 ## User-Facing Text Strings
