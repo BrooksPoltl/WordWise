@@ -7,3 +7,6 @@ export { toneDetect, toneRewrite } from './handlers/tone';
 
 // Export the new readability handler
 export { readabilityRewrite } from './handlers/readability';
+
+// Export the new passive voice handler
+export { passiveVoiceRewrite } from './handlers/passive';
