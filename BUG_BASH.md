@@ -8,3 +8,4 @@
 - Proper nouns are getting flagged
 - for passive if you update a sentence that isnt the first sentence it doesn't start with a space.
 - Document title does not trigger auto save
+- didn't triggers spell check for some reason
