@@ -2,7 +2,7 @@ import {
     Document,
     DocumentCreatePayload,
     DocumentUpdatePayload,
-    SpellingSuggestion,
+    SpellingSuggestion
 } from '../../types';
 
 export interface DocumentState {

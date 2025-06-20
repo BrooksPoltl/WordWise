@@ -7,8 +7,6 @@ import { withValidation } from "../utils/validation";
 const USER_ROLES = [
   'Product Manager',
   'Software Engineer',
-  'Data Science',
-  'Tech Sales',
 ] as const;
 
 // Define the schema for the updateUserProfile function's input

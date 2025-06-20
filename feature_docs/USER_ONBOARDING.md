@@ -11,8 +11,6 @@ The feature also includes the creation of a new User Profile page, allowing user
 The following roles will be presented to the user during onboarding. This list will be stored in a constants file and validated on the backend.
 -   Product Manager
 -   Software Engineer
--   Data Science
--   Tech Sales
 
 ## User-Facing Text Strings
 
@@ -91,7 +89,7 @@ The User Onboarding Enhancement adds a personalization layer to WordWise that ca
 #### **Constants & Configuration**
 ```typescript
 // src/constants/userConstants.ts
-export const USER_ROLES = ['Product Manager', 'Software Engineer', 'Data Science', 'Tech Sales'] as const;
+export const USER_ROLES = ['Product Manager', 'Software Engineer'] as const;
 export type UserRole = typeof USER_ROLES[number];
 export const ONBOARDING_TEXT = { /* UI text constants */ };
 ```

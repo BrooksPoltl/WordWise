@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth/auth.store';
 import { useDocumentStore } from '../store/document/document.store';
 import { Document } from '../types';
+import { NewDocumentModal } from './NewDocumentModal';
 
 const DocumentList: React.FC = () => {
   const navigate = useNavigate();
@@ -10,7 +11,6 @@ const DocumentList: React.FC = () => {
   const {
     documents,
     fetchDocuments,
-    createDocument,
     deleteDocument,
     loading,
     error,
@@ -18,7 +18,7 @@ const DocumentList: React.FC = () => {
   } = useDocumentStore();
 
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
-  const [creatingDocument, setCreatingDocument] = useState(false);
+  const [showNewDocumentModal, setShowNewDocumentModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -30,22 +30,12 @@ const DocumentList: React.FC = () => {
     };
   }, [user, fetchDocuments, clearError]);
 
-  const handleCreateDocument = async () => {
-    if (!user || creatingDocument) return;
+  const handleCreateDocument = () => {
+    setShowNewDocumentModal(true);
+  };
 
-    setCreatingDocument(true);
-    try {
-      const documentId = await createDocument(user.uid, {
-        title: 'Untitled Document',
-        content: '',
-      });
-
-      navigate(`/editor/${documentId}`);
-    } catch (createError) {
-      console.error('Failed to create document:', createError);
-    } finally {
-      setCreatingDocument(false);
-    }
+  const handleDocumentCreated = (documentId: string) => {
+    navigate(`/editor/${documentId}`);
   };
 
   const handleDeleteDocument = async (documentId: string) => {
@@ -107,32 +97,22 @@ const DocumentList: React.FC = () => {
 
         <button type="button"
           onClick={handleCreateDocument}
-          disabled={creatingDocument}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
-          {creatingDocument ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-              Creating...
-            </>
-          ) : (
-            <>
-              <svg
-                className="w-4 h-4 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              New Document
-            </>
-          )}
+          <svg
+            className="w-4 h-4 mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          New Document
         </button>
       </div>
 
@@ -193,32 +173,22 @@ const DocumentList: React.FC = () => {
           </p>
           <button type="button"
             onClick={handleCreateDocument}
-            disabled={creatingDocument}
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            {creatingDocument ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                Create First Document
-              </>
-            )}
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Create First Document
           </button>
         </div>
       ) : (
@@ -281,6 +251,13 @@ const DocumentList: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* New Document Modal */}
+      <NewDocumentModal
+        isOpen={showNewDocumentModal}
+        onClose={() => setShowNewDocumentModal(false)}
+        onDocumentCreated={handleDocumentCreated}
+      />
 
       {/* Delete Modal */}
       {showDeleteModal && (

@@ -46,11 +46,15 @@ export interface Document {
   updatedAt: Date;
   wordCount: number;
   characterCount: number;
+  context?: string;
+  documentType?: string;
 }
 
 export interface DocumentCreatePayload {
-  title: string;
+  title?: string;
   content?: string;
+  context?: string;
+  documentType?: string;
 }
 
 export interface DocumentUpdatePayload {

@@ -9,7 +9,7 @@ import {
   query,
   serverTimestamp,
   updateDoc,
-  where,
+  where
 } from "firebase/firestore";
 import { db } from "../../config";
 import { Document, DocumentCreatePayload, DocumentUpdatePayload, SpellingSuggestion } from "../../types";
@@ -52,6 +52,8 @@ export const fetchDocuments = async (
         updatedAt: data.updatedAt?.toDate() || new Date(),
         wordCount: data.wordCount || 0,
         characterCount: data.characterCount || 0,
+        context: data.context,
+        documentType: data.documentType,
       });
     });
 
@@ -84,6 +86,8 @@ export const fetchDocument = async (
         updatedAt: data.updatedAt?.toDate() || new Date(),
         wordCount: data.wordCount || 0,
         characterCount: data.characterCount || 0,
+        context: data.context,
+        documentType: data.documentType,
       };
 
       set({ currentDocument: document, loading: false });
@@ -108,13 +112,22 @@ export const createDocument = async (
 ): Promise<string> => {
   set({ loading: true, error: null });
   try {
-    const content = payload.content || "";
-    const wordCount =
-      content.split(/\s+/).filter(word => word.length > 0).length;
-    const characterCount = content.length;
+    const content = "";
+    const wordCount = 0;
+    const characterCount = 0;
 
-    const docData = {
-      title: payload.title,
+    const docData: {
+      title: string;
+      content: string;
+      userId: string;
+      createdAt: ReturnType<typeof serverTimestamp>;
+      updatedAt: ReturnType<typeof serverTimestamp>;
+      wordCount: number;
+      characterCount: number;
+      context?: string;
+      documentType?: string;
+    } = {
+      title: payload.title || 'Untitled Document',
       content,
       userId,
       createdAt: serverTimestamp(),
@@ -122,6 +135,14 @@ export const createDocument = async (
       wordCount,
       characterCount,
     };
+
+    // Add optional fields if provided
+    if (payload.context) {
+      docData.context = payload.context;
+    }
+    if (payload.documentType) {
+      docData.documentType = payload.documentType;
+    }
 
     const docRef = await addDoc(collection(db, "documents"), docData);
 
