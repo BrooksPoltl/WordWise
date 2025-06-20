@@ -1,4 +1,5 @@
-import config from '../../config';
+import { httpsCallable } from 'firebase/functions';
+import config, { functions } from '../../config';
 import { User, UserPreferences } from '../../types';
 import { useAuthStore } from '../auth/auth.store';
 import { UserStore } from './user.types';
@@ -202,28 +203,34 @@ export const updateProfile = async (
 
   try {
     const authStore = useAuthStore.getState();
-    const { firebaseUser } = authStore;
+    const { firebaseUser, user } = authStore;
 
-    if (!firebaseUser) {
+    if (!firebaseUser || !user) {
       throw new Error('User not authenticated');
     }
 
-    // Get Firebase ID token
-    const token = await firebaseUser.getIdToken();
+    // Call the Firebase Function
+    const updateUserProfileCallable = httpsCallable<
+      { role: string; persona?: string },
+      { success: boolean; message: string; data: { role: string; persona?: string } }
+    >(functions, 'updateUserProfile');
 
-    const response = await fetch(`${config.apiUrl}/updateUserProfile`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(profileData),
-    });
+    const result = await updateUserProfileCallable(profileData);
+    const { success, message } = result.data;
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to update user profile');
+    if (!success) {
+      throw new Error(message || 'Failed to update user profile');
     }
+
+    // Update the auth store's user state immediately
+    useAuthStore.setState({
+      user: {
+        ...user,
+        role: profileData.role,
+        persona: profileData.persona,
+        onboardingCompleted: true,
+      },
+    });
 
     set({ loading: false });
   } catch (error) {

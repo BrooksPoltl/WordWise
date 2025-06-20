@@ -39,15 +39,12 @@ const updateUserProfileHandler = withValidation(
     const updateData: any = {
       role,
       onboardingCompleted: true,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
     if (persona !== undefined) {
       updateData.persona = persona;
     }
-
     await userRef.update(updateData);
-
     return { 
       success: true, 
       message: "Profile updated successfully",

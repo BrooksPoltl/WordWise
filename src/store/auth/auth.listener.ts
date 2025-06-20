@@ -33,6 +33,9 @@ export const initializeAuthListener = (set: AuthSet) => {
           displayName: userData.displayName,
           createdAt: userData.createdAt.toDate(),
           preferences: userData.preferences,
+          role: userData.role,
+          persona: userData.persona,
+          onboardingCompleted: userData.onboardingCompleted || false,
         };
         set({
           user: userProfile,
