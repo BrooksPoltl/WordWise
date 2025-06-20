@@ -21,3 +21,6 @@ export { updateUserProfile } from "./handlers/userProfile";
 // Export the new comments handler
 export { getDocumentComments } from "./handlers/comments";
 
+// Export the new advisory comments handler
+export { requestAdvisoryComments } from "./handlers/advisory";
+

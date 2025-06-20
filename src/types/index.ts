@@ -151,4 +151,12 @@ export interface AIComment {
   status: "active" | "resolved";
 }
 
+export interface AIAdvisorySuggestion {
+  id: string; // Unique ID generated on the frontend for state management
+  originalText: string; // The text the advice pertains to
+  explanation: string; // The AI's advice
+  startIndex: number;
+  endIndex: number;
+}
+
 
