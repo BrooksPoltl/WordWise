@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createApiHandler } from "../utils/handlers";
 import { getOpenAIClient } from "../utils/openai";
-import { detectTone, rewriteInTone, Tone, TONE_OPTIONS } from "../utils/tone";
+import { detectTone } from "../utils/tone";
 import { withValidation } from "../utils/validation";
 
 // Define the schema for the toneDetect function's input
@@ -20,26 +20,4 @@ const toneDetectHandler = withValidation(
 );
 
 // Export the final, wrapped function
-export const toneDetect = createApiHandler(toneDetectHandler);
-
-// Create a Zod schema that validates against the TONE_OPTIONS dynamically
-const toneSchema = z.enum(TONE_OPTIONS as readonly [Tone, ...Tone[]]);
-
-// Define the schema for the toneRewrite function's input
-const toneRewriteSchema = z.object({
-  text: z.string().min(1, { message: "Text must be provided." }),
-  tone: toneSchema,
-});
-
-// The core tone rewrite logic
-const toneRewriteHandler = withValidation(
-  toneRewriteSchema,
-  async ({ text, tone }, _auth) => {
-    const openaiClient = getOpenAIClient();
-    const rewrittenText = await rewriteInTone(text, tone, openaiClient);
-    return { success: true, text: rewrittenText };
-  },
-);
-
-// Export the final, wrapped function
-export const toneRewrite = createApiHandler(toneRewriteHandler); 
+export const toneDetect = createApiHandler(toneDetectHandler); 

@@ -23,16 +23,7 @@ export interface ToneDetectResponse {
   error?: string;
 }
 
-export interface ToneRewriteRequest { 
-  text: string; 
-  tone: Tone;
-}
 
-export interface ToneRewriteResponse { 
-  success: boolean; 
-  text?: string; 
-  error?: string; 
-}
 
 /**
  * Detect tone from text using OpenAI
@@ -70,25 +61,4 @@ export async function detectTone(text: string, openaiClient: OpenAI): Promise<{ 
   };
 }
 
-/**
- * Rewrite text in a specific tone using OpenAI
- */
-export async function rewriteInTone(text: string, tone: Tone, openaiClient: OpenAI): Promise<string> {
-  if (!TONE_OPTIONS.includes(tone)) {
-    throw new Error('Unsupported tone');
-  }
-
-  const prompt = `Rewrite the following text in a ${tone} tone. Preserve the original meaning and factual content. Return ONLY the rewritten text without any additional commentary or formatting.\n\nText:\n\"\n${text}\n\"`;
-
-  const completion = await openaiClient.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.7,
-    max_tokens: 4096,
-  });
-
-  const rewrittenText = completion.choices[0]?.message?.content?.trim();
-  if (!rewrittenText) throw new Error('No response from OpenAI');
-
-  return rewrittenText;
-} 
+ 

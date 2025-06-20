@@ -33,7 +33,7 @@ import { getSentenceBoundaries } from '../utils/sentenceBoundaries';
 import EditorHeader from './editor/EditorHeader';
 import EditorToolbar from './editor/EditorToolbar';
 import SuggestionPopover from './editor/SuggestionPopover';
-import ToneModal from './editor/ToneModal';
+
 
 interface TextEditorProps {
   documentId: string;
@@ -67,14 +67,8 @@ const TextEditor: React.FC<TextEditorProps> = ({
   });
   const {
     detectedTone,
-    selectedTone,
-    isToneModalOpen,
-    refactoredContent,
     detectTone,
-    handleToneSelection,
-    applyRefactoredContent,
-    closeToneModal,
-  } = useToneAnalysis({ editor });
+  } = useToneAnalysis();
 
   const { visibility } = useSuggestionStore(state => ({
     visibility: state.visibility,
@@ -343,14 +337,11 @@ const TextEditor: React.FC<TextEditorProps> = ({
               detectedTone={detectedTone}
               wordCount={wordCount}
               characterCount={characterCount}
-              onToneClick={handleToneSelection}
             />
 
             <EditorToolbar
               editor={editor}
               detectedTone={detectedTone}
-              selectedTone={selectedTone}
-              onToneSelection={handleToneSelection}
             />
           </div>
 
@@ -370,13 +361,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
         )}
       </div>
 
-      <ToneModal
-        isOpen={isToneModalOpen}
-        onClose={closeToneModal}
-        refactoredContent={refactoredContent}
-        onApply={applyRefactoredContent}
-        selectedTone={selectedTone}
-      />
+
     </div>
   );
 };

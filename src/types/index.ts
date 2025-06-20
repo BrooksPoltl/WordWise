@@ -132,7 +132,4 @@ export interface ToneDetectResult {
   confidence?: number;
 }
 
-export interface ToneRewritePayload {
-  text: string;
-  tone: Tone;
-}
+

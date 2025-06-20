@@ -1,21 +1,16 @@
 import { Editor } from '@tiptap/react';
 import React from 'react';
-import { TONE_OPTIONS } from '../../constants/editorConstants';
 import { Tone } from '../../types';
 import { SuggestionToggles } from './SuggestionToggles';
 
 interface EditorToolbarProps {
   editor: Editor;
   detectedTone: Tone | null;
-  selectedTone: Tone | null;
-  onToneSelection: (tone: Tone) => void;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
   editor,
   detectedTone,
-  selectedTone,
-  onToneSelection,
 }) => (
     <div>
       {/* Formatting Toolbar */}
@@ -124,27 +119,6 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({
         <SuggestionToggles />
       </div>
 
-      {/* Tone selection dropdown */}
-      <div className="mt-2">
-        <label htmlFor="tone-select" className="mr-2 text-sm text-gray-600">
-          Tone:
-          <select
-            id="tone-select"
-            className="ml-2 border border-gray-300 rounded p-1 text-sm"
-            value={(selectedTone || detectedTone || '') as string}
-            onChange={e => onToneSelection(e.target.value as Tone)}
-          >
-            <option value="" disabled>
-              Select tone
-            </option>
-            {TONE_OPTIONS.map(tone => (
-              <option key={tone} value={tone}>
-                {tone}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
     </div>
 );
 

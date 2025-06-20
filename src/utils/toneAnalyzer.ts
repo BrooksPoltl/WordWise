@@ -9,11 +9,7 @@ interface ToneDetectResponse {
   error?: string;
 }
 
-interface ToneRewriteResponse {
-  success: boolean;
-  text: string;
-  error?: string;
-}
+
 
 /**
  * A service for performing tone analysis and rewriting using the Firebase backend.
@@ -52,34 +48,7 @@ class ToneAnalyzerService {
     }
   }
 
-  /**
-   * Rewrites a block of text to match a specified tone.
-   * @param text - The text to rewrite.
-   * @param tone - The target tone.
-   * @returns A promise that resolves to the rewritten text.
-   */
-  public async rewriteTone(text: string, tone: Tone): Promise<string> {
-    logger.info('Calling toneRewrite function with tone:', { tone });
-    try {
-      const rewriteTextCallable = httpsCallable<
-        { text: string; tone: Tone },
-        ToneRewriteResponse
-      >(functions, 'toneRewrite');
 
-      const result = await rewriteTextCallable({ text, tone });
-      const { success, text: rewrittenText, error } = result.data;
-
-      if (!success) {
-        throw new Error(error || 'API error during tone rewrite');
-      }
-
-      logger.info('Text rewritten successfully.');
-      return rewrittenText;
-    } catch (error) {
-      logger.error('Error calling toneRewrite callable:', error);
-      throw error;
-    }
-  }
 }
 
 export const toneAnalyzer = new ToneAnalyzerService();

@@ -9,7 +9,6 @@ interface EditorHeaderProps {
   detectedTone: Tone | null;
   wordCount: number;
   characterCount: number;
-  onToneClick?: (tone: Tone) => void;
 }
 
 const EditorHeader: React.FC<EditorHeaderProps> = ({
@@ -19,7 +18,6 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
   detectedTone,
   wordCount,
   characterCount,
-  onToneClick,
 }) => (
     <div className="flex items-center justify-between mb-4">
       <input
@@ -38,19 +36,7 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
           </div>
         )}
         {detectedTone && (
-          <div
-            role="button"
-            tabIndex={0}
-            className="flex items-center space-x-1 cursor-pointer"
-            title="Click to change tone"
-            onClick={() => onToneClick?.(detectedTone)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onToneClick?.(detectedTone);
-              }
-            }}
-          >
+          <div className="flex items-center space-x-1">
             <span>{TONE_EMOJI_MAP[detectedTone]}</span>
             <span>{detectedTone}</span>
           </div>
