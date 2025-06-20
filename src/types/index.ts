@@ -141,4 +141,14 @@ export interface ToneDetectResult {
   confidence?: number;
 }
 
+export interface AIComment {
+  id: string;
+  type: "REPLACEMENT" | "ADVICE";
+  suggestion: string;
+  originalText?: string;
+  startIndex?: number;
+  endIndex?: number;
+  status: "active" | "resolved";
+}
+
 
