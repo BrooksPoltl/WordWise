@@ -1,17 +1,17 @@
 import {
-  autoUpdate,
-  flip,
-  offset,
-  shift,
-  useFloating,
+    autoUpdate,
+    flip,
+    offset,
+    shift,
+    useFloating,
 } from '@floating-ui/react';
 import { Editor, EditorContent } from '@tiptap/react';
 import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from 'react';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { useSuggestions } from '../hooks/useSuggestions';
@@ -21,16 +21,17 @@ import { useAuthStore } from '../store/auth/auth.store';
 import { useDocumentStore } from '../store/document/document.store';
 import { useSuggestionStore } from '../store/suggestion/suggestion.store';
 import {
-  AnySuggestion
+    AnySuggestion
 } from '../store/suggestion/suggestion.types';
 import {
-  ConcisenessSuggestion,
-  PassiveSuggestion,
-  ReadabilitySuggestion,
-  SpellingSuggestion,
-  SuggestionOption
+    ConcisenessSuggestion,
+    PassiveSuggestion,
+    ReadabilitySuggestion,
+    SpellingSuggestion,
+    SuggestionOption
 } from '../types';
 import { getSentenceBoundaries } from '../utils/sentenceBoundaries';
+import { AdvisoryModal } from './editor/AdvisoryModal';
 import DocumentSettingsBar from './editor/DocumentSettingsBar';
 import EditorHeader from './editor/EditorHeader';
 import EditorToolbar from './editor/EditorToolbar';
@@ -360,6 +361,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
           onTitleChange={handleTitleChange}
           loading={loading}
           detectedTone={detectedTone}
+          documentContent={editor?.getText() || ''}
         />
         <EditorToolbar editor={editor} />
         <DocumentSettingsBar
@@ -392,6 +394,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
         initialContext={currentDocument?.context || ''}
         loading={loading}
       />
+      <AdvisoryModal />
     </div>
   );
 };

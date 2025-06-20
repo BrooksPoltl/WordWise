@@ -1,8 +1,5 @@
-- readability making too many requests (done)
-- cant sign out on editor. (instead of sign out button create a user profile dropdown)
 - Some of conciseness is that it needs to remove but it doesn't tell you
 - I set the algorithms for readability to 1 for testing, will need to change back to 5
-- AI rewrites (readability, passive) are lost if text changes during API call. This is likely a race condition where the suggestion ID changes mid-request, so when the response returns, it can't find the original suggestion to update. (done)
 - display name is not optional
 - Pasting large text does not work initially (could be bullet issue?) Detects the errors but doesn't highlight, works after save though? 
 - Proper nouns are getting flagged
@@ -10,3 +7,4 @@
 - Document title does not trigger auto save
 - didn't triggers spell check for some reason
 - Headings don't have grammar checking
+- Tone Detect runs whether document changes or not. If you are at the bottom 
