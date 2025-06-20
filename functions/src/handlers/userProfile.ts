@@ -14,7 +14,7 @@ const updateUserProfileSchema = z.object({
   role: z.enum(USER_ROLES, { 
     errorMap: () => ({ message: "Invalid role selected. Please choose from the available options." }) 
   }),
-  persona: z.string().max(1000, { message: "Persona description must be less than 1000 characters." }).optional(),
+  persona: z.string().max(1000, { message: "Persona description must be less than 1000 characters." }).nullable().optional(),
 });
 
 // The core user profile update logic
@@ -33,7 +33,7 @@ const updateUserProfileHandler = withValidation(
       onboardingCompleted: true,
     };
 
-    if (persona !== undefined) {
+    if (persona !== undefined && persona !== null) {
       updateData.persona = persona;
     }
     await userRef.update(updateData);

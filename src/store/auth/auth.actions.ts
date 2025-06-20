@@ -50,6 +50,7 @@ export const signUp = async (
       preferences: {
         language: "en-US",
       },
+      onboardingCompleted: false,
     };
 
     logger.firebase.firestore("Creating Firestore user document...");
@@ -135,6 +136,9 @@ export const signIn = async (
         displayName: userData.displayName,
         createdAt: userData.createdAt.toDate(),
         preferences: userData.preferences,
+        role: userData.role,
+        persona: userData.persona,
+        onboardingCompleted: userData.onboardingCompleted || false,
       };
 
       set({
@@ -214,6 +218,7 @@ export const signInWithGoogle = async (set: AuthSet): Promise<void> => {
         preferences: {
           language: "en-US",
         },
+        onboardingCompleted: false,
       };
 
       await setDoc(doc(db, "users", firebaseUser.uid), {
@@ -230,6 +235,9 @@ export const signInWithGoogle = async (set: AuthSet): Promise<void> => {
         displayName: userData.displayName,
         createdAt: userData.createdAt.toDate(),
         preferences: userData.preferences,
+        role: userData.role,
+        persona: userData.persona,
+        onboardingCompleted: userData.onboardingCompleted || false,
       };
     }
 

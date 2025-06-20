@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { ONBOARDING_TEXT, USER_ROLES, UserRole } from '../constants/userConstants';
 import { useAuthStore } from '../store/auth/auth.store';
 import { useUserStore } from '../store/user/user.store';
@@ -7,6 +7,7 @@ import { useUserStore } from '../store/user/user.store';
 const Onboarding: React.FC = () => {
   const { user } = useAuthStore();
   const { updateProfile, loading, error } = useUserStore();
+  const navigate = useNavigate();
   
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [persona, setPersona] = useState('');
@@ -32,8 +33,8 @@ const Onboarding: React.FC = () => {
         persona: persona.trim() || undefined,
       });
       
-      // Redirect to dashboard after successful onboarding
-      window.location.href = '/dashboard';
+      // Navigate to dashboard after successful onboarding
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       console.error('Failed to update profile:', err);
     } finally {
@@ -53,8 +54,8 @@ const Onboarding: React.FC = () => {
         role: selectedRole,
       });
       
-      // Redirect to dashboard after successful onboarding
-      window.location.href = '/dashboard';
+      // Navigate to dashboard after successful onboarding
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       console.error('Failed to update profile:', err);
     } finally {

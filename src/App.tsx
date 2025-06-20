@@ -28,7 +28,8 @@ const App: React.FC = () => {
   }
 
   // Helper function to determine if user needs onboarding
-  const needsOnboarding = user && !user.onboardingCompleted;
+  // More explicit check: if user exists but onboardingCompleted is false or undefined
+  const needsOnboarding = user && (user.onboardingCompleted !== true);
 
   // Helper function to get redirect path for authenticated users
   const getAuthenticatedRedirect = () => {
