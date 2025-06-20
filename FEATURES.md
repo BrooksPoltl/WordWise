@@ -1,6 +1,6 @@
-# WiseWord Feature Requirements
+# AlignWrite Feature Requirements
 
-This document outlines the requirements for the key features of WiseWord.
+This document outlines the requirements for the key features of AlignWrite.
 
 ## Spell Checking
 

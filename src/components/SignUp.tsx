@@ -87,7 +87,7 @@ const SignUp: React.FC<SignUpProps> = ({ onToggleMode, onSuccess }) => {
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Start your journey with WiseWord
+            Start your journey with AlignWrite
           </p>
         </div>
 

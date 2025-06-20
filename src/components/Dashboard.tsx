@@ -70,7 +70,7 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
               <div className="ml-3">
-                <h1 className="text-xl font-bold text-gray-900">WiseWord</h1>
+                <h1 className="text-xl font-bold text-gray-900">AlignWrite</h1>
               </div>
             </div>
 
