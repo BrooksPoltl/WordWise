@@ -1,7 +1,7 @@
 import { httpsCallable } from 'firebase/functions';
 import { useCallback, useRef, useState } from 'react';
 import { functions } from '../config';
-import { updateReadabilitySuggestion } from '../store/suggestion/suggestion.actions';
+import { updateSuggestion } from '../store/suggestion/suggestion.actions';
 import { ReadabilitySuggestion } from '../types';
 
 export const useReadabilityRewrite = () => {
@@ -13,7 +13,7 @@ export const useReadabilityRewrite = () => {
     async (suggestion: ReadabilitySuggestion) => {
       if (rewriteCache.current.has(suggestion.text)) {
         const cachedRewrite = rewriteCache.current.get(suggestion.text)!;
-        updateReadabilitySuggestion(suggestion.id, cachedRewrite);
+        updateSuggestion('readability', suggestion.id, cachedRewrite);
         return;
       }
 
@@ -26,7 +26,7 @@ export const useReadabilityRewrite = () => {
 
         if (data.success && data.text) {
           rewriteCache.current.set(suggestion.text, data.text);
-          updateReadabilitySuggestion(suggestion.id, data.text);
+          updateSuggestion('readability', suggestion.id, data.text);
         }
       } catch (err) {
         setError('Failed to rewrite sentence. Please try again.');

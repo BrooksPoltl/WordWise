@@ -1,7 +1,7 @@
 import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import {
-    SUGGESTION_CATEGORIES,
-    SuggestionCategory,
+  SUGGESTION_CATEGORIES,
+  SuggestionCategory,
 } from '../../store/suggestion/suggestion.types';
 
 export const SuggestionToggles = () => {

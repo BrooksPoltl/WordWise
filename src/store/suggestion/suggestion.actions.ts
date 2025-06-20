@@ -1,14 +1,17 @@
-import { ReadabilitySuggestion, SuggestionOption } from '../../types';
+import {
+  SuggestionOption
+} from '../../types';
 import { useSuggestionStore } from './suggestion.store';
+import { SuggestionCategory } from './suggestion.types';
 
-export const updateReadabilitySuggestion = (
+export const updateSuggestion = (
+  category: Extract<SuggestionCategory, 'readability' | 'passive'>,
   suggestionId: string,
   rewrittenText: string,
 ) => {
   useSuggestionStore.setState(state => {
-    const suggestionToUpdate = state.readability.find(
-      s => s.id === suggestionId,
-    );
+    const suggestions = state[category];
+    const suggestionToUpdate = suggestions.find(s => s.id === suggestionId);
 
     if (!suggestionToUpdate) {
       return state;
@@ -19,7 +22,7 @@ export const updateReadabilitySuggestion = (
       text: rewrittenText,
     };
 
-    const updatedSuggestions: ReadabilitySuggestion[] = state.readability.map(s =>
+    const updatedSuggestions = suggestions.map(s =>
       s.id === suggestionId
         ? { ...s, suggestions: [newSuggestion] }
         : s,
@@ -27,7 +30,7 @@ export const updateReadabilitySuggestion = (
 
     return {
       ...state,
-      readability: updatedSuggestions,
+      [category]: updatedSuggestions,
     };
   });
 }; 

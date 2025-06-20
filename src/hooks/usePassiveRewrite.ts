@@ -1,6 +1,7 @@
 import { httpsCallable } from 'firebase/functions';
 import { useCallback, useRef, useState } from 'react';
 import { functions } from '../config';
+import { updateSuggestion } from '../store/suggestion/suggestion.actions';
 import { PassiveSuggestion } from '../types';
 import { logger } from '../utils/logger';
 
@@ -15,7 +16,7 @@ export const usePassiveRewrite = () => {
   const rewriteSentence = useCallback(async (suggestion: PassiveSuggestion) => {
     if (rewriteCache.current.has(suggestion.text)) {
       const cachedRewrite = rewriteCache.current.get(suggestion.text)!;
-      // TODO: Call updatePassiveSuggestion(suggestion.id, cachedRewrite);
+      updateSuggestion('passive', suggestion.id, cachedRewrite);
       logger.info('Using cached rewrite for passive suggestion:', cachedRewrite);
       return;
     }
@@ -29,7 +30,7 @@ export const usePassiveRewrite = () => {
 
       if (data.success && data.text) {
         rewriteCache.current.set(suggestion.text, data.text);
-        // TODO: Call updatePassiveSuggestion(suggestion.id, data.text);
+        updateSuggestion('passive', suggestion.id, data.text);
         logger.success('Successfully rewritten passive sentence:', data.text);
       }
     } catch (err) {

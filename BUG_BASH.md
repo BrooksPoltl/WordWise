@@ -2,3 +2,4 @@
 - cant sign out on editor. (instead of sign out button create a user profile dropdown)
 - Some of conciseness is that it needs to remove but it doesn't tell you
 - I set the algorithms for readability to 1 for testing, will need to change back to 5
+- AI rewrites (readability, passive) are lost if text changes during API call. This is likely a race condition where the suggestion ID changes mid-request, so when the response returns, it can't find the original suggestion to update.
