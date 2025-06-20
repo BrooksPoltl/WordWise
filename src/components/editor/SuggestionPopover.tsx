@@ -2,11 +2,11 @@ import { FloatingContext } from '@floating-ui/react';
 import React from 'react';
 import { AnySuggestion } from '../../store/suggestion/suggestion.types';
 import {
-    ClaritySuggestion,
-    ConcisenessSuggestion,
-    PassiveSuggestion,
-    ReadabilitySuggestion,
-    SpellingSuggestion,
+  ClaritySuggestion,
+  ConcisenessSuggestion,
+  PassiveSuggestion,
+  ReadabilitySuggestion,
+  SpellingSuggestion,
 } from '../../types';
 import ClaritySuggestionPopover from './ClaritySuggestionPopover';
 import ConcisenessSuggestionPopover from './ConcisenessSuggestionPopover';
