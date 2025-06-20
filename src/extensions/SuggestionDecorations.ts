@@ -18,6 +18,7 @@ const suggestionCategoryMap: Record<SuggestionType, SuggestionCategory> = {
   conciseness: 'conciseness',
   readability: 'readability',
   clarity: 'clarity',
+  passive: 'passive',
 };
 
 const suggestionClassMap: Record<SuggestionCategory, string> = {
@@ -25,10 +26,12 @@ const suggestionClassMap: Record<SuggestionCategory, string> = {
   clarity: 'clarity-error',
   conciseness: 'conciseness-error',
   readability: 'readability-error',
+  passive: 'passive-error',
 };
 
 const suggestionPriority: SuggestionCategory[] = [
   'readability',
+  'passive',
   'clarity',
   'conciseness',
   'spelling',
@@ -95,7 +98,7 @@ function createPrioritizedDecorations(
         const existingCategory =
           suggestionCategoryMap[existingSuggestion.type];
         const existingPriority = priorityMap.get(existingCategory) ?? -1;
-        if (currentPriority > existingPriority) {
+        if (currentPriority < existingPriority) {
           charToSuggestion[i] = suggestion;
         }
       } else {
@@ -162,7 +165,7 @@ export const SuggestionDecorations = Extension.create({
         visibility: { [key: string]: boolean },
         hoveredSuggestionId: string | null,
       ) => {
-        const { spelling, clarity, conciseness, readability } =
+        const { spelling, clarity, conciseness, readability, passive } =
           useSuggestionStore.getState();
 
         const allSuggestions = [
@@ -170,6 +173,7 @@ export const SuggestionDecorations = Extension.create({
           ...clarity,
           ...conciseness,
           ...readability,
+          ...passive,
         ];
 
         const visibleSuggestionTypes = Object.entries(visibility)
@@ -177,13 +181,8 @@ export const SuggestionDecorations = Extension.create({
           .map(([type]) => type);
 
         const visibleSuggestions = allSuggestions.filter(s => {
-          if (s.type === 'weasel_word')
-            return visibleSuggestionTypes.includes('clarity');
-          if (s.type === 'conciseness')
-            return visibleSuggestionTypes.includes('conciseness');
-          if (s.type === 'readability')
-            return visibleSuggestionTypes.includes('readability');
-          return visibleSuggestionTypes.includes('spelling');
+          const category = suggestionCategoryMap[s.type] ?? 'spelling';
+          return visibleSuggestionTypes.includes(category);
         });
 
         // Validate suggestions against the current document
@@ -200,9 +199,9 @@ export const SuggestionDecorations = Extension.create({
             return false;
           }
 
-          // For readability suggestions, the offsets are the source of truth,
+          // For readability and passive suggestions, the offsets are the source of truth,
           // as direct text comparison of long sentences is brittle.
-          if (suggestion.type === 'readability') {
+          if (suggestion.type === 'readability' || suggestion.type === 'passive') {
             return true;
           }
 
@@ -282,7 +281,7 @@ export const SuggestionDecorations = Extension.create({
             const target = event.target as HTMLElement;
             if (
               target.closest(
-                '.spell-error, .clarity-error, .conciseness-error, .readability-error',
+                '.spell-error, .clarity-error, .conciseness-error, .readability-error, .passive-error',
               )
             ) {
               const pluginState = suggestionPluginKey.getState(view.state);

@@ -184,6 +184,19 @@
   background-color: rgba(139, 92, 246, 0.3); /* purple-500 with 30% opacity */
 }
 
+.passive-error {
+  @apply bg-yellow-200 bg-opacity-50 rounded-sm px-0.5;
+  text-decoration: underline;
+  text-decoration-color: #f59e0b; /* yellow-500 */
+  text-decoration-style: wavy;
+  text-decoration-thickness: 1px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.passive-error.hovered {
+  background-color: rgba(245, 158, 11, 0.3); /* yellow-500 with 30% opacity */
+}
+
 /* --- Overlapping Suggestion Hover Fixes --- */
 /*
   When hovering over a broader suggestion, ensure nested suggestions
