@@ -16,7 +16,7 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          {/* <div className="hidden md:flex items-center space-x-8">
             <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">
               Features
             </a>
@@ -29,7 +29,7 @@ const Navbar: React.FC = () => {
             <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">
               Pricing
             </a>
-          </div>
+          </div> */}
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
@@ -69,7 +69,7 @@ const Navbar: React.FC = () => {
         {isMenuOpen && (
           <div className="md:hidden border-t border-gray-100">
             <div className="px-2 pt-2 pb-3 space-y-1">
-              <a href="#features" className="block px-3 py-2 text-gray-600 hover:text-gray-900">
+              {/* <a href="#features" className="block px-3 py-2 text-gray-600 hover:text-gray-900">
                 Features
               </a>
               <a href="#how-it-works" className="block px-3 py-2 text-gray-600 hover:text-gray-900">
@@ -80,7 +80,7 @@ const Navbar: React.FC = () => {
               </a>
               <a href="#pricing" className="block px-3 py-2 text-gray-600 hover:text-gray-900">
                 Pricing
-              </a>
+              </a> */}
               <div className="pt-4 pb-2 border-t border-gray-100">
                 <button
                   type="button"
