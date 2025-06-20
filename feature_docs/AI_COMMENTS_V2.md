@@ -10,11 +10,14 @@ This document outlines the Minimum Viable Product (MVP) for an AI-powered adviso
 
 ## 3. Functional Requirements & Scope
 
--   **Trigger**: A single "Get Advice" button will be located in the editor's header.
+-   **Trigger**: Two buttons will be located in the editor's header:
+    -   **"Get Comments" button**: Triggers new AI analysis and opens the modal with fresh suggestions.
+    -   **"Comments" button**: Opens existing advisory comments without triggering new analysis. This button is disabled when no comments exist and shows a badge with the comment count when available.
 -   **User Interface**:
-    -   Clicking the button will trigger a loading state.
-    -   Upon completion, a **full-screen, scrollable modal** will open, displaying a list of all AI advisory comments.
+    -   Clicking the "Get Comments" button will trigger a loading state and upon completion, open a **full-screen, scrollable modal**.
+    -   Clicking the "Comments" button will immediately open the modal with existing suggestions.
     -   All interactions will occur inside the modal.
+    -   The modal can be closed and reopened without losing existing suggestions.
 -   **Suggestion Category**: The AI analysis will provide a single type of feedback:
     -   **Advisory Comments (`ADVICE`)**: Higher-level suggestions that encourage the user to improve the document's substance. These suggestions only include the relevant text and an explanation.
         -   **Strengthen a Claim**: "Consider adding a specific data point or example to support this claim."
@@ -24,6 +27,7 @@ This document outlines the Minimum Viable Product (MVP) for an AI-powered adviso
         -   **Acknowledge Alternatives**: "To build a stronger case, consider briefly mentioning alternative solutions."
 -   **User Actions Within Modal**:
     -   Each advisory comment card will have a single "Dismiss" button to remove it from the list.
+    -   Dismissed suggestions are permanently removed and won't be restored even if the modal is reopened.
 
 ## 4. Technical Architecture (MVP)
 
@@ -85,28 +89,4 @@ The format for each object in the array MUST be as follows:
 -   **Frontend (React Client)**:
     -   **State Management**: A new Zustand store, `advisoryStore`, will manage the UI state.
         -   **State**: `isOpen: boolean`, `isLoading: boolean`, `suggestions: AIAdvisorySuggestion[]`, `error: string | null`.
-        -   **Actions**: `requestSuggestions(editor)`, `dismissSuggestion(suggestionId)`, `closeModal()`.
-    -   **Component Architecture**:
-        -   **`AdvisoryModal.tsx`**: The main modal component that subscribes to the `advisoryStore`.
-        -   **`AdvisoryCard.tsx`**: A presentational component that receives a single `AIAdvisorySuggestion` and calls the `dismissSuggestion` action.
-
-## 5. Implementation Plan
-
-### Backend (Firebase Functions)
-
-| Priority | Task Description                                     | Implementation Details                                                                                                                                                                             | Code Pointers                                                                   | Dependencies | Completion |
-| :------- | :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------ | :----------- | :--------- |
-| **P1**   | Create `requestAdvisoryComments` Function            | Create an HTTPS Callable Function. It will accept `{ documentContent }` and pass it to the OpenAI service. It will directly return the array of advisory suggestions.                               | `functions/src/index.ts` <br/> `functions/src/handlers/advisory.ts` (new)       | -            | ☐          |
-| **P1**   | Implement OpenAI Advisory Service                    | In `openai.ts`, create a function that takes document text and sends a prompt to `gpt-4-turbo-preview`. The prompt must instruct the AI to return a JSON array of `AIAdvisorySuggestion` objects. | `functions/src/utils/openai.ts`                                                 | -            | ☐          |
-| **P1**   | Define `AIAdvisorySuggestion` Type                   | Add the `AIAdvisorySuggestion` type definition to a shared location.                                                                                                                               | `src/types/index.ts`                                                            | -            | ☐          |
-
-### Frontend (React Client)
-
-| Priority | Task Description                                     | Implementation Details                                                                                                                                                             | Code Pointers                                                              | Dependencies | Completion |
-| :------- | :--------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------- | :----------- | :--------- |
-| **P1**   | Create `advisoryStore`                               | Zustand store with `isOpen`, `isLoading`, `suggestions`, `error`. The `requestSuggestions` action calls the cloud function. `dismissSuggestion` just removes the item from the array. | `src/store/advisory/` (new folder)                                         | -            | ☐          |
-| **P1**   | Create `AdvisoryModal` Component                     | Renders a modal controlled by `advisoryStore.isOpen`. Displays a loading spinner or maps over `suggestions` to render `AdvisoryCard` components.                                   | `src/components/editor/AdvisoryModal.tsx` (new)                            | P1-Store     | ☐          |
-| **P1**   | Create `AdvisoryCard` Component                      | Stateless component taking `suggestion` as a prop. Renders suggestion details and a "Dismiss" button that calls the store action.                                                      | `src/components/editor/AdvisoryCard.tsx` (new)                             | P1-Store     | ☐          |
-| **P2**   | Add "Get Advice" Button                              | Add the button to the editor header. The `onClick` handler will call `advisoryStore.getState().requestSuggestions(editor)`.                                                          | `src/components/editor/EditorHeader.tsx`                                   | P1-Store     | ☐          |
-
-</rewritten_file> 
+        -   **Actions**: `

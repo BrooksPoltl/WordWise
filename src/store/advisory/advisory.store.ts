@@ -56,7 +56,11 @@ export const useAdvisoryStore = create<AdvisoryState & AdvisoryActions>(
     },
 
     closeModal: () => {
-      set({ isOpen: false, suggestions: [], error: null });
+      set({ isOpen: false, error: null });
+    },
+
+    openModal: () => {
+      set({ isOpen: true, error: null });
     },
   }),
 ); 
