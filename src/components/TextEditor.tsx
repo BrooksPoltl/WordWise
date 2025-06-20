@@ -27,8 +27,9 @@ import {
   PassiveSuggestion,
   ReadabilitySuggestion,
   SpellingSuggestion,
-  SuggestionOption,
+  SuggestionOption
 } from '../types';
+import { getSentenceBoundaries } from '../utils/sentenceBoundaries';
 import EditorHeader from './editor/EditorHeader';
 import EditorToolbar from './editor/EditorToolbar';
 import SuggestionPopover from './editor/SuggestionPopover';
@@ -280,14 +281,38 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
     if (isReplacementSuggestion(suggestion)) {
       const replacementText = suggestion.suggestions[0].text;
-      editor
-        .chain()
-        .focus()
-        .command(({ tr }) => {
-          tr.replaceWith(popoverState.from, popoverState.to, editor.schema.text(replacementText));
-          return true;
-        })
-        .run();
+      
+      // For passive suggestions only, replace the entire sentence
+      if (suggestion.type === 'passive') {
+        const currentText = editor.getText();
+        const { start, end } = getSentenceBoundaries(
+          currentText, 
+          suggestion.startOffset, 
+          suggestion.endOffset
+        );
+        
+        // Remove trailing punctuation from AI response since original sentence has it
+        const cleanedReplacementText = replacementText.replace(/[.!?]$/, '');
+        
+        editor
+          .chain()
+          .focus()
+          .command(({ tr }) => {
+            tr.replaceWith(start, end, editor.schema.text(cleanedReplacementText));
+            return true;
+          })
+          .run();
+      } else {
+        // For spelling, conciseness, and readability, replace just the highlighted text
+        editor
+          .chain()
+          .focus()
+          .command(({ tr }) => {
+            tr.replaceWith(popoverState.from, popoverState.to, editor.schema.text(replacementText));
+            return true;
+          })
+          .run();
+      }
 
       setPopoverState({
         isOpen: false,
