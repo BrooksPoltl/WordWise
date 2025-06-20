@@ -10,3 +10,6 @@ export { readabilityRewrite } from './handlers/readability';
 
 // Export the new passive voice handler
 export { passiveRewrite } from './handlers/passive';
+
+// Export the new user profile handler
+export { updateUserProfile } from './handlers/userProfile';

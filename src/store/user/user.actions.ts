@@ -192,4 +192,46 @@ export const updatePreferences = async (
     });
     throw error;
   }
+};
+
+export const updateProfile = async (
+  set: UserSet,
+  profileData: { role: string; persona?: string },
+): Promise<void> => {
+  set({ loading: true, error: null });
+
+  try {
+    const authStore = useAuthStore.getState();
+    const { firebaseUser } = authStore;
+
+    if (!firebaseUser) {
+      throw new Error('User not authenticated');
+    }
+
+    // Get Firebase ID token
+    const token = await firebaseUser.getIdToken();
+
+    const response = await fetch(`${config.apiUrl}/updateUserProfile`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(profileData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to update user profile');
+    }
+
+    set({ loading: false });
+  } catch (error) {
+    const errorObj = error as Error;
+    set({
+      loading: false,
+      error: errorObj.message || 'Failed to update user profile',
+    });
+    throw error;
+  }
 }; 

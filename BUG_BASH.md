@@ -6,3 +6,4 @@
 - display name is not optional
 - Pasting large text does not work initially (could be bullet issue?) Detects the errors but doesn't highlight, works after save though? 
 - Proper nouns are getting flagged
+- for passive if you update a sentence that isnt the first sentence it doesn't start with a space.

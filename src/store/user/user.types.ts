@@ -12,6 +12,9 @@ export interface UserStore {
   // Preferences operations
   updatePreferences: (preferences: UserPreferences) => Promise<void>;
 
+  // Profile operations
+  updateProfile: (profileData: { role: string; persona?: string }) => Promise<void>;
+
   // Utility functions
   clearError: () => void;
 } 

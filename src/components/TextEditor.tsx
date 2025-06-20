@@ -341,7 +341,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
 
             <EditorToolbar
               editor={editor}
-              detectedTone={detectedTone}
             />
           </div>
 

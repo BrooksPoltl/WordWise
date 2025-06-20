@@ -6,6 +6,9 @@ export interface User {
   displayName?: string;
   createdAt: Date;
   preferences: UserPreferences;
+  role?: string;
+  persona?: string;
+  onboardingCompleted?: boolean;
 }
 
 export interface UserPreferences {

@@ -1,16 +1,13 @@
 import { Editor } from '@tiptap/react';
 import React from 'react';
-import { Tone } from '../../types';
 import { SuggestionToggles } from './SuggestionToggles';
 
 interface EditorToolbarProps {
   editor: Editor;
-  detectedTone: Tone | null;
 }
 
 const EditorToolbar: React.FC<EditorToolbarProps> = ({
   editor,
-  detectedTone,
 }) => (
     <div>
       {/* Formatting Toolbar */}
