@@ -148,7 +148,12 @@ const TextEditor: React.FC<TextEditorProps> = ({
         hoveredSuggestionId,
       );
     }
-  }, [editor, allSuggestionsFromStore, hoveredSuggestionId]);
+  }, [
+    editor,
+    allSuggestionsFromStore,
+    hoveredSuggestionId,
+    suggestionVisibility,
+  ]);
 
   useEffect(() => {
     if (currentDocument?.content && !contentSetRef.current) {

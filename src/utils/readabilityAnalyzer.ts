@@ -17,7 +17,7 @@ const processor = retext()
   .use(retextEnglish)
   .use(retextReadability, {
     age: 14,
-    minWords: 10,
+    minWords: 25,
     threshold: 1 / 7,
   });
 

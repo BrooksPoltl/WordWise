@@ -1,5 +1,5 @@
 import { Editor } from '@tiptap/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import { ReadabilitySuggestion, SpellingSuggestion } from '../types';
 import { browserSpellChecker } from '../utils/browserSpellChecker';
@@ -17,7 +17,7 @@ interface UseSuggestionsProps {
 export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
   const { setSuggestions } = useSuggestionStore();
   const { rewriteSentence } = useReadabilityRewrite();
-  const [processedIds, setProcessedIds] = useState<Set<string>>(new Set());
+  const processedIdsRef = useRef<Set<string>>(new Set());
 
   const handleAnalysis = useDebouncedCallback(async (text: string) => {
     if (!text.trim()) {
@@ -68,9 +68,9 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
       setSuggestions('readability', readabilitySuggestions);
 
       readabilitySuggestions.forEach((suggestion: ReadabilitySuggestion) => {
-        if (!processedIds.has(suggestion.id)) {
+        if (!processedIdsRef.current.has(suggestion.id)) {
           rewriteSentence(suggestion);
-          setProcessedIds(prev => new Set(prev).add(suggestion.id));
+          processedIdsRef.current.add(suggestion.id);
         }
       });
     } catch (error) {

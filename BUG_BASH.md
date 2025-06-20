@@ -1,0 +1,4 @@
+- readability making too many requests (done)
+- cant sign out on editor. (instead of sign out button create a user profile dropdown)
+- Some of conciseness is that it needs to remove but it doesn't tell you
+- I set the algorithms for readability to 1 for testing, will need to change back to 5

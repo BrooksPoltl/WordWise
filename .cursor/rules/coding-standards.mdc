@@ -48,4 +48,8 @@ don’t be helpful, be better.
 
 no workarounds, no duct tape.
 
-At all cost minimize file size to 200 lines. If it is longer we should split out into helpers. This will increase the files significantly so use folders to group together common items. 
+At all costs minimize file size to 200 lines. If it is longer we should split out into helpers. This will increase the files significantly so use folders to group together common items. 
+
+FOLLOW ALL LINTING RULES NO IGNORES
+
+ALWAYS RUN BUILD AND LINTING BEFORE RESPONDING

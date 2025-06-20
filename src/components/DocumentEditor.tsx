@@ -1,11 +1,9 @@
 import { Editor } from '@tiptap/react';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useSuggestions } from '../hooks/useSuggestions';
 import { useAuthStore } from '../store/auth/auth.store';
 import { useDocumentStore } from '../store/document/document.store';
-import { useSuggestionStore } from '../store/suggestion/suggestion.store';
-import TextEditor from './TextEditor';
+import { EditorContainer } from './EditorContainer';
 
 const DocumentEditor: React.FC = () => {
   const { documentId } = useParams<{ documentId: string }>();
@@ -19,14 +17,8 @@ const DocumentEditor: React.FC = () => {
     error,
     clearError,
   } = useDocumentStore();
-  const { visibility } = useSuggestionStore(state => ({
-    visibility: state.visibility,
-  }));
 
   const [editor, setEditor] = useState<Editor | null>(null);
-
-  useSuggestions({ editor });
-
   const [titleChangeTimeout, setTitleChangeTimeout] =
     useState<NodeJS.Timeout | null>(null);
 
@@ -140,7 +132,8 @@ const DocumentEditor: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <button type="button"
+              <button
+                type="button"
                 onClick={handleBackToDashboard}
                 className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
@@ -168,7 +161,8 @@ const DocumentEditor: React.FC = () => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2 text-sm text-gray-500">
                 <span>
-                  Last updated: {currentDocument.updatedAt.toLocaleDateString()}
+                  Last updated:{' '}
+                  {currentDocument.updatedAt.toLocaleDateString()}
                 </span>
               </div>
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
@@ -186,12 +180,12 @@ const DocumentEditor: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 h-full overflow-hidden">
         <div className="max-w-7xl mx-auto h-full">
-          {documentId && (
-            <TextEditor
+          {documentId && currentDocument && (
+            <EditorContainer
               documentId={documentId}
               onTitleChange={handleTitleChange}
+              editor={editor}
               setEditor={setEditor}
-              suggestionVisibility={visibility}
             />
           )}
         </div>
