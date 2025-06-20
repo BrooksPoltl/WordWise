@@ -1,4 +1,3 @@
-import { Editor } from '@tiptap/react';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuthStore } from '../store/auth/auth.store';
@@ -18,7 +17,6 @@ const DocumentEditor: React.FC = () => {
     clearError,
   } = useDocumentStore();
 
-  const [editor, setEditor] = useState<Editor | null>(null);
   const [titleChangeTimeout, setTitleChangeTimeout] =
     useState<NodeJS.Timeout | null>(null);
 
@@ -184,8 +182,6 @@ const DocumentEditor: React.FC = () => {
             <EditorContainer
               documentId={documentId}
               onTitleChange={handleTitleChange}
-              editor={editor}
-              setEditor={setEditor}
             />
           )}
         </div>

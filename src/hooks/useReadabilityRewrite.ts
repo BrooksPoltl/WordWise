@@ -12,9 +12,11 @@ export const useReadabilityRewrite = () => {
   const rewriteSentence = useCallback(
     async (suggestion: ReadabilitySuggestion) => {
       if (rewriteCache.current.has(suggestion.text)) {
-        const cachedRewrite = rewriteCache.current.get(suggestion.text)!;
-        updateSuggestion('readability', suggestion.id, cachedRewrite);
-        return;
+        const cachedRewrite = rewriteCache.current.get(suggestion.text);
+        if (cachedRewrite) {
+          updateSuggestion('readability', suggestion.id, cachedRewrite);
+          return;
+        }
       }
 
       setIsLoading(true);

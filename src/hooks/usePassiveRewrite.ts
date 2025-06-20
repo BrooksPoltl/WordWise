@@ -15,10 +15,12 @@ export const usePassiveRewrite = () => {
 
   const rewriteSentence = useCallback(async (suggestion: PassiveSuggestion) => {
     if (rewriteCache.current.has(suggestion.text)) {
-      const cachedRewrite = rewriteCache.current.get(suggestion.text)!;
-      updateSuggestion('passive', suggestion.id, cachedRewrite);
-      logger.info('Using cached rewrite for passive suggestion:', cachedRewrite);
-      return;
+      const cachedRewrite = rewriteCache.current.get(suggestion.text);
+      if (cachedRewrite) {
+        updateSuggestion('passive', suggestion.id, cachedRewrite);
+        logger.info('Using cached rewrite for passive suggestion:', cachedRewrite);
+        return;
+      }
     }
 
     setIsLoading(true);

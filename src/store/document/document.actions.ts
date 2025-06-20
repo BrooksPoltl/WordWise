@@ -149,7 +149,7 @@ export const createDocument = async (
 
 export const updateDocument = async (
   set: DocumentSet,
-  get: () => DocumentState,
+  _get: () => DocumentState,
   payload: DocumentUpdatePayload,
 ): Promise<void> => {
   try {

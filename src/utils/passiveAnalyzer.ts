@@ -15,8 +15,28 @@ interface PassiveVFileMessage {
 
 const processor = retext().use(retextEnglish).use(retextPassive);
 
-const processRetext = async (text: string): Promise<VFile> => {
-  return processor.process(text);
+const processRetext = async (text: string): Promise<VFile> =>
+  processor.process(text);
+
+// Helper function to extract sentence containing the passive voice
+const extractSentenceContainingOffset = (text: string, startOffset: number, endOffset: number): string => {
+  // Find sentence boundaries around the passive voice phrase
+  const beforeText = text.substring(0, startOffset);
+  const afterText = text.substring(endOffset);
+  
+  // Look for sentence start (beginning of text, or after . ! ?)
+  const sentenceStartMatch = beforeText.match(/[.!?]\s*([^.!?]*)$/);
+  const sentenceStart = sentenceStartMatch 
+    ? startOffset - sentenceStartMatch[1].length 
+    : 0;
+  
+  // Look for sentence end (. ! ? or end of text)
+  const sentenceEndMatch = afterText.match(/^[^.!?]*[.!?]/);
+  const sentenceEnd = sentenceEndMatch 
+    ? endOffset + sentenceEndMatch[0].length 
+    : text.length;
+  
+  return text.substring(sentenceStart, sentenceEnd).trim();
 };
 
 export const analyzePassive = async (
@@ -27,7 +47,7 @@ export const analyzePassive = async (
 
     const suggestions: PassiveSuggestion[] = file.messages
       .map((message): PassiveSuggestion | null => {
-        const { place, actual, reason } =
+        const { place, reason } =
           message as unknown as PassiveVFileMessage;
 
         if (
@@ -37,9 +57,16 @@ export const analyzePassive = async (
           return null;
         }
 
+        // Extract the full sentence containing the passive voice
+        const fullSentence = extractSentenceContainingOffset(
+          text, 
+          place.start.offset, 
+          place.end.offset
+        );
+
         return {
           id: `passive-${place.start.offset}`,
-          text: String(actual),
+          text: fullSentence, // Send full sentence instead of just the passive phrase
           startOffset: place.start.offset,
           endOffset: place.end.offset,
           type: 'passive',
