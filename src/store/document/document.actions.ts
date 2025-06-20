@@ -1,15 +1,15 @@
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    orderBy,
+    query,
+    serverTimestamp,
+    updateDoc,
+    where
 } from "firebase/firestore";
 import { db } from "../../config";
 import { Document, DocumentCreatePayload, DocumentUpdatePayload, SpellingSuggestion } from "../../types";
@@ -218,6 +218,32 @@ export const updateDocument = async (
     });
     throw error;
   }
+};
+
+/**
+ * Fire-and-forget auto-save function for document content.
+ * Optimized for auto-save scenarios where we don't need to wait for completion
+ * or update local state since we already have the current content.
+ */
+export const autoSaveDocument = (
+  documentId: string,
+  content: string,
+): void => {
+  const docRef = doc(db, 'documents', documentId);
+  const updateData = {
+    content,
+    wordCount: content
+      .split(/\s+/)
+      .filter(word => word.length > 0).length,
+    characterCount: content.length,
+    updatedAt: serverTimestamp(),
+  };
+
+  // Fire and forget - don't await, just catch errors silently
+  updateDoc(docRef, updateData).catch((error) => {
+    // Log error but don't throw - this is fire-and-forget
+    console.warn('Auto-save failed (will retry on next change):', error);
+  });
 };
 
 export const deleteDocument = async (
