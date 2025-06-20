@@ -1,13 +1,15 @@
 import { Editor } from '@tiptap/react';
 import { useEffect, useRef } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
-import { ReadabilitySuggestion, SpellingSuggestion } from '../types';
+import { PassiveSuggestion, ReadabilitySuggestion, SpellingSuggestion } from '../types';
 import { browserSpellChecker } from '../utils/browserSpellChecker';
 
 import { useSuggestionStore } from '../store/suggestion/suggestion.store';
 import { analyzeClarity } from '../utils/clarityAnalyzer';
 import { analyzeConciseness } from '../utils/concisenessAnalyzer';
+import { analyzePassive } from '../utils/passiveAnalyzer';
 import { analyzeReadability } from '../utils/readabilityAnalyzer';
+import { usePassiveRewrite } from './usePassiveRewrite';
 import { useReadabilityRewrite } from './useReadabilityRewrite';
 
 interface UseSuggestionsProps {
@@ -16,7 +18,8 @@ interface UseSuggestionsProps {
 
 export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
   const { setSuggestions } = useSuggestionStore();
-  const { rewriteSentence } = useReadabilityRewrite();
+  const { rewriteSentence: rewriteReadability } = useReadabilityRewrite();
+  const { rewriteSentence: rewritePassive } = usePassiveRewrite();
   const processedIdsRef = useRef<Set<string>>(new Set());
 
   const handleAnalysis = useDebouncedCallback(async (text: string) => {
@@ -24,6 +27,7 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
       setSuggestions('clarity', []);
       setSuggestions('conciseness', []);
       setSuggestions('readability', []);
+      setSuggestions('passive', []);
       setSuggestions('spelling', []);
       return;
     }
@@ -33,10 +37,12 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
         claritySuggestions,
         concisenessSuggestions,
         readabilitySuggestions,
+        passiveSuggestions,
       ] = await Promise.all([
         analyzeClarity(text),
         analyzeConciseness(text),
         analyzeReadability(text),
+        analyzePassive(text),
       ]);
 
       const words = text.match(/\b\w+\b/g) || [];
@@ -66,10 +72,18 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
       setSuggestions('conciseness', concisenessSuggestions);
       setSuggestions('spelling', spellSuggestions);
       setSuggestions('readability', readabilitySuggestions);
+      setSuggestions('passive', passiveSuggestions);
 
       readabilitySuggestions.forEach((suggestion: ReadabilitySuggestion) => {
         if (!processedIdsRef.current.has(suggestion.id)) {
-          rewriteSentence(suggestion);
+          rewriteReadability(suggestion);
+          processedIdsRef.current.add(suggestion.id);
+        }
+      });
+
+      passiveSuggestions.forEach((suggestion: PassiveSuggestion) => {
+        if (!processedIdsRef.current.has(suggestion.id)) {
+          rewritePassive(suggestion);
           processedIdsRef.current.add(suggestion.id);
         }
       });
@@ -78,6 +92,7 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
       setSuggestions('clarity', []);
       setSuggestions('conciseness', []);
       setSuggestions('readability', []);
+      setSuggestions('passive', []);
       setSuggestions('spelling', []);
     }
   }, 500);
