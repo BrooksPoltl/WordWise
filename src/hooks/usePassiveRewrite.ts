@@ -1,9 +1,10 @@
 import { httpsCallable } from 'firebase/functions';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { functions } from '../config';
 import { updateSuggestion } from '../store/suggestion/suggestion.actions';
 import { PassiveSuggestion } from '../types';
 import { logger } from '../utils/logger';
+import { rewriteCache } from '../utils/rewriteCache';
 
 // TODO: Implement updatePassiveSuggestion in suggestion.actions.ts
 // import { updatePassiveSuggestion } from '../store/suggestion/suggestion.actions';
@@ -11,16 +12,14 @@ import { logger } from '../utils/logger';
 export const usePassiveRewrite = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const rewriteCache = useRef(new Map<string, string>());
 
   const rewriteSentence = useCallback(async (suggestion: PassiveSuggestion) => {
-    if (rewriteCache.current.has(suggestion.text)) {
-      const cachedRewrite = rewriteCache.current.get(suggestion.text);
-      if (cachedRewrite) {
-        updateSuggestion('passive', suggestion.id, cachedRewrite);
-        logger.info('Using cached rewrite for passive suggestion:', cachedRewrite);
-        return;
-      }
+    // Check cache first
+    const cachedRewrite = rewriteCache.get('passive', suggestion.text);
+    if (cachedRewrite) {
+      updateSuggestion('passive', suggestion.id, cachedRewrite);
+      logger.info('Using cached rewrite for passive suggestion:', cachedRewrite);
+      return;
     }
 
     setIsLoading(true);
@@ -31,7 +30,8 @@ export const usePassiveRewrite = () => {
       const data = result.data as { success: boolean; text: string };
 
       if (data.success && data.text) {
-        rewriteCache.current.set(suggestion.text, data.text);
+        // Cache the result
+        rewriteCache.set('passive', suggestion.text, data.text);
         updateSuggestion('passive', suggestion.id, data.text);
         logger.success('Successfully rewritten passive sentence:', data.text);
       }

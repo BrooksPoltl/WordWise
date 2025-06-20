@@ -4,7 +4,8 @@ import {
     useDismiss,
     useInteractions,
 } from '@floating-ui/react';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { usePassiveRewrite } from '../../hooks/usePassiveRewrite';
 import { SUGGESTION_CATEGORIES } from '../../store/suggestion/suggestion.types';
 import { PassiveSuggestion } from '../../types';
 
@@ -25,11 +26,22 @@ const PassiveSuggestionPopover = React.forwardRef<
     useDismiss(context),
   ]);
 
+  const { rewriteSentence, isLoading } = usePassiveRewrite();
+  const [hasTriggeredRewrite, setHasTriggeredRewrite] = useState(false);
+
   const hasRewrite = suggestion.suggestions && suggestion.suggestions.length > 0;
   const rewrittenText =
     suggestion.suggestions && suggestion.suggestions.length > 0
       ? suggestion.suggestions[0].text
       : null;
+
+  // Lazy retry: trigger rewrite when popover opens if no rewrite exists
+  useEffect(() => {
+    if (!hasRewrite && !hasTriggeredRewrite && !isLoading) {
+      rewriteSentence(suggestion);
+      setHasTriggeredRewrite(true);
+    }
+  }, [suggestion, hasRewrite, hasTriggeredRewrite, isLoading, rewriteSentence]);
 
   return (
     <div
@@ -43,7 +55,7 @@ const PassiveSuggestionPopover = React.forwardRef<
       </div>
       <p className="mb-3 text-sm text-gray-600">{suggestion.explanation}</p>
 
-      {!hasRewrite && (
+      {(isLoading || (!hasRewrite && hasTriggeredRewrite)) && (
         <div className="animate-pulse text-sm text-gray-500">
           Getting suggestion...
         </div>
@@ -76,7 +88,7 @@ const PassiveSuggestionPopover = React.forwardRef<
         </div>
       )}
 
-      {!rewrittenText && (
+      {!rewrittenText && !isLoading && (
         <div className="mt-2 flex justify-end">
           <button
             type="button"
