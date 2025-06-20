@@ -12,7 +12,7 @@ const Navbar: React.FC = () => {
             <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">W</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">WordWise</span>
+            <span className="text-xl font-bold text-gray-900">WiseWord</span>
           </div>
 
           {/* Desktop Navigation */}
@@ -33,18 +33,18 @@ const Navbar: React.FC = () => {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <button
-              type="button"
+            <a
+              href="/auth"
               className="text-gray-600 hover:text-gray-900 transition-colors"
             >
               Sign In
-            </button>
-            <button
-              type="button"
+            </a>
+            <a
+              href="/auth"
               className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-200"
             >
               Sign up for free
-            </button>
+            </a>
           </div>
 
           {/* Mobile menu button */}
@@ -82,18 +82,18 @@ const Navbar: React.FC = () => {
                 Pricing
               </a> */}
               <div className="pt-4 pb-2 border-t border-gray-100">
-                <button
-                  type="button"
+                <a
+                  href="/auth"
                   className="block w-full text-left px-3 py-2 text-gray-600 hover:text-gray-900"
                 >
                   Sign In
-                </button>
-                <button
-                  type="button"
+                </a>
+                <a
+                  href="/auth"
                   className="block w-full text-left px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg mt-2 hover:from-blue-600 hover:to-purple-600"
                 >
                   Sign up for free
-                </button>
+                </a>
               </div>
             </div>
           </div>
