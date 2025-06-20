@@ -3,6 +3,7 @@ import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-d
 import AuthWrapper from './components/AuthWrapper';
 import Dashboard from './components/Dashboard';
 import DocumentEditor from './components/DocumentEditor';
+import LandingPage from './components/LandingPage';
 import Onboarding from './components/Onboarding';
 import Profile from './components/Profile';
 import { useAuthStore } from './store/auth/auth.store';
@@ -39,7 +40,7 @@ const App: React.FC = () => {
 
   // Helper function to render protected route element
   const renderProtectedRoute = (component: React.ReactElement) => {
-    if (!user) return <Navigate to="/auth" replace />;
+    if (!user) return <Navigate to="/" replace />;
     if (needsOnboarding) return <Navigate to="/onboarding" replace />;
     return component;
   };
@@ -61,7 +62,7 @@ const App: React.FC = () => {
 
   // Helper function to render onboarding route element
   const renderOnboardingRoute = () => {
-    if (!user) return <Navigate to="/auth" replace />;
+    if (!user) return <Navigate to="/" replace />;
     if (!needsOnboarding) return <Navigate to="/dashboard" replace />;
     return <Onboarding />;
   };
@@ -69,7 +70,15 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* Public routes */}
+        {/* Landing page for unauthenticated users */}
+        <Route 
+          path="/" 
+          element={
+            user ? <Navigate to={getAuthenticatedRedirect()} replace /> : <LandingPage />
+          } 
+        />
+
+        {/* Auth routes */}
         <Route path="/auth" element={renderAuthRoute()} />
 
         {/* Onboarding route */}
@@ -85,23 +94,12 @@ const App: React.FC = () => {
           element={renderProtectedRoute(<DocumentEditor />)}
         />
 
-        {/* Default redirect */}
-        <Route
-          path="/"
-          element={
-            <Navigate 
-              to={user ? getAuthenticatedRedirect() : '/auth'} 
-              replace 
-            />
-          }
-        />
-
         {/* Catch all route */}
         <Route
           path="*"
           element={
             <Navigate 
-              to={user ? getAuthenticatedRedirect() : '/auth'} 
+              to={user ? getAuthenticatedRedirect() : '/'} 
               replace 
             />
           }
