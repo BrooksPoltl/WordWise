@@ -7,8 +7,6 @@ interface EditorHeaderProps {
   onTitleChange: (title: string) => void;
   loading: boolean;
   detectedTone: Tone | null;
-  wordCount: number;
-  characterCount: number;
 }
 
 const EditorHeader: React.FC<EditorHeaderProps> = ({
@@ -16,8 +14,6 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
   onTitleChange,
   loading,
   detectedTone,
-  wordCount,
-  characterCount,
 }) => (
     <div className="flex items-center justify-between mb-4">
       <input
@@ -41,8 +37,6 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
             <span>{detectedTone}</span>
           </div>
         )}
-        <span>{wordCount} words</span>
-        <span>{characterCount} characters</span>
       </div>
     </div>
 );

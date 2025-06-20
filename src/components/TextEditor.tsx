@@ -17,6 +17,7 @@ import { useAutoSave } from '../hooks/useAutoSave';
 import { useSuggestions } from '../hooks/useSuggestions';
 import { useTextEditor } from '../hooks/useTextEditor';
 import { useToneAnalysis } from '../hooks/useToneAnalysis';
+import { useAuthStore } from '../store/auth/auth.store';
 import { useDocumentStore } from '../store/document/document.store';
 import { useSuggestionStore } from '../store/suggestion/suggestion.store';
 import {
@@ -30,9 +31,11 @@ import {
   SuggestionOption
 } from '../types';
 import { getSentenceBoundaries } from '../utils/sentenceBoundaries';
+import DocumentSettingsBar from './editor/DocumentSettingsBar';
 import EditorHeader from './editor/EditorHeader';
 import EditorToolbar from './editor/EditorToolbar';
 import SuggestionPopover from './editor/SuggestionPopover';
+import UpdateContextModal from './editor/UpdateContextModal';
 
 
 interface TextEditorProps {
@@ -51,15 +54,14 @@ const TextEditor: React.FC<TextEditorProps> = ({
   documentId,
   onTitleChange,
 }) => {
-  const { currentDocument, loading } = useDocumentStore();
+  const { user } = useAuthStore();
+  const { currentDocument, loading, updateDocument } = useDocumentStore();
   const { debouncedSave } = useAutoSave(documentId);
   const contentSetRef = useRef(false);
   const {
     editor,
     title,
     setTitle,
-    wordCount,
-    characterCount,
     updateContent,
     isProgrammaticUpdate,
   } = useTextEditor({
@@ -75,6 +77,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
   }));
   useSuggestions({ editor });
 
+  const [isContextModalOpen, setIsContextModalOpen] = useState(false);
   const [popoverState, setPopoverState] = useState<PopoverState>({
     isOpen: false,
     suggestionId: null,
@@ -137,6 +140,30 @@ const TextEditor: React.FC<TextEditorProps> = ({
     },
     [setTitle, onTitleChange],
   );
+
+  const handleContextSave = async (newContext: string) => {
+    if (!documentId) return;
+    await updateDocument({
+      id: documentId,
+      context: newContext,
+    });
+    setIsContextModalOpen(false);
+  };
+
+  const handleDocumentTypeChange = async (newType: string) => {
+    if (!documentId) {
+      return;
+    }
+    
+    try {
+      await updateDocument({
+        id: documentId,
+        documentType: newType,
+      });
+    } catch (error) {
+      // Error handling is done in the updateDocument function
+    }
+  };
 
   useEffect(() => {
     setTitle(currentDocument?.title || '');
@@ -326,41 +353,45 @@ const TextEditor: React.FC<TextEditorProps> = ({
   }
 
   return (
-    <div className="flex h-full">
-      <div className="flex-1 relative">
-        <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden h-full">
-          <div className="border-b border-gray-200 p-4">
-            <EditorHeader
-              title={title}
-              onTitleChange={handleTitleChange}
-              loading={loading}
-              detectedTone={detectedTone}
-              wordCount={wordCount}
-              characterCount={characterCount}
-            />
-
-            <EditorToolbar
-              editor={editor}
-            />
-          </div>
-
-          <div className="min-h-[500px] flex-1">
-            <EditorContent editor={editor} />
-          </div>
-        </div>
-        {popoverState.isOpen && activeSuggestion && (
-          <SuggestionPopover
-            ref={refs.setFloating}
-            suggestion={activeSuggestion}
-            onAccept={handleAcceptSuggestion}
-            onDismiss={() => setPopoverState(p => ({ ...p, isOpen: false }))}
-            style={floatingStyles}
-            context={context}
-          />
-        )}
+    <div className="flex flex-col h-full bg-white shadow rounded-lg">
+      <div className="p-4 border-b border-gray-200">
+        <EditorHeader
+          title={title}
+          onTitleChange={handleTitleChange}
+          loading={loading}
+          detectedTone={detectedTone}
+        />
+        <EditorToolbar editor={editor} />
+        <DocumentSettingsBar
+          onOpenContextModal={() => setIsContextModalOpen(true)}
+          currentDocumentType={currentDocument?.documentType}
+          userRole={user?.role}
+          onDocumentTypeChange={handleDocumentTypeChange}
+        />
       </div>
 
-
+      <div className="flex-1 overflow-y-auto p-4">
+        {editor && (
+          <EditorContent editor={editor} />
+        )}
+      </div>
+      {popoverState.isOpen && activeSuggestion && (
+        <SuggestionPopover
+          ref={refs.setFloating}
+          suggestion={activeSuggestion}
+          onAccept={handleAcceptSuggestion}
+          onDismiss={() => setPopoverState(p => ({ ...p, isOpen: false }))}
+          style={floatingStyles}
+          context={context}
+        />
+      )}
+      <UpdateContextModal
+        isOpen={isContextModalOpen}
+        onClose={() => setIsContextModalOpen(false)}
+        onSave={handleContextSave}
+        initialContext={currentDocument?.context || ''}
+        loading={loading}
+      />
     </div>
   );
 };

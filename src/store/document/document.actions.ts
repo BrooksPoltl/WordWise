@@ -181,6 +181,8 @@ export const updateDocument = async (
       content?: string;
       wordCount?: number;
       characterCount?: number;
+      context?: string;
+      documentType?: string;
     } = {
       updatedAt: serverTimestamp(),
     };
@@ -197,11 +199,19 @@ export const updateDocument = async (
       updateData.characterCount = payload.content.length;
     }
 
-    await updateDoc(docRef, updateData);
+    if (payload.context !== undefined) {
+      updateData.context = payload.context;
+    }
 
-    // No longer need to update local state optimistically,
-    // as the editor is the source of truth during an editing session.
-    // The main document list will be updated on the next full fetch.
+    if (payload.documentType !== undefined) {
+      updateData.documentType = payload.documentType;
+    }
+    
+    await updateDoc(docRef, updateData);
+    
+    // Refetch the document to update local state with the changes
+    await fetchDocument(set, payload.id);
+
   } catch (error) {
     set({
       error: getFriendlyErrorMessage(error, 'Failed to update document'),

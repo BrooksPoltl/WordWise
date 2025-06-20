@@ -61,6 +61,8 @@ export interface DocumentUpdatePayload {
   id: string;
   title?: string;
   content?: string;
+  context?: string;
+  documentType?: string;
 }
 
 // Spell checking types

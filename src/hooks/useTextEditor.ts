@@ -46,16 +46,10 @@ export const useTextEditor = ({ initialContent = '' }: UseTextEditorProps) => {
     [editor],
   );
 
-  // Get word and character counts
-  const wordCount = editor?.storage.characterCount.words() || 0;
-  const characterCount = editor?.storage.characterCount.characters() || 0;
-
   return {
     editor,
     title,
     setTitle,
-    wordCount,
-    characterCount,
     updateContent,
     isProgrammaticUpdate,
   };
