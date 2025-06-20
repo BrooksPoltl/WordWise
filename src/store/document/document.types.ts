@@ -1,8 +1,8 @@
 import {
-    Document,
-    DocumentCreatePayload,
-    DocumentUpdatePayload,
-    SpellingSuggestion
+  Document,
+  DocumentCreatePayload,
+  DocumentUpdatePayload,
+  SpellingSuggestion
 } from '../../types';
 
 export interface DocumentState {
