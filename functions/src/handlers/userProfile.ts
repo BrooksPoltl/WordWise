@@ -9,7 +9,7 @@ const USER_ROLES = [
   'Software Engineer',
   'Technical Writer',
   'UX/UI Designer',
-  'Data Scientist / Analyst',
+  'Data Scientist',
   'Marketing Manager',
   'QA Engineer',
   'Engineering Manager',

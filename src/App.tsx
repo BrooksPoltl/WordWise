@@ -3,6 +3,7 @@ import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-d
 import AuthWrapper from './components/AuthWrapper';
 import Dashboard from './components/Dashboard';
 import DocumentEditor from './components/DocumentEditor';
+import Onboarding from './components/Onboarding';
 import { useAuthStore } from './store/auth/auth.store';
 
 const App: React.FC = () => {
@@ -25,47 +26,81 @@ const App: React.FC = () => {
     );
   }
 
+  // Helper function to determine if user needs onboarding
+  const needsOnboarding = user && !user.onboardingCompleted;
+
+  // Helper function to get redirect path for authenticated users
+  const getAuthenticatedRedirect = () => {
+    if (needsOnboarding) return '/onboarding';
+    return '/dashboard';
+  };
+
+  // Helper function to render protected route element
+  const renderProtectedRoute = (component: React.ReactElement) => {
+    if (!user) return <Navigate to="/auth" replace />;
+    if (needsOnboarding) return <Navigate to="/onboarding" replace />;
+    return component;
+  };
+
+  // Helper function to render auth route element
+  const renderAuthRoute = () => {
+    if (!user) {
+      return (
+        <AuthWrapper
+          onAuthSuccess={() => {
+            // Authentication success is handled by the auth store
+            // This callback could be used for additional logic if needed
+          }}
+        />
+      );
+    }
+    return <Navigate to={getAuthenticatedRedirect()} replace />;
+  };
+
+  // Helper function to render onboarding route element
+  const renderOnboardingRoute = () => {
+    if (!user) return <Navigate to="/auth" replace />;
+    if (!needsOnboarding) return <Navigate to="/dashboard" replace />;
+    return <Onboarding />;
+  };
+
   return (
     <Router>
       <Routes>
         {/* Public routes */}
-        <Route
-          path="/auth"
-          element={
-            !user ? (
-              <AuthWrapper
-                onAuthSuccess={() => {
-                  // Authentication success is handled by the auth store
-                  // This callback could be used for additional logic if needed
-                }}
-              />
-            ) : (
-              <Navigate to="/dashboard" replace />
-            )
-          }
-        />
+        <Route path="/auth" element={renderAuthRoute()} />
+
+        {/* Onboarding route */}
+        <Route path="/onboarding" element={renderOnboardingRoute()} />
 
         {/* Protected routes */}
-        <Route
-          path="/dashboard"
-          element={user ? <Dashboard /> : <Navigate to="/auth" replace />}
-        />
+        <Route path="/dashboard" element={renderProtectedRoute(<Dashboard />)} />
 
         <Route
           path="/editor/:documentId"
-          element={user ? <DocumentEditor /> : <Navigate to="/auth" replace />}
+          element={renderProtectedRoute(<DocumentEditor />)}
         />
 
         {/* Default redirect */}
         <Route
           path="/"
-          element={<Navigate to={user ? '/dashboard' : '/auth'} replace />}
+          element={
+            <Navigate 
+              to={user ? getAuthenticatedRedirect() : '/auth'} 
+              replace 
+            />
+          }
         />
 
         {/* Catch all route */}
         <Route
           path="*"
-          element={<Navigate to={user ? '/dashboard' : '/auth'} replace />}
+          element={
+            <Navigate 
+              to={user ? getAuthenticatedRedirect() : '/auth'} 
+              replace 
+            />
+          }
         />
       </Routes>
     </Router>
