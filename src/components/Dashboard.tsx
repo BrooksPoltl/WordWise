@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/auth/auth.store';
 import { useDocumentStore } from '../store/document/document.store';
 import { Document } from '../types';
 import DocumentList from './DocumentList';
+import FeatureShowcaseSection from './dashboard/FeatureShowcaseSection';
 
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuthStore();
@@ -170,17 +171,9 @@ const Dashboard: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="space-y-6">
-          {/* Welcome Section */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-2">
-                Welcome back, {user.displayName || 'there'}!
-              </h2>
-              <p className="text-gray-600">
-                Ready to improve your writing with lightning-fast browser spell checking?
-              </p>
-            </div>
-          </div>
+
+          {/* Feature Showcase Section */}
+          <FeatureShowcaseSection />
 
           {/* Documents Section */}
           <div className="bg-white shadow rounded-lg">
