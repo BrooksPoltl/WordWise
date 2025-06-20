@@ -2,13 +2,15 @@ import { FloatingContext } from '@floating-ui/react';
 import React from 'react';
 import { AnySuggestion } from '../../store/suggestion/suggestion.types';
 import {
-  ClaritySuggestion,
-  ConcisenessSuggestion,
-  ReadabilitySuggestion,
-  SpellingSuggestion,
+    ClaritySuggestion,
+    ConcisenessSuggestion,
+    PassiveSuggestion,
+    ReadabilitySuggestion,
+    SpellingSuggestion,
 } from '../../types';
 import ClaritySuggestionPopover from './ClaritySuggestionPopover';
 import ConcisenessSuggestionPopover from './ConcisenessSuggestionPopover';
+import PassiveSuggestionPopover from './PassiveSuggestionPopover';
 import ReadabilitySuggestionPopover from './ReadabilitySuggestionPopover';
 import SpellingSuggestionPopover from './SpellingSuggestionPopover';
 
@@ -37,6 +39,9 @@ const SuggestionPopover = React.forwardRef<
   const isReadabilitySuggestion = (
     s: AnySuggestion,
   ): s is ReadabilitySuggestion => s.type === 'readability';
+
+  const isPassiveSuggestion = (s: AnySuggestion): s is PassiveSuggestion =>
+    s.type === 'passive';
 
   if (isSpellingSuggestion(suggestion)) {
     return (
@@ -79,6 +84,19 @@ const SuggestionPopover = React.forwardRef<
   if (isReadabilitySuggestion(suggestion)) {
     return (
       <ReadabilitySuggestionPopover
+        ref={ref}
+        suggestion={suggestion}
+        onAccept={onAccept}
+        onDismiss={onDismiss}
+        style={style}
+        context={context}
+      />
+    );
+  }
+
+  if (isPassiveSuggestion(suggestion)) {
+    return (
+      <PassiveSuggestionPopover
         ref={ref}
         suggestion={suggestion}
         onAccept={onAccept}
