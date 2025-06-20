@@ -1,10 +1,10 @@
-- Some of conciseness is that it needs to remove but it doesn't tell you
-- I set the algorithms for readability to 1 for testing, will need to change back to 5
-- display name is not optional
-- Pasting large text does not work initially (could be bullet issue?) Detects the errors but doesn't highlight, works after save though? 
-- Proper nouns are getting flagged
-- for passive if you update a sentence that isnt the first sentence it doesn't start with a space.
-- Document title does not trigger auto save
-- didn't triggers spell check for some reason
-- Headings don't have grammar checking
-- Tone Detect runs whether document changes or not. If you are at the bottom 
+- Some of conciseness is that it needs to remove but it doesn't tell you (low)
+- I set the algorithms for readability to 1 for testing, will need to change back to 5 (low)
+- display name is not optional (low)
+- Pasting large text does not work initially (could be bullet issue?) Detects the errors but doesn't highlight, works after save though? (medium)
+- Proper nouns are getting flagged (medium)
+- for passive if you update a sentence that isnt the first sentence it doesn't start with a space. (medium)
+- Document title does not trigger auto save (important)
+- didn't triggers spell check for some reason (important)
+- Headings don't have grammar checking (less important)
+- Tone Detect runs whether document changes or not. If you are at the bottom (very annoying need to fix)

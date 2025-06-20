@@ -4,7 +4,92 @@ This document provides a set of sentences and scenarios to manually test and ver
 
 ---
 
-## I. Comprehensive & Combined Suggestions
+## I. AI Advisory Comments Feature
+
+This section tests the new AI Advisory Comments feature that provides high-level feedback on document structure and substance.
+
+### Test Case A1: Comprehensive Advisory Document
+*   **Objective:** Verify that the AI Advisory Comments feature correctly identifies various types of structural and argumentative issues.
+*   **Test Document:**
+    ```
+    Product Requirements Document: New User Dashboard
+
+    Overview
+    Our platform needs a better dashboard. Users are complaining about the current one and we should fix it soon.
+
+    Problem Statement
+    The dashboard is bad. It doesn't work well and users don't like it. This causes issues for our business.
+
+    Goals
+    We want to make a new dashboard that is good. It should be better than the old one and users should like it more.
+
+    User Research
+    We talked to some users and they said the dashboard needs improvement. They mentioned various issues but we didn't document all the feedback systematically.
+
+    Technical Requirements
+    The new dashboard will use React and will have charts. We'll implement real-time updates using WebSockets. The backend will be built with Node.js and will connect to our existing PostgreSQL database.
+
+    Success Metrics
+    We'll measure success by looking at user satisfaction and engagement. The dashboard should perform better than the current version.
+
+    Timeline
+    This project should be completed as soon as possible. We need to launch before our competitors do.
+
+    Implementation Plan
+    The engineering team will build the dashboard. We'll start with the frontend and then work on the backend. Testing will be done throughout the process.
+    ```
+*   **Expected Advisory Categories:**
+    1.  **Strengthen a Claim:** "Users are complaining" and "The dashboard is bad" should be flagged for needing supporting data/evidence.
+    2.  **Define Key Terms:** Technical terms like "WebSockets" and "PostgreSQL" should be flagged for definition.
+    3.  **Improve Structural Flow:** Brief paragraphs or dense sections should be identified.
+    4.  **Add Clear Call to Action:** Vague sections like "Timeline" and "Implementation Plan" should be flagged for specific next steps.
+    5.  **Acknowledge Alternatives:** Lack of alternative solutions mentioned should be identified.
+
+*   **Testing Steps:**
+    1.  Paste the test document into the WordWise editor.
+    2.  Click the "Get Advice" button in the editor header.
+    3.  Verify loading state appears ("Analyzing...").
+    4.  Verify modal opens with advisory suggestions.
+    5.  Check that suggestions are categorized correctly.
+    6.  Test dismissing individual suggestions.
+    7.  Test closing the modal.
+
+### Test Case A2: Well-Structured Document (No Suggestions)
+*   **Objective:** Verify that well-written documents receive minimal or no advisory suggestions.
+*   **Test Document:**
+    ```
+    Technical Design Document: User Authentication System
+
+    Executive Summary
+    This document outlines the design for implementing a secure user authentication system. Based on our analysis of 500+ user feedback responses, 73% of users cited security concerns as their primary barrier to adoption. This system will address these concerns while maintaining usability.
+
+    Problem Statement
+    Our current authentication relies on basic username/password combinations. Security audit findings from Q3 2023 revealed 15 critical vulnerabilities. Industry standards (NIST 800-63B) recommend multi-factor authentication for applications handling sensitive data.
+
+    Technical Architecture
+    The system will implement OAuth 2.0 with PKCE (Proof Key for Code Exchange) for enhanced security. OAuth 2.0 is an industry-standard authorization framework that enables applications to obtain limited access to user accounts. We considered three alternatives: SAML 2.0 (rejected due to complexity), custom JWT implementation (rejected due to security risks), and Auth0 integration (selected as our primary approach with OAuth 2.0 as fallback).
+
+    Success Metrics
+    - Reduce authentication-related support tickets by 40%
+    - Achieve 99.9% uptime for authentication services
+    - Complete security audit with zero critical findings
+    - User adoption rate of 85% within 30 days
+
+    Next Steps
+    The development team will begin implementation on January 15th, 2024. Phase 1 (OAuth integration) will be completed by February 1st, followed by Phase 2 (multi-factor authentication) by February 15th.
+    ```
+*   **Expected Behavior:** Should receive few or no advisory suggestions, demonstrating the AI can distinguish well-structured content.
+
+### Test Case A3: Empty/Minimal Content
+*   **Objective:** Verify graceful handling of edge cases.
+*   **Test Cases:**
+    1.  **Empty Document:** Click "Get Advice" with no content - button should be disabled.
+    2.  **Single Sentence:** "This is a test." - Should handle gracefully.
+    3.  **Very Short Document:** A few sentences - Should provide appropriate feedback or indicate no suggestions.
+
+---
+
+## II. Comprehensive & Combined Suggestions
 
 These test cases are designed to trigger multiple, overlapping suggestions to test the robustness of the highlighting and popover systems.
 
