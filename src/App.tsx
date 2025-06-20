@@ -4,6 +4,7 @@ import AuthWrapper from './components/AuthWrapper';
 import Dashboard from './components/Dashboard';
 import DocumentEditor from './components/DocumentEditor';
 import Onboarding from './components/Onboarding';
+import Profile from './components/Profile';
 import { useAuthStore } from './store/auth/auth.store';
 
 const App: React.FC = () => {
@@ -75,6 +76,8 @@ const App: React.FC = () => {
 
         {/* Protected routes */}
         <Route path="/dashboard" element={renderProtectedRoute(<Dashboard />)} />
+
+        <Route path="/profile" element={renderProtectedRoute(<Profile />)} />
 
         <Route
           path="/editor/:documentId"
