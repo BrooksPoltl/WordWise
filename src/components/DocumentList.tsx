@@ -241,8 +241,13 @@ const DocumentList: React.FC = () => {
 
                 <div className="flex items-center justify-between text-sm text-gray-500">
                   <div className="flex items-center space-x-4">
-                    <span>{doc.wordCount} words</span>
-                    <span>{doc.characterCount} chars</span>
+                    {doc.documentType ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {doc.documentType}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">No type set</span>
+                    )}
                   </div>
                   <span>{formatDate(doc.updatedAt)}</span>
                 </div>
