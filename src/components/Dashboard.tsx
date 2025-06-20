@@ -270,10 +270,10 @@ const Dashboard: React.FC = () => {
                       <div className="ml-5 w-0 flex-1">
                         <dl>
                           <dt className="text-sm font-medium text-gray-500 truncate">
-                            Spell Checker
+                            Document Analysis Score
                           </dt>
                           <dd className="text-lg font-medium text-gray-900">
-                            <span className="text-green-600 font-medium">⚡ Browser</span>
+                            <span className="text-green-600 font-medium">Coming Soon</span>
                           </dd>
                         </dl>
                       </div>
