@@ -20,11 +20,11 @@ import { useToneAnalysis } from '../hooks/useToneAnalysis';
 import { useDocumentStore } from '../store/document/document.store';
 import { useSuggestionStore } from '../store/suggestion/suggestion.store';
 import {
-  AnySuggestion,
-  SuggestionCategory,
+  AnySuggestion
 } from '../store/suggestion/suggestion.types';
 import {
   ConcisenessSuggestion,
+  PassiveSuggestion,
   ReadabilitySuggestion,
   SpellingSuggestion,
   SuggestionOption,
@@ -37,8 +37,6 @@ import ToneModal from './editor/ToneModal';
 interface TextEditorProps {
   documentId: string;
   onTitleChange: (title: string) => void;
-  setEditor: (editor: Editor | null) => void;
-  suggestionVisibility: Record<SuggestionCategory, boolean>;
 }
 
 interface PopoverState {
@@ -51,8 +49,6 @@ interface PopoverState {
 const TextEditor: React.FC<TextEditorProps> = ({
   documentId,
   onTitleChange,
-  setEditor,
-  suggestionVisibility,
 }) => {
   const { currentDocument, loading } = useDocumentStore();
   const { debouncedSave } = useAutoSave(documentId);
@@ -79,6 +75,9 @@ const TextEditor: React.FC<TextEditorProps> = ({
     closeToneModal,
   } = useToneAnalysis({ editor });
 
+  const { visibility } = useSuggestionStore(state => ({
+    visibility: state.visibility,
+  }));
   useSuggestions({ editor });
 
   const [popoverState, setPopoverState] = useState<PopoverState>({
@@ -91,25 +90,37 @@ const TextEditor: React.FC<TextEditorProps> = ({
     null,
   );
 
-  const visibilityRef = useRef(suggestionVisibility);
+  const visibilityRef = useRef(visibility);
   useEffect(() => {
-    visibilityRef.current = suggestionVisibility;
-  }, [suggestionVisibility]);
+    visibilityRef.current = visibility;
+  }, [visibility]);
 
-  const { spelling, clarity, conciseness, readability } = useSuggestionStore(
-    state => ({
-      spelling: state.spelling,
-      clarity: state.clarity,
-      conciseness: state.conciseness,
-      readability: state.readability,
-    }),
-    (oldState, newState) =>
-      JSON.stringify(oldState) === JSON.stringify(newState),
-  );
+  const { spelling, clarity, conciseness, readability, passive } =
+    useSuggestionStore(
+      state => ({
+        spelling: state.spelling,
+        clarity: state.clarity,
+        conciseness: state.conciseness,
+        readability: state.readability,
+        passive: state.passive,
+      }),
+      (oldState, newState) =>
+        oldState.spelling === newState.spelling &&
+        oldState.clarity === newState.clarity &&
+        oldState.conciseness === newState.conciseness &&
+        oldState.readability === newState.readability &&
+        oldState.passive === newState.passive,
+    );
 
   const allSuggestionsFromStore = useMemo(
-    () => [...spelling, ...clarity, ...conciseness, ...readability],
-    [spelling, clarity, conciseness, readability],
+    () => [
+      ...spelling,
+      ...clarity,
+      ...conciseness,
+      ...readability,
+      ...passive,
+    ],
+    [spelling, clarity, conciseness, readability, passive],
   );
 
   const activeSuggestion = popoverState.suggestionId
@@ -133,10 +144,6 @@ const TextEditor: React.FC<TextEditorProps> = ({
   );
 
   useEffect(() => {
-    setEditor(editor);
-  }, [editor, setEditor]);
-
-  useEffect(() => {
     setTitle(currentDocument?.title || '');
   }, [currentDocument?.title, setTitle]);
 
@@ -148,12 +155,7 @@ const TextEditor: React.FC<TextEditorProps> = ({
         hoveredSuggestionId,
       );
     }
-  }, [
-    editor,
-    allSuggestionsFromStore,
-    hoveredSuggestionId,
-    suggestionVisibility,
-  ]);
+  }, [editor, allSuggestionsFromStore, hoveredSuggestionId, visibility]);
 
   useEffect(() => {
     if (currentDocument?.content && !contentSetRef.current) {
@@ -267,10 +269,12 @@ const TextEditor: React.FC<TextEditorProps> = ({
     ): s is
       | (SpellingSuggestion & { suggestions: SuggestionOption[] })
       | (ConcisenessSuggestion & { suggestions: SuggestionOption[] })
-      | (ReadabilitySuggestion & { suggestions: SuggestionOption[] }) =>
+      | (ReadabilitySuggestion & { suggestions: SuggestionOption[] })
+      | (PassiveSuggestion & { suggestions: SuggestionOption[] }) =>
       (s.type === 'spelling' ||
         s.type === 'conciseness' ||
-        s.type === 'readability') &&
+        s.type === 'readability' ||
+        s.type === 'passive') &&
       s.suggestions !== undefined &&
       s.suggestions.length > 0;
 

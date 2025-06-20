@@ -112,6 +112,65 @@ npm run emulator
 npm run build
 ```
 
+## Dictionary Management
+
+WordWise includes a powerful dictionary management script that allows you to add words to the Hunspell dictionary file while maintaining proper alphabetical order using binary search algorithms.
+
+### Dictionary Script Usage
+
+The dictionary management script is located at `scripts/add-to-dictionary.js` and provides the following functionality:
+
+#### Adding Words
+
+```bash
+# Add a simple word
+node scripts/add-to-dictionary.js hello
+
+# Add a word with Hunspell flags
+node scripts/add-to-dictionary.js running /DGSJ
+
+# Add a noun that can be plural
+node scripts/add-to-dictionary.js computer /SM
+```
+
+#### Common Hunspell Flags
+
+- `/S` - Plural forms
+- `/M` - Can be used as a noun
+- `/G` - Gerund forms (-ing)
+- `/D` - Past tense forms (-ed)
+- `/J` - Adjective forms
+- `/R` - Comparative forms (-er)
+- `/T` - Superlative forms (-est)
+
+#### Validation and Help
+
+```bash
+# Validate dictionary alphabetical order
+node scripts/add-to-dictionary.js --validate
+
+# Show help and usage information
+node scripts/add-to-dictionary.js --help
+```
+
+### Features
+
+- **Binary Search**: Efficient O(log n) insertion to maintain alphabetical order
+- **Duplicate Detection**: Prevents adding words that already exist
+- **Automatic Backups**: Creates timestamped backups before making changes
+- **Flag Support**: Full support for Hunspell morphological flags
+- **Error Handling**: Comprehensive error checking and user feedback
+- **Validation**: Built-in dictionary integrity checking
+
+### Dictionary Location
+
+The script manages the dictionary file at:
+```
+public/dictionaries/index.dic
+```
+
+This file is used by the client-side spell checker (`nspell`) for real-time spell checking without sending data to external servers.
+
 ## Future Features
 
 - **Clarity Suggestions**: AI-powered clarity and readability improvements
