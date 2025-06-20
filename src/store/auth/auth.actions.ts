@@ -1,9 +1,9 @@
 import {
-    createUserWithEmailAndPassword,
-    GoogleAuthProvider,
-    signInWithEmailAndPassword,
-    signInWithPopup,
-    signOut
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut
 } from "firebase/auth";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import { auth, db } from "../../config";
