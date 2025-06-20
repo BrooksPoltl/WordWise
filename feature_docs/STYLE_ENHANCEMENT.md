@@ -1,5 +1,71 @@
 ### Feature: Style Enhancement & UX Overhaul
 
+### Session Summary (Latest Session - Race Condition & Passive Voice Fixes)
+This session focused on debugging and resolving critical issues with the passive voice implementation and AI rewrite functionality.
+
+**Critical Issues Identified & Resolved:**
+
+1. **Race Condition Bug in AI Rewrites** 🐛➡️✅
+   - **Problem**: AI rewrites (readability, passive) were being lost when text changed during API calls. Suggestion IDs would change mid-request, causing responses to fail when trying to update non-existent suggestions.
+   - **Root Cause**: Content-based suggestion IDs were regenerating on every text change, making long-running AI requests unable to find their original suggestions.
+   - **Solution Implemented**: 
+     - **localStorage Cache with TTL**: Created `src/utils/rewriteCache.ts` with 30-minute expiration, content-based hashing, and automatic cleanup.
+     - **Lazy Retry Pattern**: Instead of automatic retries, implemented on-demand retry when users open popovers. If no rewrite exists, fresh API request is made with current (non-stale) data.
+     - **Cost-Effective**: Only retries on user interaction, uses browser storage, eliminates wasted API calls.
+
+2. **Passive Voice Sentence Replacement Issues** 🐛➡️✅
+   - **Problem**: "Accept" was only replacing the passive phrase (e.g., "is sent") instead of the entire sentence with the AI rewrite.
+   - **Root Cause**: `handleAcceptSuggestion` was using `popoverState.from/to` (highlighting range) instead of full sentence boundaries.
+   - **Solution Implemented**: 
+     - **Sentence Boundary Detection**: Created `src/utils/sentenceBoundaries.ts` using regex patterns to detect sentence start/end positions.
+     - **Sentence-Level Replacement**: For passive suggestions only, replace entire sentence instead of just highlighted words.
+     - **Punctuation Handling**: Simplified approach - strip trailing punctuation from AI responses to prevent double periods.
+
+3. **Highlighting System Debugging** 🔍✅
+   - **Initial Issue**: User reported passive voice highlighting was broken, but investigation revealed ALL highlighting was broken.
+   - **Debugging Process**: Added extensive logging to `passiveAnalyzer.ts`, `useSuggestions.ts`, and `SuggestionDecorations.ts` to trace the suggestion pipeline.
+   - **Resolution**: Issues were resolved through the race condition fixes and proper sentence boundary implementation.
+
+**Technical Implementation Details:**
+
+- **Cache Implementation**: `rewriteCache.ts` uses content hashing (MD5) as keys, stores JSON with TTL timestamps, handles errors gracefully.
+- **Sentence Boundaries**: Regex-based detection looking for `.!?` terminators, handles edge cases like text without punctuation.
+- **Punctuation Strategy**: Simple approach - always strip AI response punctuation, preserve original sentence punctuation.
+- **Lazy Loading**: AI rewrites only trigger on user demand (popover open), not automatically on detection.
+
+**Architecture Improvements:**
+- Eliminated automatic AI rewrite triggers from `useSuggestions.ts`
+- Centralized caching logic in dedicated utility
+- Improved error handling and user experience for failed AI requests
+- Reduced API costs through intelligent retry patterns
+
+**Key Lessons Learned:**
+
+1. **Race Conditions in Real-Time Systems**: Content-based IDs that regenerate on every change are incompatible with long-running async operations. Solution: Use stable caching mechanisms with TTL instead of relying on ephemeral suggestion IDs.
+
+2. **User Experience vs. Performance**: Automatic AI rewrites create poor UX when they fail due to race conditions. Lazy loading (on-demand) provides better reliability and cost control.
+
+3. **Debugging Complex Systems**: When one feature appears broken, investigate the entire pipeline - the issue may be systemic rather than isolated.
+
+4. **Simplicity Wins**: Complex sentence boundary logic with punctuation matching was error-prone. Simple approach (strip AI punctuation) was more reliable and maintainable.
+
+5. **Cache Strategy**: Browser localStorage with TTL is effective for expensive operations that don't need real-time updates. Content hashing provides good cache keys for text-based operations.
+
+**Files Created/Modified in This Session:**
+
+- **NEW**: `src/utils/rewriteCache.ts` - TTL-based localStorage cache for AI rewrites
+- **NEW**: `src/utils/sentenceBoundaries.ts` - Sentence boundary detection utility  
+- **MODIFIED**: `src/hooks/usePassiveRewrite.ts` - Added lazy retry and cache integration
+- **MODIFIED**: `src/hooks/useReadabilityRewrite.ts` - Added lazy retry and cache integration
+- **MODIFIED**: `src/components/editor/PassiveSuggestionPopover.tsx` - Added lazy retry button
+- **MODIFIED**: `src/components/editor/ReadabilitySuggestionPopover.tsx` - Added lazy retry button
+- **MODIFIED**: `src/components/TextEditor.tsx` - Added sentence-level replacement for passive suggestions
+- **MODIFIED**: `src/hooks/useSuggestions.ts` - Removed automatic AI rewrite triggers
+
+**Current Status**: Passive voice detection and replacement is now fully functional with proper race condition handling, sentence-level replacements, and intelligent caching. The system is ready for production use.
+
+---
+
 ### Session Summary (End of Last Session)
 This document has been updated to reflect the significant progress made in refactoring the suggestion UI from a sidebar to an inline, popover-based system.
 
@@ -157,7 +223,7 @@ This section outlines the critical path forward to complete the Style Enhancemen
 | Priority | Task Description                                                    | Implementation Details                                                                                                                                                                                                                                     | Code Pointers                                                                                                                                                                                                    | Status    |
 | :------- | :------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------- |
 | **High**   | **1. Implement Readability (Complex Sentences)**            | - Integrate `retext-readability` into `readabilityAnalyzer.ts`.<br>- On detection, trigger a call to the backend AI service for an active voice rewrite.<br>- Create a `ReadabilitySuggestionPopover.tsx` to show the explanation and the AI suggestion (with a loading state). | `src/utils/readabilityAnalyzer.ts`<br>`src/hooks/useReadabilityRewrite.ts` (new)<br>`src/components/editor/ReadabilitySuggestionPopover.tsx` (new)                                                                | ✅         |
-| **High**   | **2. Implement Passive Detection**                          | - Integrate `retext-passive` into a new `passiveAnalyzer.ts`.<br>- On detection, trigger a call to a new backend AI service for an active voice rewrite.<br>- Create a new `PassiveSuggestionPopover.tsx` to show the explanation and the AI suggestion (with a loading state).<br>- Add a new "Passive" toggle to the UI. | `src/utils/passiveAnalyzer.ts` (new)<br>`src/hooks/usePassiveRewrite.ts` (new)<br>`src/components/editor/PassiveSuggestionPopover.tsx` (new)                                                              | ✅         |
+| **High**   | **2. Implement Passive Detection**                          | - Integrate `retext-passive` into a new `passiveAnalyzer.ts`.<br>- On detection, trigger a call to a new backend AI service for an active voice rewrite.<br>- Create a new `PassiveSuggestionPopover.tsx` to show the explanation and the AI suggestion (with a loading state).<br>- Add a new "Passive" toggle to the UI. | `src/utils/passiveAnalyzer.ts` (new)<br>`src/hooks/usePassiveRewrite.ts` (new)<br>`src/components/editor/PassiveSuggestionPopover.tsx` (new)                                                              | ✅ **COMPLETE WITH FIXES**         |
 | **Medium** | **3. UI/UX Refinement & Consistency**                               | - Conduct a full review of all popover components (`Spelling`, `Clarity`, `Conciseness`, `Readability`, `Passive`) for consistent styling, positioning, and behavior.<br>- Add subtle `framer-motion` animations for popover transitions to enhance feel.<br>- Verify toggle counts are accurate for all new suggestion types. | `src/components/editor/*SuggestionPopover.tsx`                                                                                                                                                                   | ☐         |
 | **Low**    | **4. Code Cleanup & Finalization**                                  | - Review all new hooks and components for adherence to project standards (conciseness, modularity).<br>- Remove any dead code, leftover comments, or `console.log` statements from the refactoring process.<br>- Run `npm run build` and `npm run lint` and fix all issues. | Entire `src/` directory                                                                                                                                                                                          | ☐         |
 
@@ -187,8 +253,7 @@ This section outlines the critical path forward to complete the Style Enhancemen
 | Priority | Task Description                                                    | Implementation Details                                                                                                                                                                                                                                     | Code Pointers                                                                                                                                                                                                    | Status    |
 | :------- | :------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------- |
 | **High**   | **1. Implement Readability (Complex Sentences)**            | - Integrate `retext-readability` into `readabilityAnalyzer.ts`.<br>- On detection, trigger a call to the backend AI service for an active voice rewrite.<br>- Create a `ReadabilitySuggestionPopover.tsx` to show the explanation and the AI suggestion (with a loading state). | `src/utils/readabilityAnalyzer.ts`<br>`src/hooks/useReadabilityRewrite.ts` (new)<br>`src/components/editor/ReadabilitySuggestionPopover.tsx` (new)                                                                | ✅         |
-| **High**   | **2. Implement Passive Detection**                          | - Integrate `retext-passive` into a new `passiveAnalyzer.ts`.<br>- On detection, trigger a call to a new backend AI service for an active voice rewrite.<br>- Create a new `PassiveSuggestionPopover.tsx` to show the explanation and the AI suggestion (with a loading state).<br>- Add a new "Passive" toggle to the UI. | `src/utils/passiveAnalyzer.ts` (new)<br>`src/hooks/usePassiveRewrite.ts` (new)<br>`src/components/editor/PassiveSuggestionPopover.tsx` (new)                                                              | ✅         |
+| **High**   | **2. Implement Passive Detection**                          | - Integrate `retext-passive` into a new `passiveAnalyzer.ts`.<br>- On detection, trigger a call to a new backend AI service for an active voice rewrite.<br>- Create a new `PassiveSuggestionPopover.tsx` to show the explanation and the AI suggestion (with a loading state).<br>- Add a new "Passive" toggle to the UI. | `src/utils/passiveAnalyzer.ts` (new)<br>`src/hooks/usePassiveRewrite.ts` (new)<br>`src/components/editor/PassiveSuggestionPopover.tsx` (new)                                                              | ✅ **COMPLETE WITH FIXES**         |
 | **Medium** | **3. UI/UX Refinement & Consistency**                               | - Conduct a full review of all popover components (`Spelling`, `Clarity`, `Conciseness`, `Readability`, `Passive`) for consistent styling, positioning, and behavior.<br>- Add subtle `framer-motion` animations for popover transitions to enhance feel.<br>- Verify toggle counts are accurate for all new suggestion types. | `src/components/editor/*SuggestionPopover.tsx`                                                                                                                                                                   | ☐         |
-| **Low**    | **4. Code Cleanup & Finalization**                                  | - Review all new hooks and components for adherence to project standards (conciseness, modularity).<br>- Remove any dead code, leftover comments, or `console.log` statements from the refactoring process.<br>- Run `npm run build` and `npm run lint` and fix all issues. | Entire `src/` directory                                                                                                                                                                                          | ☐         |
 
 ---
