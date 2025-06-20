@@ -17,4 +17,4 @@ const passiveRewriteHandler = withValidation(
   },
 );
 
-export const passiveVoiceRewrite = createApiHandler(passiveRewriteHandler); 
+export const passiveRewrite = createApiHandler(passiveRewriteHandler); 

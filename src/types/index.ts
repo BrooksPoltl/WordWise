@@ -101,6 +101,16 @@ export interface ReadabilitySuggestion {
   suggestions?: SuggestionOption[];
 }
 
+export interface PassiveSuggestion {
+  id: string;
+  text: string;
+  startOffset: number;
+  endOffset: number;
+  type: 'passive';
+  explanation: string;
+  suggestions?: SuggestionOption[];
+}
+
 export interface WritingMetrics {
   wordCount: number;
   characterCount: number;

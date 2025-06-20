@@ -9,4 +9,4 @@ export { toneDetect, toneRewrite } from './handlers/tone';
 export { readabilityRewrite } from './handlers/readability';
 
 // Export the new passive voice handler
-export { passiveVoiceRewrite } from './handlers/passive';
+export { passiveRewrite } from './handlers/passive';
