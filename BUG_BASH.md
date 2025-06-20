@@ -5,3 +5,4 @@
 - AI rewrites (readability, passive) are lost if text changes during API call. This is likely a race condition where the suggestion ID changes mid-request, so when the response returns, it can't find the original suggestion to update. (done)
 - display name is not optional
 - Pasting large text does not work initially (could be bullet issue?) Detects the errors but doesn't highlight, works after save though? 
+- Proper nouns are getting flagged
