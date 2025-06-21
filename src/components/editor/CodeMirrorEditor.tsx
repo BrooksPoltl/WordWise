@@ -75,25 +75,22 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     [onChange],
   );
 
-  // Get visible suggestions from store based on visibility settings
-  const getVisibleSuggestions = useCallback((): AnySuggestion[] => {
+  // Find suggestion at a given position - create a stable version for the editor
+  const findSuggestionAtPosStable = useCallback((pos: number): AnySuggestion | null => {
+    // Get current suggestions directly without depending on getVisibleSuggestions
+    const { grammar, clarity, conciseness, readability, passive, visibility } = suggestionStore;
     const allSuggestions: AnySuggestion[] = [
-      ...(suggestionStore.visibility.grammar ? suggestionStore.grammar : []),
-      ...(suggestionStore.visibility.clarity ? suggestionStore.clarity : []),
-      ...(suggestionStore.visibility.conciseness ? suggestionStore.conciseness : []),
-      ...(suggestionStore.visibility.readability ? suggestionStore.readability : []),
-      ...(suggestionStore.visibility.passive ? suggestionStore.passive : []),
+      ...(visibility.grammar ? grammar : []),
+      ...(visibility.clarity ? clarity : []),
+      ...(visibility.conciseness ? conciseness : []),
+      ...(visibility.readability ? readability : []),
+      ...(visibility.passive ? passive : []),
     ];
-    return allSuggestions;
-  }, [suggestionStore]);
-
-  // Find suggestion at a given position
-  const findSuggestionAtPos = useCallback((pos: number): AnySuggestion | null => {
-    const visibleSuggestions = getVisibleSuggestions();
-    return visibleSuggestions.find(
+    return allSuggestions.find(
       suggestion => suggestion.startOffset <= pos && suggestion.endOffset >= pos
     ) || null;
-  }, [getVisibleSuggestions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array to keep it stable for editor - intentionally not including suggestionStore
 
   // Update decorations when suggestion store changes
   useEffect(() => {
@@ -137,7 +134,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           if (pos === null) return;
 
           // First try to find a suggestion from our store
-          const storeSuggestion = findSuggestionAtPos(pos);
+          const storeSuggestion = findSuggestionAtPosStable(pos);
           if (storeSuggestion) {
             refs.setReference({
               getBoundingClientRect: () => {
@@ -212,7 +209,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       view.destroy();
       viewRef.current = null;
     };
-  }, [initialContent, placeholder, handleContentChange, refs, findSuggestionAtPos, setSuggestions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialContent, placeholder, handleContentChange, findSuggestionAtPosStable, setSuggestions]); // refs accessed directly in click handler
 
   // Handle suggestion actions
   const handleAcceptSuggestion = useCallback((suggestion: AnySuggestion) => {
