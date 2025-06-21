@@ -2,10 +2,10 @@ import { Editor } from '@tiptap/react';
 import { useEffect } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import {
-    BaseSuggestion,
-    GrammarSuggestion,
-    // PassiveSuggestion,
-    SuggestionAction
+  BaseSuggestion,
+  GrammarSuggestion,
+  // PassiveSuggestion,
+  SuggestionAction
 } from '../types';
 
 import { useSuggestionStore } from '../store/suggestion/suggestion.store';
