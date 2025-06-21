@@ -3,23 +3,16 @@ import { useEffect, useRef } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import {
     BaseSuggestion,
-    ClaritySuggestion,
-    ConcisenessSuggestion,
     GrammarSuggestion,
     PassiveSuggestion,
-    ReadabilitySuggestion,
     SuggestionAction
 } from '../types';
 
 import { useSuggestionStore } from '../store/suggestion/suggestion.store';
-import { analyzeClarity } from '../utils/clarityAnalyzer';
-import { analyzeConciseness } from '../utils/concisenessAnalyzer';
 import { getLinter, HarperLint } from '../utils/harperLinter';
 import { getHarperDisplayTitle, mapHarperLintKind } from '../utils/harperMapping';
 import { analyzePassive } from '../utils/passiveAnalyzer';
-import { analyzeReadability } from '../utils/readabilityAnalyzer';
 import { usePassiveRewrite } from './usePassiveRewrite';
-import { useReadabilityRewrite } from './useReadabilityRewrite';
 
 interface UseSuggestionsProps {
   editor: Editor | null;
@@ -116,15 +109,15 @@ const convertToTypedSuggestions = (suggestions: BaseSuggestion[]) => {
       }
     }));
     
-  const claritySuggestions: ClaritySuggestion[] = suggestions
+  const claritySuggestions = suggestions
     .filter(s => s.type === 'weasel_word')
     .map(s => ({ ...s, type: 'weasel_word' as const }));
     
-  const concisenessSuggestions: ConcisenessSuggestion[] = suggestions
+  const concisenessSuggestions = suggestions
     .filter(s => s.type === 'conciseness')
     .map(s => ({ ...s, type: 'conciseness' as const }));
     
-  const readabilitySuggestions: ReadabilitySuggestion[] = suggestions
+  const readabilitySuggestions = suggestions
     .filter(s => s.type === 'readability')
     .map(s => ({ ...s, type: 'readability' as const }));
 
@@ -138,7 +131,6 @@ const convertToTypedSuggestions = (suggestions: BaseSuggestion[]) => {
 
 export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
   const { setSuggestions } = useSuggestionStore();
-  const { rewriteSentence: rewriteReadability } = useReadabilityRewrite();
   const { rewriteSentence: rewritePassive } = usePassiveRewrite();
   const processedIdsRef = useRef<Set<string>>(new Set());
 
@@ -155,17 +147,11 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
     }
 
     try {
-      // Run Harper analysis alongside existing analyzers
+      // Run Harper analysis alongside passive analyzer
       const [
-        claritySuggestions,
-        concisenessSuggestions,
-        readabilitySuggestions,
         passiveSuggestions,
         harperLints,
       ] = await Promise.all([
-        analyzeClarity(text),
-        analyzeConciseness(text),
-        analyzeReadability(text),
         analyzePassive(text),
         runHarperAnalysis(text),
       ]);
@@ -175,18 +161,11 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
       const typedHarperSuggestions = convertToTypedSuggestions(harperSuggestions);
 
       setSuggestions({
-        clarity: [...claritySuggestions, ...typedHarperSuggestions.clarity],
-        conciseness: [...concisenessSuggestions, ...typedHarperSuggestions.conciseness],
-        readability: [...readabilitySuggestions, ...typedHarperSuggestions.readability],
+        clarity: typedHarperSuggestions.clarity,
+        conciseness: typedHarperSuggestions.conciseness,
+        readability: typedHarperSuggestions.readability,
         passive: passiveSuggestions,
-        grammar: typedHarperSuggestions.grammar, // Harper handles all grammar suggestions
-      });
-
-      readabilitySuggestions.forEach((suggestion: ReadabilitySuggestion) => {
-        if (!processedIdsRef.current.has(suggestion.id)) {
-          rewriteReadability(suggestion);
-          processedIdsRef.current.add(suggestion.id);
-        }
+        grammar: typedHarperSuggestions.grammar,
       });
 
       passiveSuggestions.forEach((suggestion: PassiveSuggestion) => {

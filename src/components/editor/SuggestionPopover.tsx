@@ -2,15 +2,9 @@ import { FloatingContext } from '@floating-ui/react';
 import React from 'react';
 import { AnySuggestion } from '../../store/suggestion/suggestion.types';
 import {
-  ClaritySuggestion,
-  ConcisenessSuggestion,
-  PassiveSuggestion,
-  ReadabilitySuggestion
+  PassiveSuggestion
 } from '../../types';
-import ClaritySuggestionPopover from './ClaritySuggestionPopover';
-import ConcisenessSuggestionPopover from './ConcisenessSuggestionPopover';
 import PassiveSuggestionPopover from './PassiveSuggestionPopover';
-import ReadabilitySuggestionPopover from './ReadabilitySuggestionPopover';
 
 interface SuggestionPopoverProps {
   suggestion: AnySuggestion;
@@ -25,25 +19,15 @@ const SuggestionPopover = React.forwardRef<
   HTMLDivElement,
   SuggestionPopoverProps
 >(({ suggestion, onAccept, onDismiss, onIgnore, style, context }, ref) => {
-  const isGrammarSuggestion = (s: AnySuggestion): boolean =>
-    s.type === 'spelling' || s.type === 'grammar' || s.type === 'style';
-
-  const isClaritySuggestion = (s: AnySuggestion): s is ClaritySuggestion =>
-    s.type === 'weasel_word';
-
-  const isConcisenessSuggestion = (
-    s: AnySuggestion,
-  ): s is ConcisenessSuggestion => s.type === 'conciseness';
-
-  const isReadabilitySuggestion = (
-    s: AnySuggestion,
-  ): s is ReadabilitySuggestion => s.type === 'readability';
+  const isHarperSuggestion = (s: AnySuggestion): boolean =>
+    s.type === 'spelling' || s.type === 'grammar' || s.type === 'style' ||
+    s.type === 'weasel_word' || s.type === 'conciseness' || s.type === 'readability';
 
   const isPassiveSuggestion = (s: AnySuggestion): s is PassiveSuggestion =>
     s.type === 'passive';
 
-  if (isGrammarSuggestion(suggestion)) {
-    // Enhanced grammar suggestion handler for Harper integration
+  if (isHarperSuggestion(suggestion)) {
+    // Enhanced Harper suggestion handler for all Harper-powered suggestions
     return (
       <div
         ref={ref}
@@ -51,10 +35,10 @@ const SuggestionPopover = React.forwardRef<
         className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 max-w-xs"
       >
         <div className="text-sm font-medium text-gray-900 mb-2">
-          {suggestion.title || 'Grammar Suggestion'}
+          {suggestion.title || 'Writing Suggestion'}
         </div>
         <div className="text-sm text-gray-600 mb-3">
-          {suggestion.explanation || 'Grammar improvement suggested'}
+          {suggestion.explanation || 'Improvement suggested'}
         </div>
         
         {/* Render Harper actions if available */}
@@ -108,7 +92,7 @@ const SuggestionPopover = React.forwardRef<
             </div>
           </div>
         ) : (
-          // Fallback for legacy suggestions
+          // Fallback for legacy suggestions without actions
           <div className="flex gap-2">
             <button
               type="button"
@@ -134,47 +118,6 @@ const SuggestionPopover = React.forwardRef<
           </div>
         )}
       </div>
-    );
-  }
-
-  if (isClaritySuggestion(suggestion)) {
-    return (
-      <ClaritySuggestionPopover
-        ref={ref}
-        suggestion={suggestion}
-        onDismiss={onDismiss}
-        onIgnore={onIgnore}
-        style={style}
-        context={context}
-      />
-    );
-  }
-
-  if (isConcisenessSuggestion(suggestion)) {
-    return (
-      <ConcisenessSuggestionPopover
-        ref={ref}
-        suggestion={suggestion}
-        onAccept={onAccept}
-        onDismiss={onDismiss}
-        onIgnore={onIgnore}
-        style={style}
-        context={context}
-      />
-    );
-  }
-
-  if (isReadabilitySuggestion(suggestion)) {
-    return (
-      <ReadabilitySuggestionPopover
-        ref={ref}
-        suggestion={suggestion}
-        onAccept={onAccept}
-        onDismiss={onDismiss}
-        onIgnore={onIgnore}
-        style={style}
-        context={context}
-      />
     );
   }
 

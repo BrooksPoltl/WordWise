@@ -45,11 +45,21 @@ This document outlines a phased approach to integrate the Harper grammar engine 
 | **P2** | **Implement "Apply Action" Logic** | The popover will emit a `SuggestionAction` on click. `EditorV2` will listen and dispatch the correct CodeMirror transaction (`replace`, `delete`, `insert`) to apply the change. | • **Edit:** `src/components/EditorV2.tsx`<br/>• **Edit:** `src/components/editor/SuggestionPopover.tsx` | Task 11 | ✅ **Complete** |
 | **P3** | **Implement Suggestion Toggles** | The `SuggestionToggles` component will filter suggestions by type (`grammar`, `clarity`, etc.) by updating state in the `suggestionStore`. | • **Use:** `src/components/editor/SuggestionToggles.tsx`<br/>• **Edit:** `src/components/EditorV2.tsx`<br/>• **Edit:** `src/store/suggestion/suggestion.store.ts` | Task 10 | ✅ **Complete** |
 
-### **Phase 3: Backend Integration**
+### **Phase 3: Legacy Analyzer Cleanup**
+
+*Goal: Remove legacy analyzers that caused re-rendering issues and conflicts with Harper.*
+
+| Priority | Task Description | Implementation Details | Code Pointers | Dependencies | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **P3** | **Remove Legacy Analyzers** | Remove all legacy analyzers (clarity, conciseness, readability) and their imports from `useSuggestions` hook since Harper handles all these suggestion types better. | • **Delete:** `src/utils/clarityAnalyzer.ts`<br/>• **Delete:** `src/utils/concisenessAnalyzer.ts`<br/>• **Delete:** `src/utils/readabilityAnalyzer.ts`<br/>• **Delete:** `src/utils/readabilityRewriter.ts`<br/>• **Delete:** `src/hooks/useReadabilityRewrite.ts`<br/>• **Edit:** `src/hooks/useSuggestions.ts` | Phase 2 | ✅ **Complete** |
+| **P3** | **Remove Legacy Suggestion Popovers** | Remove specific suggestion popover components since all Harper suggestions now use the unified popover with action support. | • **Delete:** `src/components/editor/ClaritySuggestionPopover.tsx`<br/>• **Delete:** `src/components/editor/ConcisenessSuggestionPopover.tsx`<br/>• **Delete:** `src/components/editor/ReadabilitySuggestionPopover.tsx`<br/>• **Edit:** `src/components/editor/SuggestionPopover.tsx` | Task 13 | ✅ **Complete** |
+| **P3** | **Update Unified Popover** | Update `SuggestionPopover` to handle all Harper suggestion types (grammar, clarity, conciseness, readability) with the same enhanced popover interface. | • **Edit:** `src/components/editor/SuggestionPopover.tsx` | Task 14 | ✅ **Complete** |
+
+### **Phase 4: Backend Integration**
 
 *Goal: Integrate the Harper linter with the backend to enable autosaving and additional features.*
 
 | Priority | Task Description | Implementation Details | Code Pointers | Dependencies | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **P3** | **Implement Passive Analyzer** | Integrate the `passiveAnalyzer` with the backend to enable autosaving and additional features. | • **Edit:** `src/utils/passiveAnalyzer.ts`<br/>• **Edit:** `src/store/suggestion/suggestion.store.ts` | Task 12 | ✅ **Complete** |
-| **P3** | **Finalize Integration** | Ensure all components and backend integrations are complete and working as expected. | • **Test:** All components and backend integrations<br/>• **Review:** Code and documentation | Task 13 | ✅ **Complete** | 
+| **P4** | **Implement Passive Analyzer** | Integrate the `passiveAnalyzer` with the backend to enable autosaving and additional features. | • **Edit:** `src/utils/passiveAnalyzer.ts`<br/>• **Edit:** `src/store/suggestion/suggestion.store.ts` | Phase 3 | ✅ **Complete** |
+| **P4** | **Finalize Integration** | Ensure all components and backend integrations are complete and working as expected. | • **Test:** All components and backend integrations<br/>• **Review:** Code and documentation | Phase 3 | ✅ **Complete** | 
