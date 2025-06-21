@@ -13,23 +13,20 @@ import {
 } from '../../utils/harperLinterSource';
 import SuggestionPopover from './SuggestionPopover';
 
-const diagnosticToSuggestion = (
+const convertDiagnosticToGrammarSuggestion = (
   diagnostic: Diagnostic,
-  doc: EditorState['doc'],
 ): GrammarSuggestion => ({
   id: `${diagnostic.from}-${diagnostic.to}-${diagnostic.message}`,
-  text: doc.sliceString(diagnostic.from, diagnostic.to),
+  text: diagnostic.message,
   startOffset: diagnostic.from,
   endOffset: diagnostic.to,
-  word: doc.sliceString(diagnostic.from, diagnostic.to),
-  type: 'grammar', // This can be enhanced if the diagnostic has more type info
-  suggestions:
-    diagnostic.actions
-      ?.filter(action => action.name !== 'Ignore')
-      .map(action => ({
-        id: action.name,
-        text: action.name,
-      })) || [],
+  word: '', // Will be populated from the actual text
+  type: 'grammar',
+  title: 'Grammar', // Default title for CodeMirror diagnostics
+  suggestions: diagnostic.actions?.map((action) => ({
+    id: action.name,
+    text: action.name,
+  })) || [],
   raw: diagnostic, // Storing the raw diagnostic for actions
 });
 
@@ -96,10 +93,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           );
 
           if (clickedDiagnostic) {
-            const suggestion = diagnosticToSuggestion(
-              clickedDiagnostic,
-              view.state.doc,
-            );
+            const suggestion = convertDiagnosticToGrammarSuggestion(clickedDiagnostic);
 
             // This is the magic. We set the floating-ui reference to a virtual
             // element that represents the clicked text.

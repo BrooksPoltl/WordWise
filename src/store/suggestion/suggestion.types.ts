@@ -12,7 +12,7 @@ export interface Suggestion {
 }
 
 export const SUGGESTION_CATEGORIES = {
-  spelling: {
+  grammar: {
     label: 'Grammar',
     color: '#ef4444', // Red
   },
@@ -44,7 +44,7 @@ export type AnySuggestion =
   | GrammarSuggestion;
 
 export interface SuggestionState {
-  spelling: GrammarSuggestion[];
+  grammar: GrammarSuggestion[];
   clarity: ClaritySuggestion[];
   conciseness: ConcisenessSuggestion[];
   passive: PassiveSuggestion[];
@@ -52,7 +52,7 @@ export interface SuggestionState {
 }
 
 export interface SuggestionVisibility {
-  spelling: boolean;
+  grammar: boolean;
   clarity: boolean;
   conciseness: boolean;
   passive: boolean;
@@ -63,8 +63,8 @@ export interface SuggestionStore extends SuggestionState {
   visibility: SuggestionVisibility;
   setSuggestions: (suggestions: Partial<SuggestionState>) => void;
   clearSuggestions: () => void;
-  setSpellingSuggestions: (suggestions: GrammarSuggestion[]) => void;
-  clearSpellingSuggestions: () => void;
+  setGrammarSuggestions: (suggestions: GrammarSuggestion[]) => void;
+  clearGrammarSuggestions: () => void;
   toggleVisibility: (category: SuggestionCategory) => void;
   // ... other setters if needed
 }

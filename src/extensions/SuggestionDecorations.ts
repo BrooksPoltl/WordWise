@@ -7,22 +7,20 @@ import {
     AnySuggestion,
     SuggestionCategory,
 } from '../store/suggestion/suggestion.types';
-
-type SuggestionType = SuggestionCategory | 'weasel_word' | 'grammar' | 'style';
+import { SuggestionType } from '../types';
 
 const suggestionCategoryMap: Record<SuggestionType, SuggestionCategory> = {
-  spelling: 'spelling',
-  grammar: 'spelling',
-  style: 'spelling',
+  spelling: 'grammar', // Legacy support
+  grammar: 'grammar',
+  style: 'grammar',
   weasel_word: 'clarity',
   conciseness: 'conciseness',
   readability: 'readability',
-  clarity: 'clarity',
   passive: 'passive',
 };
 
 const suggestionClassMap: Record<SuggestionCategory, string> = {
-  spelling: 'spell-error',
+  grammar: 'spell-error',
   clarity: 'clarity-error',
   conciseness: 'conciseness-error',
   readability: 'readability-error',
@@ -34,7 +32,7 @@ const suggestionPriority: SuggestionCategory[] = [
   'passive',
   'clarity',
   'conciseness',
-  'spelling',
+  'grammar',
 ];
 
 interface SuggestionState {
@@ -165,11 +163,11 @@ export const SuggestionDecorations = Extension.create({
         visibility: { [key: string]: boolean },
         hoveredSuggestionId: string | null,
       ) => {
-        const { spelling, clarity, conciseness, readability, passive } =
+        const { grammar, clarity, conciseness, readability, passive } =
           useSuggestionStore.getState();
 
         const allSuggestions = [
-          ...spelling,
+          ...grammar,
           ...clarity,
           ...conciseness,
           ...readability,
@@ -181,7 +179,7 @@ export const SuggestionDecorations = Extension.create({
           .map(([type]) => type);
 
         const visibleSuggestions = allSuggestions.filter(s => {
-          const category = suggestionCategoryMap[s.type] ?? 'spelling';
+          const category = suggestionCategoryMap[s.type] ?? 'grammar';
           return visibleSuggestionTypes.includes(category);
         });
 

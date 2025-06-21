@@ -1,14 +1,14 @@
 import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import {
-  SUGGESTION_CATEGORIES,
-  SuggestionCategory,
+    SUGGESTION_CATEGORIES,
+    SuggestionCategory,
 } from '../../store/suggestion/suggestion.types';
 
 export const SuggestionToggles = () => {
   const { visibility, toggleVisibility, ...suggestions } = useSuggestionStore();
 
   const suggestionCounts = {
-    spelling: suggestions.spelling.length,
+    grammar: suggestions.grammar.length,
     clarity: suggestions.clarity.length,
     conciseness: suggestions.conciseness.length,
     readability: suggestions.readability.length,

@@ -58,13 +58,14 @@ export const analyzeConciseness = async (
           : [];
 
         return {
-          id: `concise-${startOffset}-${index}`,
+          id: `conciseness-${startOffset}-${endOffset}`,
           text: text.slice(startOffset, endOffset),
           word: text.slice(startOffset, endOffset),
           startOffset,
           endOffset,
           suggestions: suggestionOptions,
           type: 'conciseness',
+          title: 'Conciseness',
           explanation: msg.message,
         };
       },

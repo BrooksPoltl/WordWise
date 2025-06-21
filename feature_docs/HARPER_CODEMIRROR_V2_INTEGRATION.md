@@ -22,17 +22,17 @@ This document outlines a phased approach to integrate the Harper grammar engine 
 | **P0** | **Reset `useSuggestions` Hook** | Refactor the `useSuggestions` hook to remove any temporary proof-of-concept logic. Establish a clean, minimal version of the hook that is ready for the new Harper-only linter logic. | • **Edit:** `src/hooks/useSuggestions.ts` | None | ✅ **Complete** |
 | **P0** | **Stabilize Suggestion Store** | Review and clean up the pending changes in `suggestionStore`. Ensure its state and actions are consistent and do not contain references to the removed spell checker. | • **Edit:** `src/store/suggestion/suggestion.store.ts`<br/>• **Edit:** `src/store/suggestion/suggestion.types.ts` | Task 1 | ✅ **Complete** |
 
-### **Phase 1: Backend & State Management (Harper Integration)**
+### **Phase 1: Frontend (EditorV2)**
 
 *Goal: Integrate Harper as the primary source of suggestions, managed through our global state.*
 
-| Priority | Task Description | Implementation Details | Code Pointers | Dependencies |
-| :--- | :--- | :--- | :--- | :--- |
-| **P1** | **Define Rich Suggestion Types** | Update `BaseSuggestion` to include a `title: string` (for Harper's `lint_kind`) and an `actions` array. Create a `SuggestionAction` union type for `{ type: 'replace', ... }`, `{ type: 'remove' }`, etc. | • **Edit:** `src/types/index.ts`<br/>• **Edit:** `src/store/suggestion/suggestion.types.ts` | Phase 0 |
-| **P1** | **Create Harper Lint Kind Mapper** | Create a utility function `mapHarperLintKind` that takes a Harper `lint_kind` string and returns our corresponding internal category (`'grammar'`, `'clarity'`, etc.). | • **Create:** `src/utils/harperMapping.ts` | None |
-| **P1** | **Implement Harper Linter Logic** | In the `useSuggestions` hook, implement the logic to run Harper's linter on the document text. **Note: Do not integrate `passiveAnalyzer` at this time.** | • **Edit:** `src/hooks/useSuggestions.ts`<br/>• **Use:** `src/utils/harperLinterSource.ts` | Task 5, Task 6 |
-| **P1** | **Process Raw Lints into App State** | Within `useSuggestions`, transform raw Harper output into our rich `Suggestion` objects, setting the `type`, `title`, and `actions` array using the mapper. | • **Edit:** `src/hooks/useSuggestions.ts` | Task 7 |
-| **P1** | **Dispatch Suggestions to Store** | The `useSuggestions` hook will call an action (e.g., `setSuggestions`) to update the global `suggestionStore` with the processed Harper suggestions. | • **Edit:** `src/hooks/useSuggestions.ts`<br/>• **Use:** `src/store/suggestion/suggestion.actions.ts` | Task 8 |
+| Priority | Task Description | Implementation Details | Code Pointers | Dependencies | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **P1** | **Define Rich Suggestion Types** | Update `BaseSuggestion` to include a `title: string` (for Harper's `lint_kind`) and an `actions` array. Create a `SuggestionAction` union type for `{ type: 'replace', ... }`, `{ type: 'remove' }`, etc. | • **Edit:** `src/types/index.ts`<br/>• **Edit:** `src/store/suggestion/suggestion.types.ts` | Phase 0 | ✅ **Complete** |
+| **P1** | **Create Harper Lint Kind Mapper** | Create a utility function `mapHarperLintKind` that takes a Harper `lint_kind` string and returns our corresponding internal category (`'grammar'`, `'clarity'`, etc.). | • **Create:** `src/utils/harperMapping.ts` | None | ✅ **Complete** |
+| **P1** | **Implement Harper Linter Logic** | In the `useSuggestions` hook, implement the logic to run Harper's linter on the document text. **Note: Do not integrate `passiveAnalyzer` at this time.** | • **Edit:** `src/hooks/useSuggestions.ts`<br/>• **Use:** `src/utils/harperLinterSource.ts` | Task 5, Task 6 | ✅ **Complete** |
+| **P1** | **Process Raw Lints into App State** | Within `useSuggestions`, transform raw Harper output into our rich `Suggestion` objects, setting the `type`, `title`, and `actions` array using the mapper. | • **Edit:** `src/hooks/useSuggestions.ts` | Task 7 | ✅ **Complete** |
+| **P1** | **Dispatch Suggestions to Store** | The `useSuggestions` hook will call an action (e.g., `setSuggestions`) to update the global `suggestionStore` with the processed Harper suggestions. | • **Edit:** `src/hooks/useSuggestions.ts`<br/>• **Use:** `src/store/suggestion/suggestion.actions.ts` | Task 8 | ✅ **Complete** |
 
 ### **Phase 2: Frontend (EditorV2) Integration**
 

@@ -4,7 +4,7 @@ import { unified } from 'unified';
 import { Point, Position } from 'unist';
 import { VFile } from 'vfile';
 import { VFileMessage } from 'vfile-message';
-import { ClaritySuggestion, SuggestionOption } from '../types';
+import { ClaritySuggestion } from '../types';
 import { logger } from './logger';
 import { weaselWordExplanations } from './weaselWordExplanations';
 
@@ -48,7 +48,7 @@ export const analyzeClarity = async (
       positionedMessages,
     );
 
-    const suggestions = positionedMessages.map((msg, index): ClaritySuggestion => {
+    const suggestions = positionedMessages.map((msg): ClaritySuggestion => {
       let startOffset: number;
       let endOffset: number;
 
@@ -65,14 +65,15 @@ export const analyzeClarity = async (
         weaselWordExplanations[msg.ruleId as string] || msg.message;
 
       return {
-        id: `clarity-${startOffset}-${index}`,
+        id: `clarity-${startOffset}-${endOffset}`,
         text: text.slice(startOffset, endOffset),
         word: text.slice(startOffset, endOffset),
         startOffset,
         endOffset,
-        suggestions: [] as SuggestionOption[],
+        suggestions: [{ id: 'remove', text: 'Remove weasel word' }],
         type: 'weasel_word',
-        explanation,
+        title: 'Clarity',
+        explanation: `"${text.slice(startOffset, endOffset)}" is a weasel word. ${explanation}`,
       };
     });
 

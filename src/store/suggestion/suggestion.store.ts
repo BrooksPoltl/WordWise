@@ -8,7 +8,7 @@ import {
 } from './suggestion.types';
 
 const initialState: SuggestionState = {
-    spelling: [],
+    grammar: [],
     clarity: [],
     conciseness: [],
     readability: [],
@@ -16,7 +16,7 @@ const initialState: SuggestionState = {
 };
 
 const initialVisibility: SuggestionVisibility = {
-    spelling: true,
+    grammar: true,
     clarity: true,
     conciseness: true,
     readability: true,
@@ -46,10 +46,9 @@ export const useSuggestionStore = create<SuggestionStore>(set => ({
             },
         })),
 
-    // Legacy method names maintained for compatibility
-    // The 'spelling' slice will be used for Harper grammar suggestions in Phase 1
-    setSpellingSuggestions: (suggestions: GrammarSuggestion[]) =>
-        set({ spelling: suggestions }),
+    // Updated method names for grammar suggestions
+    setGrammarSuggestions: (suggestions: GrammarSuggestion[]) =>
+        set({ grammar: suggestions }),
 
-    clearSpellingSuggestions: () => set({ spelling: [] }),
+    clearGrammarSuggestions: () => set({ grammar: [] }),
 })); 

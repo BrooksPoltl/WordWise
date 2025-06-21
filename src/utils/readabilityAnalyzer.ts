@@ -41,13 +41,14 @@ export const analyzeReadability = async (
         }
 
         return {
-          id: `readability-${place.start.offset}`,
+          id: `readability-${place.start.offset}-${place.end.offset}`,
           text: String(actual),
           word: String(actual),
           startOffset: place.start.offset,
           endOffset: place.end.offset,
           type: 'readability',
-          explanation: reason,
+          title: 'Readability',
+          explanation: `This sentence is difficult to read (${reason.split(' ')[0]} readability score). Consider breaking it into shorter sentences or simplifying the language.`,
         };
       })
       .filter((s): s is ReadabilitySuggestion => s !== null);

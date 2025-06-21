@@ -22,8 +22,7 @@ const colors = {
   operator: '#374151',
   
   // Harper suggestion colors
-  spelling: '#ef4444',
-  grammar: '#f59e0b',
+  grammar: '#ef4444',
   clarity: '#8b5cf6',
   conciseness: '#06b6d4',
   readability: '#10b981',
@@ -89,7 +88,7 @@ const wordwiseEditorTheme = EditorView.theme({
   // Harper suggestions
   '.harper-suggestion': {
     textDecoration: 'underline wavy',
-    textDecorationColor: colors.spelling,
+    textDecorationColor: colors.grammar,
     cursor: 'pointer',
     transition: 'opacity 0.2s ease',
   },

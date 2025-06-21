@@ -2,11 +2,10 @@ import { FloatingContext } from '@floating-ui/react';
 import React from 'react';
 import { AnySuggestion } from '../../store/suggestion/suggestion.types';
 import {
-    ClaritySuggestion,
-    ConcisenessSuggestion,
-    GrammarSuggestion,
-    PassiveSuggestion,
-    ReadabilitySuggestion
+  ClaritySuggestion,
+  ConcisenessSuggestion,
+  PassiveSuggestion,
+  ReadabilitySuggestion
 } from '../../types';
 import ClaritySuggestionPopover from './ClaritySuggestionPopover';
 import ConcisenessSuggestionPopover from './ConcisenessSuggestionPopover';
@@ -26,7 +25,7 @@ const SuggestionPopover = React.forwardRef<
   HTMLDivElement,
   SuggestionPopoverProps
 >(({ suggestion, onAccept, onDismiss, onIgnore, style, context }, ref) => {
-  const isGrammarSuggestion = (s: AnySuggestion): s is GrammarSuggestion =>
+  const isGrammarSuggestion = (s: AnySuggestion): boolean =>
     s.type === 'spelling' || s.type === 'grammar' || s.type === 'style';
 
   const isClaritySuggestion = (s: AnySuggestion): s is ClaritySuggestion =>

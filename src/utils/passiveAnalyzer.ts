@@ -65,12 +65,13 @@ export const analyzePassive = async (
         );
 
         return {
-          id: `passive-${place.start.offset}`,
-          text: fullSentence, // Send full sentence instead of just the passive phrase
-          word: text.substring(place.start.offset, place.end.offset), // The actual passive phrase
+          id: `passive-${place.start.offset}-${place.end.offset}`,
+          text: fullSentence,
+          word: text.substring(place.start.offset, place.end.offset),
           startOffset: place.start.offset,
           endOffset: place.end.offset,
           type: 'passive',
+          title: 'Passive Voice',
           explanation: reason,
         };
       })

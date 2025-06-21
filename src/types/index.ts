@@ -61,15 +61,22 @@ export interface SpellingSuggestion extends BaseSuggestion {
   type: 'spelling';
 }
 
+export type SuggestionAction =
+  | { type: 'replace'; text: string }
+  | { type: 'remove' }
+  | { type: 'insert_after'; text: string };
+
 // Base suggestion type
 export interface BaseSuggestion {
   id: string;
   type: SuggestionType;
+  title: string; // Harper's lint_kind for display (e.g., "Spelling", "Word Choice")
   word: string;
   text: string; // The actual text content of the suggestion
   startOffset: number;
   endOffset: number;
   suggestions?: Suggestion[];
+  actions?: SuggestionAction[]; // Rich actions for Harper suggestions
   explanation?: string;
 }
 
