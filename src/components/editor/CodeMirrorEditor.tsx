@@ -3,7 +3,12 @@ import { EditorState, Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AnySuggestion } from '../../store/suggestion/suggestion.types';
+import {
+    createSuggestionDecorationExtension,
+    dispatchSuggestionUpdate
+} from '../../extensions/SuggestionDecorations';
+import { useSuggestions } from '../../hooks/useSuggestions';
+import { AnySuggestion, SuggestionStore } from '../../store/suggestion/suggestion.types';
 import { wordwiseTheme } from '../../themes/wordwiseTheme';
 import { GrammarSuggestion } from '../../types';
 import {
@@ -34,18 +39,41 @@ interface CodeMirrorEditorProps {
   initialContent?: string;
   onChange?: (content: string) => void;
   placeholder?: string;
+  suggestionStore: SuggestionStore;
 }
+
+// Mock TipTap editor interface for useSuggestions hook compatibility
+interface MockEditor {
+  getText: () => string;
+  on: (event: string, callback: () => void) => void;
+  off: (event: string, callback: () => void) => void;
+}
+
+const createMockEditor = (content: string): MockEditor => ({
+  getText: () => content,
+  on: () => {},
+  off: () => {},
+});
 
 const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   initialContent = '',
   onChange,
   placeholder = 'Start writing...',
+  suggestionStore,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const [currentContent, setCurrentContent] = useState(initialContent);
 
   const [activeSuggestion, setActiveSuggestion] =
     useState<AnySuggestion | null>(null);
+
+  // Create mock editor for useSuggestions hook
+  const mockEditor = createMockEditor(currentContent);
+  
+  // Initialize suggestion analysis
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  useSuggestions({ editor: mockEditor as any });
 
   const { x, y, refs, strategy, context } = useFloating({
     open: !!activeSuggestion,
@@ -62,10 +90,50 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
   const handleContentChange = useCallback(
     (newContent: string) => {
+      setCurrentContent(newContent);
       onChange?.(newContent);
     },
     [onChange],
   );
+
+  // Get visible suggestions from store based on visibility settings
+  const getVisibleSuggestions = useCallback((): AnySuggestion[] => {
+    const allSuggestions: AnySuggestion[] = [
+      ...(suggestionStore.visibility.grammar ? suggestionStore.grammar : []),
+      ...(suggestionStore.visibility.clarity ? suggestionStore.clarity : []),
+      ...(suggestionStore.visibility.conciseness ? suggestionStore.conciseness : []),
+      ...(suggestionStore.visibility.readability ? suggestionStore.readability : []),
+      ...(suggestionStore.visibility.passive ? suggestionStore.passive : []),
+    ];
+    return allSuggestions;
+  }, [suggestionStore]);
+
+  // Find suggestion at a given position
+  const findSuggestionAtPos = useCallback((pos: number): AnySuggestion | null => {
+    const visibleSuggestions = getVisibleSuggestions();
+    return visibleSuggestions.find(
+      suggestion => suggestion.startOffset <= pos && suggestion.endOffset >= pos
+    ) || null;
+  }, [getVisibleSuggestions]);
+
+  // Update decorations when suggestion store changes
+  useEffect(() => {
+    if (viewRef.current) {
+      const allSuggestions = [
+        ...suggestionStore.grammar,
+        ...suggestionStore.clarity,
+        ...suggestionStore.conciseness,
+        ...suggestionStore.readability,
+        ...suggestionStore.passive,
+      ];
+      
+      dispatchSuggestionUpdate(
+        viewRef.current,
+        allSuggestions,
+        suggestionStore.visibility
+      );
+    }
+  }, [suggestionStore]);
 
   useEffect(() => {
     if (!editorRef.current) return () => {};
@@ -82,11 +150,38 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       harperLinterPlugin,
       harperLintDeco,
       harperDiagnostics,
+      createSuggestionDecorationExtension(),
       EditorView.domEventHandlers({
         click: (event: MouseEvent, view: EditorView) => {
           const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
           if (pos === null) return;
 
+          // First try to find a suggestion from our store
+          const storeSuggestion = findSuggestionAtPos(pos);
+          if (storeSuggestion) {
+            refs.setReference({
+              getBoundingClientRect: () => {
+                const rect = view.coordsAtPos(pos);
+                if (!rect) {
+                  return new DOMRect(0, 0, 0, 0);
+                }
+                return {
+                  width: rect.right - rect.left,
+                  height: rect.bottom - rect.top,
+                  x: rect.left,
+                  y: rect.top,
+                  top: rect.top,
+                  left: rect.left,
+                  right: rect.right,
+                  bottom: rect.bottom,
+                };
+              },
+            });
+            setActiveSuggestion(storeSuggestion);
+            return;
+          }
+
+          // Fallback to Harper diagnostics (for direct Harper integration)
           const diagnostics = view.state.field(harperDiagnostics);
           const clickedDiagnostic = diagnostics.find(
             d => d.from <= pos && d.to >= pos,
@@ -95,15 +190,12 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           if (clickedDiagnostic) {
             const suggestion = convertDiagnosticToGrammarSuggestion(clickedDiagnostic);
 
-            // This is the magic. We set the floating-ui reference to a virtual
-            // element that represents the clicked text.
             refs.setReference({
               getBoundingClientRect: () => {
                 const rect = view.coordsAtPos(pos);
                 if (!rect) {
                   return new DOMRect(0, 0, 0, 0);
                 }
-                // Construct a DOMRect-like object for floating-ui
                 return {
                   width: rect.right - rect.left,
                   height: rect.bottom - rect.top,
@@ -136,11 +228,103 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
     viewRef.current = view;
 
+    // Initial decoration update
+    const allSuggestions = [
+      ...suggestionStore.grammar,
+      ...suggestionStore.clarity,
+      ...suggestionStore.conciseness,
+      ...suggestionStore.readability,
+      ...suggestionStore.passive,
+    ];
+    
+    dispatchSuggestionUpdate(view, allSuggestions, suggestionStore.visibility);
+
     return () => {
       view.destroy();
       viewRef.current = null;
     };
-  }, [initialContent, placeholder, handleContentChange, refs]);
+  }, [initialContent, placeholder, handleContentChange, refs, findSuggestionAtPos, suggestionStore]);
+
+  // Handle suggestion actions
+  const handleAcceptSuggestion = useCallback((suggestion: AnySuggestion) => {
+    if (!viewRef.current) return;
+
+    // Handle Harper suggestions with actions
+    if ('actions' in suggestion && suggestion.actions && suggestion.actions.length > 0) {
+      const firstAction = suggestion.actions[0];
+      const view = viewRef.current;
+      
+      switch (firstAction.type) {
+        case 'replace':
+          view.dispatch({
+            changes: {
+              from: suggestion.startOffset,
+              to: suggestion.endOffset,
+              insert: firstAction.text,
+            },
+          });
+          break;
+        case 'remove':
+          view.dispatch({
+            changes: {
+              from: suggestion.startOffset,
+              to: suggestion.endOffset,
+              insert: '',
+            },
+          });
+          break;
+        case 'insert_after':
+          view.dispatch({
+            changes: {
+              from: suggestion.endOffset,
+              to: suggestion.endOffset,
+              insert: firstAction.text,
+            },
+          });
+          break;
+        default:
+          // Unknown action type, do nothing
+          break;
+      }
+    }
+    // Handle legacy grammar suggestions with raw diagnostics
+    else if ('raw' in suggestion) {
+      const grammarSuggestion = suggestion as GrammarSuggestion;
+      const action = grammarSuggestion.raw.actions?.find(
+        (a: { name: string }) => a.name === grammarSuggestion.suggestions?.[0]?.text,
+      );
+      if (action) {
+        action.apply(
+          viewRef.current,
+          grammarSuggestion.startOffset,
+          grammarSuggestion.endOffset,
+        );
+      }
+    }
+
+    setActiveSuggestion(null);
+  }, []);
+
+  const handleIgnoreSuggestion = useCallback((suggestion: AnySuggestion) => {
+    if (!viewRef.current) return;
+
+    // Handle legacy grammar suggestions with ignore action
+    if ('raw' in suggestion) {
+      const grammarSuggestion = suggestion as GrammarSuggestion;
+      const ignoreAction = grammarSuggestion.raw.actions?.find(
+        (a: { name: string }) => a.name === 'Ignore',
+      );
+      if (ignoreAction) {
+        ignoreAction.apply(
+          viewRef.current,
+          grammarSuggestion.startOffset,
+          grammarSuggestion.endOffset,
+        );
+      }
+    }
+
+    setActiveSuggestion(null);
+  }, []);
 
   return (
     <div className="relative w-full h-full">
@@ -149,37 +333,9 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         <SuggestionPopover
           ref={refs.setFloating as React.Ref<HTMLDivElement>}
           suggestion={activeSuggestion}
-          onAccept={suggestion => {
-            if (!('raw' in suggestion)) return;
-            const grammarSuggestion = suggestion as GrammarSuggestion;
-            const action = grammarSuggestion.raw.actions?.find(
-              (a: { name: string }) => a.name === grammarSuggestion.suggestions?.[0]?.text,
-            );
-            if (action && viewRef.current) {
-              action.apply(
-                viewRef.current,
-                grammarSuggestion.startOffset,
-                grammarSuggestion.endOffset,
-              );
-              setActiveSuggestion(null);
-            }
-          }}
+          onAccept={handleAcceptSuggestion}
           onDismiss={() => setActiveSuggestion(null)}
-          onIgnore={suggestion => {
-            if (!('raw' in suggestion)) return;
-            const grammarSuggestion = suggestion as GrammarSuggestion;
-            const ignoreAction = grammarSuggestion.raw.actions?.find(
-              (a: { name: string }) => a.name === 'Ignore',
-            );
-            if (ignoreAction && viewRef.current) {
-              ignoreAction.apply(
-                viewRef.current,
-                grammarSuggestion.startOffset,
-                grammarSuggestion.endOffset,
-              );
-              setActiveSuggestion(null);
-            }
-          }}
+          onIgnore={handleIgnoreSuggestion}
           style={{
             position: strategy,
             top: y ?? 0,

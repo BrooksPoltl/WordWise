@@ -43,8 +43,7 @@ const SuggestionPopover = React.forwardRef<
     s.type === 'passive';
 
   if (isGrammarSuggestion(suggestion)) {
-    // Temporary simple grammar suggestion handler
-    // This will be replaced with Harper integration in Phase 1
+    // Enhanced grammar suggestion handler for Harper integration
     return (
       <div
         ref={ref}
@@ -52,34 +51,88 @@ const SuggestionPopover = React.forwardRef<
         className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 max-w-xs"
       >
         <div className="text-sm font-medium text-gray-900 mb-2">
-          Grammar Suggestion
+          {suggestion.title || 'Grammar Suggestion'}
         </div>
         <div className="text-sm text-gray-600 mb-3">
           {suggestion.explanation || 'Grammar improvement suggested'}
         </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => onAccept(suggestion)}
-            className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
-          >
-            Accept
-          </button>
-          <button
-            type="button"
-            onClick={onDismiss}
-            className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
-          >
-            Dismiss
-          </button>
-          <button
-            type="button"
-            onClick={() => onIgnore(suggestion)}
-            className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
-          >
-            Ignore
-          </button>
-        </div>
+        
+        {/* Render Harper actions if available */}
+        {'actions' in suggestion && suggestion.actions && suggestion.actions.length > 0 ? (
+          <div className="space-y-2">
+            <div className="text-xs text-gray-500 mb-1">Suggestions:</div>
+            <div className="flex flex-wrap gap-1 mb-3">
+              {suggestion.actions.map((action, index) => {
+                let buttonText = 'Apply';
+                let buttonTitle = `Apply: ${action.type}`;
+                
+                if (action.type === 'replace') {
+                  buttonText = action.text;
+                  buttonTitle = `Apply: ${action.text}`;
+                } else if (action.type === 'remove') {
+                  buttonText = 'Remove';
+                  buttonTitle = 'Apply: Remove';
+                } else if (action.type === 'insert_after') {
+                  buttonText = `Add "${action.text}"`;
+                  buttonTitle = `Apply: Add "${action.text}"`;
+                }
+                
+                return (
+                  <button
+                    key={`${suggestion.id}-action-${action.type}-${action.type === 'replace' ? action.text : index}`}
+                    type="button"
+                    onClick={() => onAccept(suggestion)}
+                    className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+                    title={buttonTitle}
+                  >
+                    {buttonText}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onDismiss}
+                className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
+              >
+                Dismiss
+              </button>
+              <button
+                type="button"
+                onClick={() => onIgnore(suggestion)}
+                className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
+              >
+                Ignore
+              </button>
+            </div>
+          </div>
+        ) : (
+          // Fallback for legacy suggestions
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => onAccept(suggestion)}
+              className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+            >
+              Accept
+            </button>
+            <button
+              type="button"
+              onClick={onDismiss}
+              className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
+            >
+              Dismiss
+            </button>
+            <button
+              type="button"
+              onClick={() => onIgnore(suggestion)}
+              className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
+            >
+              Ignore
+            </button>
+          </div>
+        )}
       </div>
     );
   }

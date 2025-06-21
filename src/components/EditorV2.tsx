@@ -1,4 +1,6 @@
 import { Suspense, lazy } from 'react';
+import { useSuggestionStore } from '../store/suggestion/suggestion.store';
+import { SuggestionToggles } from './editor/SuggestionToggles';
 
 const CodeMirrorEditor = lazy(() => import('./editor/CodeMirrorEditor'));
 
@@ -12,30 +14,47 @@ I like apples, bananas and oranges. He said, "This is a test". We sell books, CD
 
 I think we should probably proceed with the evaluation. Due to the fact that it was late, we decided to make a decision to go home. This is a very long and rambling sentence that goes on for quite a while without getting to the point, which is really just to demonstrate that the long sentence detector is working as intended and will flag this particular piece of text. If we release this now, we might shoot ourselves in the foot. What the hell is going on?`;
 
-const EditorV2 = () => (
-  <div className="flex flex-col h-screen bg-gray-50">
-    <header className="p-4 border-b bg-white">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-xl font-bold">CodeMirror Editor (V2)</h1>
-        <p className="text-sm text-gray-500">
-          This page contains the new CodeMirror editor with Harper.js
-          integration.
-        </p>
-      </div>
-    </header>
-    <main className="flex-grow p-4 overflow-auto">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <h2 className="text-lg font-semibold mb-2">Editor</h2>
-          <div className="border rounded-lg overflow-hidden">
-            <Suspense fallback={<div>Loading Editor...</div>}>
-              <CodeMirrorEditor initialContent={PLACEHOLDER_CONTENT} />
-            </Suspense>
+const EditorV2 = () => {
+  const suggestionStore = useSuggestionStore();
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-50">
+      <header className="p-4 border-b bg-white">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-xl font-bold">CodeMirror Editor (V2)</h1>
+          <p className="text-sm text-gray-500">
+            This page contains the new CodeMirror editor with Harper.js
+            integration and AI-powered suggestions.
+          </p>
+        </div>
+      </header>
+      
+      {/* Suggestion Controls */}
+      <div className="p-4 border-b bg-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-gray-700">Writing Suggestions</h2>
+            <SuggestionToggles />
           </div>
         </div>
       </div>
-    </main>
-  </div>
-);
+
+      <main className="flex-grow p-4 overflow-auto">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <div className="border rounded-lg overflow-hidden">
+              <Suspense fallback={<div>Loading Editor...</div>}>
+                <CodeMirrorEditor 
+                  initialContent={PLACEHOLDER_CONTENT}
+                  suggestionStore={suggestionStore}
+                />
+              </Suspense>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
 
 export default EditorV2; 

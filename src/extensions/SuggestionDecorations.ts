@@ -1,320 +1,134 @@
-import { Editor, Extension } from '@tiptap/core';
-import { Node } from 'prosemirror-model';
-import { Plugin, PluginKey } from 'prosemirror-state';
-import { Decoration, DecorationSet } from 'prosemirror-view';
-import { useSuggestionStore } from '../store/suggestion/suggestion.store';
-import {
-    AnySuggestion,
-    SuggestionCategory,
-} from '../store/suggestion/suggestion.types';
+import { Extension, StateEffect, StateField } from '@codemirror/state';
+import { Decoration, DecorationSet, EditorView } from '@codemirror/view';
+import { AnySuggestion } from '../store/suggestion/suggestion.types';
 import { SuggestionType } from '../types';
 
-const suggestionCategoryMap: Record<SuggestionType, SuggestionCategory> = {
-  spelling: 'grammar', // Legacy support
-  grammar: 'grammar',
-  style: 'grammar',
-  weasel_word: 'clarity',
-  conciseness: 'conciseness',
-  readability: 'readability',
-  passive: 'passive',
+// Map suggestion types to categories for visibility filtering
+const mapSuggestionTypeToCategory = (type: SuggestionType): string => {
+  switch (type) {
+    case 'spelling':
+    case 'grammar':
+    case 'style':
+      return 'grammar';
+    case 'weasel_word':
+      return 'clarity';
+    case 'conciseness':
+      return 'conciseness';
+    case 'readability':
+      return 'readability';
+    case 'passive':
+      return 'passive';
+    default:
+      return 'grammar';
+  }
 };
 
-const suggestionClassMap: Record<SuggestionCategory, string> = {
-  grammar: 'spell-error',
-  clarity: 'clarity-error',
-  conciseness: 'conciseness-error',
-  readability: 'readability-error',
-  passive: 'passive-error',
+// Get CSS class for suggestion type
+const getSuggestionCssClass = (type: SuggestionType): string => {
+  switch (type) {
+    case 'spelling':
+    case 'grammar':
+    case 'style':
+      return 'wordwise-suggestion-grammar';
+    case 'weasel_word':
+      return 'wordwise-suggestion-clarity';
+    case 'conciseness':
+      return 'wordwise-suggestion-conciseness';
+    case 'readability':
+      return 'wordwise-suggestion-readability';
+    case 'passive':
+      return 'wordwise-suggestion-passive';
+    default:
+      return 'wordwise-suggestion-grammar';
+  }
 };
 
-const suggestionPriority: SuggestionCategory[] = [
-  'readability',
-  'passive',
-  'clarity',
-  'conciseness',
-  'grammar',
-];
-
-interface SuggestionState {
+// State effect to update suggestions
+export const updateSuggestions = StateEffect.define<{
   suggestions: AnySuggestion[];
-  decorations: DecorationSet;
-}
+  visibility: Record<string, boolean>;
+}>();
 
-const suggestionPluginKey = new PluginKey<SuggestionState>('suggestions');
-
-/**
- * Convert plain text offset to ProseMirror document position
- */
-function offsetToPos(doc: Node, offset: number): number | null {
-  let textOffset = 0;
-  let result: number | null = null;
-  
-  try {
-    doc.descendants((node: Node, nodePos: number) => {
-      if (node.isText && typeof node.text === 'string') {
-        const nodeStart = textOffset;
-        const nodeEnd = textOffset + node.text.length;
-        
-        if (offset >= nodeStart && offset <= nodeEnd) {
-          result = nodePos + (offset - nodeStart);
-          return false; // Stop iteration
-        }
-        textOffset = nodeEnd;
-      }
-      return true; // Continue iteration
-    });
+// Suggestion decoration field
+export const suggestionDecorationField = StateField.define<DecorationSet>({
+  create() {
+    return Decoration.none;
+  },
+  update(decorations, tr) {
+    // Map existing decorations through document changes
+    let newDecorations = decorations.map(tr.changes);
     
-    return result;
-  } catch (error) {
-    // This is a developer-facing error, console.warn is appropriate
-    console.warn('Error converting offset to position:', error);
-    return null;
-  }
-}
-
-function createPrioritizedDecorations(
-  doc: Node,
-  suggestions: AnySuggestion[],
-  hoveredSuggestionId: string | null,
-): DecorationSet {
-  const docSize = doc.content.size;
-  const charToSuggestion = new Array<AnySuggestion | null>(docSize).fill(null);
-  const priorityMap = new Map(suggestionPriority.map((s, i) => [s, i]));
-
-  // 1. "Paint" the character map with the highest priority suggestion for each spot
-  suggestions.forEach(suggestion => {
-    const from = offsetToPos(doc, suggestion.startOffset);
-    const to = offsetToPos(doc, suggestion.endOffset);
-    if (from === null || to === null) return;
-
-    const category = suggestionCategoryMap[suggestion.type];
-    const currentPriority = priorityMap.get(category) ?? -1;
-
-    for (let i = from; i < to; i += 1) {
-      const existingSuggestion = charToSuggestion[i];
-      if (existingSuggestion) {
-        const existingCategory =
-          suggestionCategoryMap[existingSuggestion.type];
-        const existingPriority = priorityMap.get(existingCategory) ?? -1;
-        if (currentPriority < existingPriority) {
-          charToSuggestion[i] = suggestion;
-        }
-      } else {
-        charToSuggestion[i] = suggestion;
-      }
-    }
-  });
-
-  // 2. Merge consecutive characters with the same suggestion into decorations
-  const decorations: Decoration[] = [];
-  let i = 0;
-  while (i < docSize) {
-    const suggestion = charToSuggestion[i];
-    if (suggestion) {
-      let j = i;
-      while (
-        j < docSize &&
-        charToSuggestion[j]?.id === suggestion.id
-      ) {
-        j += 1;
-      }
-
-      const category = suggestionCategoryMap[suggestion.type];
-      let cssClass = suggestionClassMap[category];
-
-      if (suggestion.id === hoveredSuggestionId) {
-        cssClass += ' hovered';
-      }
-
-      decorations.push(
-        Decoration.inline(
-          i,
-          j,
-          {
+    // Check for suggestion updates
+    for (const effect of tr.effects) {
+      if (effect.is(updateSuggestions)) {
+        const { suggestions, visibility } = effect.value;
+        
+        // Filter visible suggestions
+        const visibleSuggestions = suggestions.filter(suggestion => {
+          const category = mapSuggestionTypeToCategory(suggestion.type);
+          return visibility[category] !== false;
+        });
+        
+        // Create decorations
+        const decorationRanges = visibleSuggestions.map(suggestion => {
+          const cssClass = getSuggestionCssClass(suggestion.type);
+          return Decoration.mark({
             class: cssClass,
-            'data-suggestion-id': suggestion.id,
-            onmouseenter: `this.dispatchEvent(new CustomEvent('suggestionHover', { detail: { suggestionId: '${suggestion.id}' }, bubbles: true, composed: true }))`,
-            onmouseleave: `this.dispatchEvent(new CustomEvent('suggestionLeave', { bubbles: true, composed: true }))`,
-          },
-          { suggestion },
-        ),
-      );
-      i = j;
-    } else {
-      i += 1;
+            attributes: {
+              'data-suggestion-id': suggestion.id,
+              'data-suggestion-type': suggestion.type,
+            }
+          }).range(suggestion.startOffset, suggestion.endOffset);
+        });
+        
+        newDecorations = Decoration.set(decorationRanges, true);
+      }
     }
-  }
-
-  return DecorationSet.create(doc, decorations);
-}
-
-/**
- * Suggestion Decorations Extension
- * Uses ProseMirror's decoration system for robust suggestion highlights
- */
-export const SuggestionDecorations = Extension.create({
-  name: 'suggestionDecorations',
-
-  addStorage() {
-    return {
-      suggestions: [] as AnySuggestion[],
-      updateDecorations: (
-        editor: Editor,
-        visibility: { [key: string]: boolean },
-        hoveredSuggestionId: string | null,
-      ) => {
-        const { grammar, clarity, conciseness, readability, passive } =
-          useSuggestionStore.getState();
-
-        const allSuggestions = [
-          ...grammar,
-          ...clarity,
-          ...conciseness,
-          ...readability,
-          ...passive,
-        ];
-
-        const visibleSuggestionTypes = Object.entries(visibility)
-          .filter(([, isVisible]) => isVisible)
-          .map(([type]) => type);
-
-        const visibleSuggestions = allSuggestions.filter(s => {
-          const category = suggestionCategoryMap[s.type] ?? 'grammar';
-          return visibleSuggestionTypes.includes(category);
-        });
-
-        // Validate suggestions against the current document
-        const validSuggestions = visibleSuggestions.filter(suggestion => {
-          const from = offsetToPos(editor.state.doc, suggestion.startOffset);
-          const to = offsetToPos(editor.state.doc, suggestion.endOffset);
-
-          if (
-            from === null ||
-            to === null ||
-            from >= to ||
-            to > editor.state.doc.content.size
-          ) {
-            return false;
-          }
-
-          // For readability and passive suggestions, the offsets are the source of truth,
-          // as direct text comparison of long sentences is brittle.
-          if (suggestion.type === 'readability' || suggestion.type === 'passive') {
-            return true;
-          }
-
-          try {
-            const actualText = editor.state.doc.textBetween(from, to);
-            const suggestionText = suggestion.word;
-            
-            return actualText.toLowerCase() === suggestionText.toLowerCase();
-
-          } catch (e) {
-            return false;
-          }
-        });
-
-        const decorations = createPrioritizedDecorations(
-          editor.state.doc,
-          validSuggestions,
-          hoveredSuggestionId,
-        );
-        const tr = editor.state.tr.setMeta(suggestionPluginKey, {
-          suggestions: allSuggestions, // Store all suggestions
-          decorations,
-        });
-        editor.view.dispatch(tr);
-      },
-      clearDecorations: (editor: Editor) => {
-        const tr = editor.state.tr.setMeta(suggestionPluginKey, {
-          suggestions: [],
-          decorations: DecorationSet.empty,
-        });
-        editor.view.dispatch(tr);
-      },
-    };
+    
+    return newDecorations;
   },
-
-  addProseMirrorPlugins() {
-    return [
-      new Plugin({
-        key: suggestionPluginKey,
-        
-        state: {
-          init(): SuggestionState {
-            return {
-              suggestions: [],
-              decorations: DecorationSet.empty,
-            };
-          },
-          
-          apply(tr, pluginState) {
-            // Check if we have new suggestions from meta
-            const meta = tr.getMeta(suggestionPluginKey);
-            if (meta) {
-              return meta as SuggestionState;
-            }
-
-            // Map existing decorations through document changes
-            if (tr.docChanged) {
-              const decorations = pluginState.decorations.map(
-                tr.mapping,
-                tr.doc,
-              );
-              return { ...pluginState, decorations };
-            }
-
-            return pluginState;
-          },
-        },
-        
-        props: {
-          decorations(state) {
-            const pluginState = suggestionPluginKey.getState(state);
-            return pluginState?.decorations || DecorationSet.empty;
-          },
-          
-          handleClick(view, pos, event) {
-            const target = event.target as HTMLElement;
-            if (
-              target.closest(
-                '.spell-error, .clarity-error, .conciseness-error, .readability-error, .passive-error',
-              )
-            ) {
-              const pluginState = suggestionPluginKey.getState(view.state);
-              if (!pluginState) return false;
-
-              const clickedDecorations = pluginState.decorations.find(pos, pos);
-
-              if (clickedDecorations.length > 0) {
-                const clickedDeco = clickedDecorations[0];
-                const suggestion = clickedDeco.spec.suggestion as AnySuggestion;
-
-                if (suggestion) {
-                  const customEvent = new CustomEvent('suggestionClick', {
-                    detail: {
-                      suggestion,
-                      from: clickedDeco.from,
-                      to: clickedDeco.to,
-                    },
-                  });
-                  view.dom.dispatchEvent(customEvent);
-                  return true; // We handled the click
-                }
-              }
-            }
-            return false; // Click not handled
-          },
-        },
-      }),
-    ];
-  },
+  provide: f => EditorView.decorations.from(f)
 });
 
-// Helper function to get suggestion by ID
-export function getSuggestionById(
+// Create the suggestion decoration extension
+export const createSuggestionDecorationExtension = (): Extension => [
+  suggestionDecorationField,
+  EditorView.theme({
+    '.wordwise-suggestion-grammar': {
+      textDecoration: 'underline wavy',
+      textDecorationColor: '#ef4444',
+      cursor: 'pointer',
+    },
+    '.wordwise-suggestion-clarity': {
+      textDecoration: 'underline wavy',
+      textDecorationColor: '#8b5cf6',
+      cursor: 'pointer',
+    },
+    '.wordwise-suggestion-conciseness': {
+      textDecoration: 'underline wavy',
+      textDecorationColor: '#06b6d4',
+      cursor: 'pointer',
+    },
+    '.wordwise-suggestion-readability': {
+      textDecoration: 'underline wavy',
+      textDecorationColor: '#10b981',
+      cursor: 'pointer',
+    },
+    '.wordwise-suggestion-passive': {
+      textDecoration: 'underline wavy',
+      textDecorationColor: '#f97316',
+      cursor: 'pointer',
+    },
+  }),
+];
+
+// Helper function to update suggestions in the editor
+export const dispatchSuggestionUpdate = (
+  view: EditorView,
   suggestions: AnySuggestion[],
-  id: string,
-): AnySuggestion | undefined {
-  return suggestions.find(s => s.id === id);
-} 
+  visibility: Record<string, boolean>
+) => {
+  view.dispatch({
+    effects: updateSuggestions.of({ suggestions, visibility })
+  });
+}; 

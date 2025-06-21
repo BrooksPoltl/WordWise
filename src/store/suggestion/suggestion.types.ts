@@ -57,6 +57,7 @@ export interface SuggestionVisibility {
   conciseness: boolean;
   passive: boolean;
   readability: boolean;
+  [key: string]: boolean; // Index signature for compatibility
 }
 
 export interface SuggestionStore extends SuggestionState {

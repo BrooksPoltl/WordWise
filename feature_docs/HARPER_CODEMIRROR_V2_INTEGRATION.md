@@ -38,9 +38,18 @@ This document outlines a phased approach to integrate the Harper grammar engine 
 
 *Goal: Connect the `EditorV2` component to the suggestion store to display highlights and actions.*
 
-| Priority | Task Description | Implementation Details | Code Pointers | Dependencies |
-| :--- | :--- | :--- | :--- | :--- |
-| **P2** | **Drive Decorations from Store** | `EditorV2` will read the suggestion list from `suggestionStore` and use a CodeMirror `ViewPlugin` to render decorations (underlines) based on this global state. | • **Edit:** `src/components/EditorV2.tsx`<br/>• **Use:** `src/store/suggestion/suggestion.store.ts` | Task 9 |
-| **P2** | **Enhance Suggestion Popover** | Update `SuggestionPopover` to display `suggestion.title` as its header and render action buttons based on the `suggestion.actions` array. | • **Edit:** `src/components/editor/SuggestionPopover.tsx` | Task 5 |
-| **P2** | **Implement "Apply Action" Logic** | The popover will emit a `SuggestionAction` on click. `EditorV2` will listen and dispatch the correct CodeMirror transaction (`replace`, `delete`, `insert`) to apply the change. | • **Edit:** `src/components/EditorV2.tsx`<br/>• **Edit:** `src/components/editor/SuggestionPopover.tsx` | Task 11 |
-| **P3** | **Implement Suggestion Toggles** | The `SuggestionToggles` component will filter suggestions by type (`grammar`, `clarity`, etc.) by updating state in the `suggestionStore`. | • **Use:** `src/components/editor/SuggestionToggles.tsx`<br/>• **Edit:** `src/components/EditorV2.tsx`<br/>• **Edit:** `src/store/suggestion/suggestion.store.ts` | Task 10 | 
+| Priority | Task Description | Implementation Details | Code Pointers | Dependencies | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **P2** | **Drive Decorations from Store** | `EditorV2` will read the suggestion list from `suggestionStore` and use a CodeMirror `ViewPlugin` to render decorations (underlines) based on this global state. | • **Edit:** `src/components/EditorV2.tsx`<br/>• **Use:** `src/store/suggestion/suggestion.store.ts` | Task 9 | ✅ **Complete** |
+| **P2** | **Enhance Suggestion Popover** | Update `SuggestionPopover` to display `suggestion.title` as its header and render action buttons based on the `suggestion.actions` array. | • **Edit:** `src/components/editor/SuggestionPopover.tsx` | Task 5 | ✅ **Complete** |
+| **P2** | **Implement "Apply Action" Logic** | The popover will emit a `SuggestionAction` on click. `EditorV2` will listen and dispatch the correct CodeMirror transaction (`replace`, `delete`, `insert`) to apply the change. | • **Edit:** `src/components/EditorV2.tsx`<br/>• **Edit:** `src/components/editor/SuggestionPopover.tsx` | Task 11 | ✅ **Complete** |
+| **P3** | **Implement Suggestion Toggles** | The `SuggestionToggles` component will filter suggestions by type (`grammar`, `clarity`, etc.) by updating state in the `suggestionStore`. | • **Use:** `src/components/editor/SuggestionToggles.tsx`<br/>• **Edit:** `src/components/EditorV2.tsx`<br/>• **Edit:** `src/store/suggestion/suggestion.store.ts` | Task 10 | ✅ **Complete** |
+
+### **Phase 3: Backend Integration**
+
+*Goal: Integrate the Harper linter with the backend to enable autosaving and additional features.*
+
+| Priority | Task Description | Implementation Details | Code Pointers | Dependencies | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **P3** | **Implement Passive Analyzer** | Integrate the `passiveAnalyzer` with the backend to enable autosaving and additional features. | • **Edit:** `src/utils/passiveAnalyzer.ts`<br/>• **Edit:** `src/store/suggestion/suggestion.store.ts` | Task 12 | ✅ **Complete** |
+| **P3** | **Finalize Integration** | Ensure all components and backend integrations are complete and working as expected. | • **Test:** All components and backend integrations<br/>• **Review:** Code and documentation | Task 13 | ✅ **Complete** | 

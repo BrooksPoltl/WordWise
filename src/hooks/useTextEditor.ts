@@ -3,7 +3,6 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useCallback, useRef, useState } from 'react';
-import { SuggestionDecorations } from '../extensions/SuggestionDecorations';
 
 interface UseTextEditorProps {
   initialContent?: string;
@@ -20,7 +19,7 @@ export const useTextEditor = ({ initialContent = '' }: UseTextEditorProps) => {
         placeholder: 'Start writing your document...',
       }),
       CharacterCount,
-      SuggestionDecorations,
+      // Note: SuggestionDecorations removed - now handled by CodeMirror in EditorV2
     ],
     content: initialContent,
     editorProps: {
