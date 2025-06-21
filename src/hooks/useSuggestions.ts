@@ -1,18 +1,18 @@
 import { Editor } from '@tiptap/react';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import {
     BaseSuggestion,
     GrammarSuggestion,
-    PassiveSuggestion,
+    // PassiveSuggestion,
     SuggestionAction
 } from '../types';
 
 import { useSuggestionStore } from '../store/suggestion/suggestion.store';
+// import { analyzePassive } from '../utils/passiveAnalyzer';
 import { getLinter, HarperLint } from '../utils/harperLinter';
 import { getHarperDisplayTitle, mapHarperLintKind } from '../utils/harperMapping';
-import { analyzePassive } from '../utils/passiveAnalyzer';
-import { usePassiveRewrite } from './usePassiveRewrite';
+// import { usePassiveRewrite } from './usePassiveRewrite';
 
 interface UseSuggestionsProps {
   editor: Editor | null;
@@ -131,8 +131,8 @@ const convertToTypedSuggestions = (suggestions: BaseSuggestion[]) => {
 
 export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
   const { setSuggestions } = useSuggestionStore();
-  const { rewriteSentence: rewritePassive } = usePassiveRewrite();
-  const processedIdsRef = useRef<Set<string>>(new Set());
+  // const { rewriteSentence: rewritePassive } = usePassiveRewrite();
+  // const processedIdsRef = useRef<Set<string>>(new Set());
 
   const handleAnalysis = useDebouncedCallback(async (text: string) => {
     if (!text.trim()) {
@@ -147,12 +147,12 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
     }
 
     try {
-      // Run Harper analysis alongside passive analyzer
+      // Run Harper analysis only (passive analyzer commented out)
       const [
-        passiveSuggestions,
+        // passiveSuggestions,
         harperLints,
       ] = await Promise.all([
-        analyzePassive(text),
+        // analyzePassive(text),
         runHarperAnalysis(text),
       ]);
 
@@ -164,16 +164,17 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
         clarity: typedHarperSuggestions.clarity,
         conciseness: typedHarperSuggestions.conciseness,
         readability: typedHarperSuggestions.readability,
-        passive: passiveSuggestions,
+        passive: [], // passiveSuggestions,
         grammar: typedHarperSuggestions.grammar,
       });
 
-      passiveSuggestions.forEach((suggestion: PassiveSuggestion) => {
-        if (!processedIdsRef.current.has(suggestion.id)) {
-          rewritePassive(suggestion);
-          processedIdsRef.current.add(suggestion.id);
-        }
-      });
+      // Commented out passive voice rewriting
+      // passiveSuggestions.forEach((suggestion: PassiveSuggestion) => {
+      //   if (!processedIdsRef.current.has(suggestion.id)) {
+      //     rewritePassive(suggestion);
+      //     processedIdsRef.current.add(suggestion.id);
+      //   }
+      // });
     } catch (error) {
       console.error('Failed to analyze text for suggestions:', error);
       setSuggestions({

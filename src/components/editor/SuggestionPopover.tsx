@@ -1,10 +1,10 @@
 import { FloatingContext } from '@floating-ui/react';
 import React from 'react';
 import { AnySuggestion } from '../../store/suggestion/suggestion.types';
-import {
-  PassiveSuggestion
-} from '../../types';
-import PassiveSuggestionPopover from './PassiveSuggestionPopover';
+// import {
+//   PassiveSuggestion
+// } from '../../types';
+// import PassiveSuggestionPopover from './PassiveSuggestionPopover';
 
 interface SuggestionPopoverProps {
   suggestion: AnySuggestion;
@@ -18,13 +18,13 @@ interface SuggestionPopoverProps {
 const SuggestionPopover = React.forwardRef<
   HTMLDivElement,
   SuggestionPopoverProps
->(({ suggestion, onAccept, onDismiss, onIgnore, style, context }, ref) => {
+>(({ suggestion, onAccept, onDismiss, onIgnore, style, context: _context }, ref) => {
   const isHarperSuggestion = (s: AnySuggestion): boolean =>
     s.type === 'spelling' || s.type === 'grammar' || s.type === 'style' ||
     s.type === 'weasel_word' || s.type === 'conciseness' || s.type === 'readability';
 
-  const isPassiveSuggestion = (s: AnySuggestion): s is PassiveSuggestion =>
-    s.type === 'passive';
+  // const isPassiveSuggestion = (s: AnySuggestion): s is PassiveSuggestion =>
+  //   s.type === 'passive';
 
   if (isHarperSuggestion(suggestion)) {
     // Enhanced Harper suggestion handler for all Harper-powered suggestions
@@ -121,19 +121,20 @@ const SuggestionPopover = React.forwardRef<
     );
   }
 
-  if (isPassiveSuggestion(suggestion)) {
-    return (
-      <PassiveSuggestionPopover
-        ref={ref}
-        suggestion={suggestion}
-        onAccept={onAccept}
-        onDismiss={onDismiss}
-        onIgnore={onIgnore}
-        style={style}
-        context={context}
-      />
-    );
-  }
+  // Commented out passive voice handling
+  // if (isPassiveSuggestion(suggestion)) {
+  //   return (
+  //     <PassiveSuggestionPopover
+  //       ref={ref}
+  //       suggestion={suggestion}
+  //       onAccept={onAccept}
+  //       onDismiss={onDismiss}
+  //       onIgnore={onIgnore}
+  //       style={style}
+  //       context={context}
+  //     />
+  //   );
+  // }
 
   return null;
 });
