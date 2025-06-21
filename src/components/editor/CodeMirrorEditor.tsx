@@ -1,66 +1,34 @@
 import { markdown } from '@codemirror/lang-markdown';
-import {
-    Compartment,
-    EditorState,
-    Extension,
-    RangeSetBuilder
-} from '@codemirror/state';
-import {
-    Decoration,
-    DecorationSet,
-    EditorView,
-    ViewPlugin,
-    ViewUpdate,
-} from '@codemirror/view';
+import { Diagnostic } from '@codemirror/lint';
+import { EditorState, Extension } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
 import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useHarperLinter } from '../../hooks/useHarperLinter';
-import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import { AnySuggestion } from '../../store/suggestion/suggestion.types';
 import { wordwiseTheme } from '../../themes/wordwiseTheme';
+import {
+    harperDiagnostics,
+    harperLintDeco,
+    harperLinterPlugin,
+} from '../../utils/harperLinterSource';
 import SuggestionPopover from './SuggestionPopover';
 
-const suggestionDecoration = (suggestion: AnySuggestion) =>
-  Decoration.mark({
-    class: 'harper-suggestion',
-    attributes: {
-      'data-suggestion-id': suggestion.id,
-      'data-suggestion-type': suggestion.type,
-    },
-  });
-
-const buildDecorations = (
-  view: EditorView,
-  suggestions: AnySuggestion[],
-): DecorationSet => {
-  const builder = new RangeSetBuilder<Decoration>();
-  for (const s of suggestions) {
-    if (s.startOffset < view.viewport.to && s.endOffset > view.viewport.from) {
-      builder.add(s.startOffset, s.endOffset, suggestionDecoration(s));
-    }
-  }
-  return builder.finish();
-};
-
-const suggestionDecorations = (suggestions: AnySuggestion[]) =>
-  ViewPlugin.fromClass(
-    class {
-      decorations: DecorationSet;
-
-      constructor(view: EditorView) {
-        this.decorations = buildDecorations(view, suggestions);
-      }
-
-      update(update: ViewUpdate) {
-        if (update.docChanged || update.viewportChanged) {
-          this.decorations = buildDecorations(update.view, suggestions);
-        }
-      }
-    },
-    {
-      decorations: (v: { decorations: DecorationSet }) => v.decorations,
-    },
-  );
+const diagnosticToSuggestion = (
+  diagnostic: Diagnostic,
+  doc: EditorState['doc'],
+): AnySuggestion => ({
+  id: `${diagnostic.from}-${diagnostic.to}-${diagnostic.message}`,
+  startOffset: diagnostic.from,
+  endOffset: diagnostic.to,
+  word: doc.sliceString(diagnostic.from, diagnostic.to),
+  type: 'spelling', // This can be enhanced if the diagnostic has more type info
+  suggestions:
+    diagnostic.actions?.map(action => ({
+      id: action.name,
+      text: action.name,
+    })) || [],
+  raw: diagnostic, // Storing the raw diagnostic for actions
+});
 
 interface CodeMirrorEditorProps {
   initialContent?: string;
@@ -75,16 +43,9 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const decorationsCompartment = useRef(new Compartment());
-  const { linter, forceReLint } = useHarperLinter({
-    toString: () => initialContent,
-  });
 
-  const [content, setContent] = useState(initialContent);
   const [activeSuggestion, setActiveSuggestion] =
     useState<AnySuggestion | null>(null);
-
-  const spellingSuggestions = useSuggestionStore(state => state.spelling);
 
   const { x, y, refs, strategy, context } = useFloating({
     open: !!activeSuggestion,
@@ -101,68 +62,11 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
   const handleContentChange = useCallback(
     (newContent: string) => {
-      setContent(newContent);
       onChange?.(newContent);
     },
     [onChange],
   );
 
-  const handleApplySuggestion = useCallback((_suggestion: AnySuggestion) => {
-    // TODO: Re-implement suggestion application without the deprecated method.
-    // This will likely involve dispatching a transaction to the editor view.
-    // For now, this function is a no-op.
-  }, []);
-
-  const handleIgnoreSuggestion = useCallback(
-    async (suggestionToIgnore: AnySuggestion) => {
-      // Duck-typing to check if it's a valid HarperLint object
-      if (
-        linter &&
-        suggestionToIgnore.raw &&
-        typeof suggestionToIgnore.raw.span === 'function' &&
-        typeof suggestionToIgnore.raw.suggestions === 'function'
-      ) {
-        await linter.ignoreLint(content, suggestionToIgnore.raw);
-        setActiveSuggestion(null);
-        forceReLint();
-      }
-    },
-    [linter, content, forceReLint],
-  );
-
-  const handleEditorClick = useCallback(
-    (event: MouseEvent) => {
-      const suggestionElement = (event.target as HTMLElement).closest(
-        '[data-suggestion-id]',
-      );
-
-      if (suggestionElement) {
-        const suggestionId =
-          suggestionElement.getAttribute('data-suggestion-id');
-        const suggestion = spellingSuggestions.find(s => s.id === suggestionId);
-
-        if (suggestion) {
-          const domRect = suggestionElement.getBoundingClientRect();
-          refs.setReference({
-            getBoundingClientRect: () => domRect,
-          });
-          setActiveSuggestion(suggestion);
-          return true;
-        }
-      }
-
-      setActiveSuggestion(null);
-      return false;
-    },
-    [spellingSuggestions, refs],
-  );
-
-  const clickHandlerRef = useRef(handleEditorClick);
-  useEffect(() => {
-    clickHandlerRef.current = handleEditorClick;
-  }, [handleEditorClick]);
-
-  // This useEffect is for creating and destroying the editor instance.
   useEffect(() => {
     if (!editorRef.current) return () => {};
 
@@ -175,11 +79,53 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           handleContentChange(update.state.doc.toString());
         }
       }),
-      EditorView.domEventHandlers({
-        click: event => clickHandlerRef.current(event),
-      }),
       EditorView.contentAttributes.of({ placeholder: placeholder ?? '' }),
-      decorationsCompartment.current.of(suggestionDecorations([])),
+      harperLinterPlugin,
+      harperLintDeco,
+      harperDiagnostics,
+      EditorView.domEventHandlers({
+        click: (event: MouseEvent, view: EditorView) => {
+          const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+          if (pos === null) return;
+
+          const diagnostics = view.state.field(harperDiagnostics);
+          const clickedDiagnostic = diagnostics.find(
+            d => pos >= d.from && pos <= d.to,
+          );
+
+          if (clickedDiagnostic) {
+            const suggestion = diagnosticToSuggestion(
+              clickedDiagnostic,
+              view.state.doc,
+            );
+
+            // This is the magic. We set the floating-ui reference to a virtual
+            // element that represents the clicked text.
+            refs.setReference({
+              getBoundingClientRect: () => {
+                const rect = view.coordsAtPos(pos);
+                if (!rect) {
+                  return new DOMRect(0, 0, 0, 0);
+                }
+                // Construct a DOMRect-like object for floating-ui
+                return {
+                  width: rect.right - rect.left,
+                  height: rect.bottom - rect.top,
+                  x: rect.left,
+                  y: rect.top,
+                  top: rect.top,
+                  left: rect.left,
+                  right: rect.right,
+                  bottom: rect.bottom,
+                };
+              },
+            });
+            setActiveSuggestion(suggestion);
+          } else {
+            setActiveSuggestion(null);
+          }
+        },
+      }),
     ];
 
     const startState = EditorState.create({
@@ -198,19 +144,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       view.destroy();
       viewRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // This effect is responsible for updating the decorations from the store
-  useEffect(() => {
-    if (!viewRef.current) return;
-
-    viewRef.current.dispatch({
-      effects: decorationsCompartment.current.reconfigure(
-        suggestionDecorations(spellingSuggestions),
-      ),
-    });
-  }, [spellingSuggestions]);
+  }, [initialContent, placeholder, handleContentChange, refs]);
 
   return (
     <div className="relative w-full h-full">
@@ -219,9 +153,29 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         <SuggestionPopover
           ref={refs.setFloating as React.Ref<HTMLDivElement>}
           suggestion={activeSuggestion}
-          onAccept={handleApplySuggestion}
+          onAccept={suggestion => {
+            const action = suggestion.raw?.actions?.find(
+              a => a.name === suggestion.suggestions?.[0]?.text,
+            );
+            if (action && viewRef.current) {
+              action.apply(
+                viewRef.current,
+                suggestion.startOffset,
+                suggestion.endOffset,
+              );
+              setActiveSuggestion(null);
+            }
+          }}
           onDismiss={() => setActiveSuggestion(null)}
-          onIgnore={handleIgnoreSuggestion}
+          onIgnore={suggestion => {
+            const ignoreAction = suggestion.raw?.actions?.find(
+              a => a.name === 'Ignore',
+            );
+            if (ignoreAction && viewRef.current) {
+              ignoreAction.apply(viewRef.current, 0, 0);
+              setActiveSuggestion(null);
+            }
+          }}
           style={{
             position: strategy,
             top: y ?? 0,

@@ -5,6 +5,23 @@ import { logger } from './logger';
 // --- Singleton Scoped Variables ---
 
 let linterInstance: harper.WorkerLinter | null = null;
+const ignoredLints = new Set<string>();
+
+const getLintId = (lint: harper.Lint) => {
+  const span = lint.span();
+  return `${span.start}-${span.end}-${lint.message()}`;
+};
+
+export const ignoreLint = (lint: harper.Lint) => {
+  const id = getLintId(lint);
+  ignoredLints.add(id);
+  logger.info(`Ignoring lint: ${id}`);
+};
+
+export const isLintIgnored = (lint: harper.Lint) => {
+  const id = getLintId(lint);
+  return ignoredLints.has(id);
+};
 
 /**
  * Gets the singleton instance of the Harper linter.

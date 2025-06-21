@@ -1,5 +1,5 @@
+import { Diagnostic } from '@codemirror/lint';
 import { User as FirebaseUser } from 'firebase/auth';
-import { HarperLint } from '../utils/harperLinter';
 
 export interface User {
   uid: string;
@@ -43,7 +43,7 @@ export interface BaseSuggestion {
   id: string;
   startOffset: number;
   endOffset: number;
-  raw?: HarperLint;
+  raw?: Diagnostic;
 }
 
 // Document types
