@@ -1,60 +1,136 @@
-import { SuggestionType } from '../types';
+import * as harper from 'harper.js';
+import { BaseSuggestion, GrammarSuggestion, SuggestionAction } from '../types';
 
 /**
- * Maps Harper's lint_kind to our internal suggestion categories
- * Based on the categorization we defined in the planning phase
+ * Maps Harper lint kinds to our internal suggestion categories
  */
-export const mapHarperLintKind = (lintKind: string): SuggestionType => {
-  switch (lintKind.toLowerCase()) {
-    // Grammar category
-    case 'spelling':
-    case 'grammar':
-    case 'punctuation':
-    case 'casing':
-    case 'compounding':
-    case 'regional':
-    case 'formatting':
-      return 'grammar';
-    
-    // Conciseness category
-    case 'redundancy':
-    case 'repetition':
-      return 'conciseness';
-    
-    // Readability category
-    case 'readability':
-      return 'readability';
-    
-    // Clarity category
-    case 'wordchoice':
-    case 'style':
-    case 'completeness':
-    case 'enhancement':
-    case 'consistency':
-    case 'miscellaneous':
-      return 'weasel_word'; // Using existing clarity type
-    
-    // Default to grammar for unknown types
-    default:
-      return 'grammar';
+export const mapHarperLintKind = (lintKind: string): BaseSuggestion['type'] => {
+  const kind = lintKind.toLowerCase();
+  
+  // Grammar-related lints
+  if (kind.includes('spelling') || 
+      kind.includes('grammar') || 
+      kind.includes('punctuation') || 
+      kind.includes('casing') || 
+      kind.includes('compounding') || 
+      kind.includes('regional') || 
+      kind.includes('formatting')) {
+    return 'grammar';
   }
+  
+  // Conciseness-related lints
+  if (kind.includes('redundancy') || 
+      kind.includes('repetition')) {
+    return 'conciseness';
+  }
+  
+  // Readability-related lints
+  if (kind.includes('readability')) {
+    return 'readability';
+  }
+  
+  // Clarity-related lints (everything else)
+  return 'weasel_word'; // Using weasel_word as the clarity type
 };
 
 /**
- * Gets the display title for Harper suggestions
- * This uses Harper's original lint_kind for more specific user feedback
+ * Gets display-friendly title for Harper lint kinds
  */
-export const getHarperDisplayTitle = (lintKind: string): string => {
-  // Capitalize first letter and handle special cases
-  const formatted = lintKind.charAt(0).toUpperCase() + lintKind.slice(1);
+export const getHarperDisplayTitle = (lintKind: string): string =>
+  // Convert snake_case or camelCase to Title Case
+  lintKind
+    .replace(/([a-z])([A-Z])/g, '$1 $2') // camelCase to space
+    .replace(/_/g, ' ') // snake_case to space
+    .replace(/\b\w/g, l => l.toUpperCase()); // Title Case
+
+/**
+ * Converts Harper lint suggestions to our SuggestionAction format
+ */
+export const convertHarperActions = (lint: harper.Lint): SuggestionAction[] => {
+  const actions: SuggestionAction[] = [];
   
-  // Handle special cases for better UX
-  switch (lintKind.toLowerCase()) {
-    case 'wordchoice':
-      return 'Word Choice';
-    case 'miscellaneous':
-      return 'Style';
-    default:
-      return formatted;
+  // Get Harper's suggestions and convert them
+  const suggestions = lint.suggestions();
+  suggestions.forEach(suggestion => {
+    const replacementText = suggestion.get_replacement_text();
+    if (replacementText) {
+      actions.push({
+        type: 'replace',
+        text: replacementText
+      });
+    }
+  });
+  
+  // Add remove action if no suggestions provided (for redundant words, etc.)
+  if (actions.length === 0) {
+    const lintKind = lint.lint_kind().toLowerCase();
+    if (lintKind.includes('redundancy') || lintKind.includes('repetition')) {
+      actions.push({ type: 'remove' });
+    }
   }
+  
+  return actions;
+};
+
+/**
+ * Processes Harper lints into our BaseSuggestion format
+ */
+export const processHarperLints = (lints: harper.Lint[]): BaseSuggestion[] =>
+  lints.map((lint) => {
+    const span = lint.span();
+    const lintKind = lint.lint_kind();
+    const problemText = lint.get_problem_text();
+    
+    return {
+      id: `harper-${span.start}-${span.end}-${lintKind}`,
+      type: mapHarperLintKind(lintKind),
+      title: getHarperDisplayTitle(lintKind),
+      word: problemText,
+      text: problemText,
+      startOffset: span.start,
+      endOffset: span.end,
+      actions: convertHarperActions(lint),
+      explanation: lint.message(),
+    };
+  });
+
+/**
+ * Converts BaseSuggestion to specific typed suggestions
+ */
+export const convertToTypedSuggestions = (suggestions: BaseSuggestion[]) => {
+  const grammarSuggestions: GrammarSuggestion[] = suggestions
+    .filter(s => s.type === 'grammar')
+    .map(s => ({ 
+      ...s, 
+      type: 'grammar' as const,
+      raw: {
+        from: s.startOffset,
+        to: s.endOffset,
+        severity: 'warning' as const,
+        message: s.explanation || s.title,
+        actions: s.actions?.map(action => ({
+          name: action.type === 'replace' ? action.text : 'Remove',
+          apply: () => {}, // Will be handled by EditorV2
+        })) || [],
+      }
+    }));
+    
+  const claritySuggestions = suggestions
+    .filter(s => s.type === 'weasel_word')
+    .map(s => ({ ...s, type: 'weasel_word' as const }));
+    
+  const concisenessSuggestions = suggestions
+    .filter(s => s.type === 'conciseness')
+    .map(s => ({ ...s, type: 'conciseness' as const }));
+    
+  const readabilitySuggestions = suggestions
+    .filter(s => s.type === 'readability')
+    .map(s => ({ ...s, type: 'readability' as const }));
+
+  return {
+    grammar: grammarSuggestions,
+    clarity: claritySuggestions,
+    conciseness: concisenessSuggestions,
+    readability: readabilitySuggestions,
+  };
 }; 

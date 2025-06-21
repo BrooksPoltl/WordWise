@@ -3,19 +3,23 @@ import { EditorState, Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 import {
     createSuggestionDecorationExtension,
     dispatchSuggestionUpdate
 } from '../../extensions/SuggestionDecorations';
-import { useSuggestions } from '../../hooks/useSuggestions';
+import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import { AnySuggestion, SuggestionStore } from '../../store/suggestion/suggestion.types';
 import { wordwiseTheme } from '../../themes/wordwiseTheme';
 import { GrammarSuggestion } from '../../types';
+import { runHarperAnalysis } from '../../utils/harperLinter';
 import {
     harperDiagnostics,
     harperLintDeco,
     harperLinterPlugin
 } from '../../utils/harperLinterSource';
+import { convertToTypedSuggestions, processHarperLints } from '../../utils/harperMapping';
+import { logger } from '../../utils/logger';
 import SuggestionPopover from './SuggestionPopover';
 
 const convertDiagnosticToGrammarSuggestion = (
@@ -51,12 +55,52 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const [currentContent, setCurrentContent] = useState(initialContent);
+  const { setSuggestions } = useSuggestionStore();
 
   const [activeSuggestion, setActiveSuggestion] =
     useState<AnySuggestion | null>(null);
 
-  // Initialize suggestion analysis with current text content
-  useSuggestions({ text: currentContent });
+  // Debounced Harper analysis function
+  const handleHarperAnalysis = useDebouncedCallback(async (text: string) => {
+    if (!text.trim()) {
+      setSuggestions({
+        clarity: [],
+        conciseness: [],
+        readability: [],
+        passive: [],
+        grammar: [],
+      });
+      return;
+    }
+
+    try {
+      const harperLints = await runHarperAnalysis(text);
+      const harperSuggestions = processHarperLints(harperLints);
+      const typedHarperSuggestions = convertToTypedSuggestions(harperSuggestions);
+
+      setSuggestions({
+        clarity: typedHarperSuggestions.clarity,
+        conciseness: typedHarperSuggestions.conciseness,
+        readability: typedHarperSuggestions.readability,
+        passive: [], // No passive analysis for now
+        grammar: typedHarperSuggestions.grammar,
+      });
+    } catch (error) {
+      logger.error('Failed to analyze text for suggestions:', error);
+      setSuggestions({
+        clarity: [],
+        conciseness: [],
+        readability: [],
+        passive: [],
+        grammar: [],
+      });
+    }
+  }, 500);
+
+  // Trigger analysis when content changes
+  useEffect(() => {
+    handleHarperAnalysis(currentContent);
+  }, [currentContent, handleHarperAnalysis]);
 
   const { x, y, refs, strategy, context } = useFloating({
     open: !!activeSuggestion,

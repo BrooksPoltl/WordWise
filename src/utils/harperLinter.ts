@@ -70,3 +70,22 @@ export type {
 
 export const { Lint } = harper;
 
+/**
+ * Runs Harper analysis on the provided text
+ */
+export const runHarperAnalysis = async (text: string): Promise<harper.Lint[]> => {
+  try {
+    const linter = await getLinter();
+    if (!linter) {
+      logger.warning('Harper linter not available');
+      return [];
+    }
+    
+    const lints = await linter.lint(text);
+    return lints;
+  } catch (error) {
+    logger.error('Harper analysis failed:', error);
+    return [];
+  }
+};
+
