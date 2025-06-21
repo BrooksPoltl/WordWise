@@ -230,3 +230,20 @@ h6 {
   font-family: 'Inter', sans-serif;
   font-weight: 600;
 }
+
+.cm-gutters {
+  background-color: transparent !important;
+  border-right: none !important;
+}
+
+.wordwise-lint-warning {
+  background-color: #ffe5e5; /* Light pink/red background */
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: #ff4d4d; /* A softer red */
+  text-decoration-skip-ink: none; /* Ensures the wavy line is continuous */
+}
+
+.cm-focused {
+  outline: none !important;
+}

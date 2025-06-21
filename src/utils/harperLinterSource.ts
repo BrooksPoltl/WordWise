@@ -98,7 +98,7 @@ export const harperLinterPlugin = ViewPlugin.fromClass(
 );
 
 const suggestionUnderline = Decoration.mark({
-  class: 'cm-lintRange cm-lintRange-warning',
+  class: 'wordwise-lint-warning',
 });
 export const harperLintDeco = StateField.define<DecorationSet>({
   create() {

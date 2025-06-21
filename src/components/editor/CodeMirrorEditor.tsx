@@ -23,10 +23,12 @@ const diagnosticToSuggestion = (
   word: doc.sliceString(diagnostic.from, diagnostic.to),
   type: 'spelling', // This can be enhanced if the diagnostic has more type info
   suggestions:
-    diagnostic.actions?.map(action => ({
-      id: action.name,
-      text: action.name,
-    })) || [],
+    diagnostic.actions
+      ?.filter(action => action.name !== 'Ignore')
+      .map(action => ({
+        id: action.name,
+        text: action.name,
+      })) || [],
   raw: diagnostic, // Storing the raw diagnostic for actions
 });
 
