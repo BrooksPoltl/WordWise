@@ -1,4 +1,4 @@
-import { OnboardingContent } from '../../types';
+import { OnboardingContent } from '../types/index';
 
 export const USER_ROLES = [
   'Product Manager',

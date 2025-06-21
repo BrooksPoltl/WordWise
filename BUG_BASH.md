@@ -8,3 +8,4 @@
 - didn't triggers spell check for some reason (important)
 - Headings don't have grammar checking (less important)
 - Tone Detect runs whether document changes or not. If you are at the bottom (very annoying need to fix)
+- Something is wrong local vs. deployed with suggestions

@@ -159,4 +159,17 @@ export interface AIAdvisorySuggestion {
   endIndex: number;
 }
 
+export interface OnboardingContent {
+  welcome: {
+    TITLE: string;
+  };
+  persona: {
+    TITLE: string;
+    DESCRIPTION: string;
+  };
+  writingStyle: {
+    TITLE: string;
+  };
+}
+
 
