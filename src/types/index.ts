@@ -78,6 +78,8 @@ export interface SpellingSuggestion {
   endOffset: number;
   suggestions: SuggestionOption[];
   type: 'spelling' | 'grammar' | 'style';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  raw?: any; // Raw lint object from Harper
 }
 
 export interface ClaritySuggestion {

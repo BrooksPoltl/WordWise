@@ -13,6 +13,7 @@ interface PassiveSuggestionPopoverProps {
   suggestion: PassiveSuggestion;
   onAccept: (suggestion: PassiveSuggestion) => void;
   onDismiss: () => void;
+  onIgnore: (suggestion: PassiveSuggestion) => void;
   style: React.CSSProperties;
   context: FloatingContext;
 }
@@ -20,7 +21,7 @@ interface PassiveSuggestionPopoverProps {
 const PassiveSuggestionPopover = React.forwardRef<
   HTMLDivElement,
   PassiveSuggestionPopoverProps
->(({ suggestion, onAccept, onDismiss, style, context }, ref) => {
+>(({ suggestion, onAccept, onDismiss, onIgnore, style, context }, ref) => {
   const { getFloatingProps } = useInteractions([
     useClick(context),
     useDismiss(context),
@@ -73,6 +74,13 @@ const PassiveSuggestionPopover = React.forwardRef<
             <button
               type="button"
               className="text-xs text-gray-500 hover:text-gray-700"
+              onClick={() => onIgnore(suggestion)}
+            >
+              Ignore
+            </button>
+            <button
+              type="button"
+              className="text-xs text-gray-500 hover:text-gray-700"
               onClick={onDismiss}
             >
               Dismiss
@@ -89,7 +97,14 @@ const PassiveSuggestionPopover = React.forwardRef<
       )}
 
       {!rewrittenText && !isLoading && (
-        <div className="mt-2 flex justify-end">
+        <div className="mt-2 flex justify-end space-x-2">
+          <button
+            type="button"
+            className="text-xs text-gray-500 hover:text-gray-700"
+            onClick={() => onIgnore(suggestion)}
+          >
+            Ignore
+          </button>
           <button
             type="button"
             className="text-xs text-gray-500 hover:text-gray-700"

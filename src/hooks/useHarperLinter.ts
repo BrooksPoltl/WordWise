@@ -1,152 +1,69 @@
 import { useEffect, useState } from 'react';
-import { HarperLinterHook, HarperLinterState, HarperSuggestion, Lint, WorkerLinter } from '../types/harper';
+import { useSuggestionStore } from '../store/suggestion/suggestion.store';
+import { SpellingSuggestion } from '../types';
+import {
+    getLinter,
+    HarperLint,
+    HarperWorkerLinter,
+} from '../utils/harperLinter';
 
-// Global state to prevent multiple Harper loads
-let globalLinter: WorkerLinter | null = null;
-let globalState: HarperLinterState | null = null;
-let globalError: string | null = null;
-let isLoading = false;
+// Re-exporting for use in other components
+export type { HarperLintConfig as LintConfig } from '../utils/harperLinter';
 
-export const useHarperLinter = (): HarperLinterHook => {
-  const [linter, setLinter] = useState<WorkerLinter | null>(globalLinter);
-  const [state, setState] = useState<HarperLinterState>(globalState || 'loading');
-  const [error, setError] = useState<string | null>(globalError);
+export const useHarperLinter = (
+  doc: { toString: () => string },
+  configOverrides: Record<string, boolean | null> = {},
+) => {
+  const [linter, setLinter] = useState<HarperWorkerLinter | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Effect to initialize and reconfigure the linter
   useEffect(() => {
-    const loadHarper = async () => {
-      // If already loaded, use global instance
-      if (globalLinter && globalState === 'ready') {
-        setLinter(globalLinter);
-        setState('ready');
-        setError(null);
-        return;
-      }
+    const manageLinter = async () => {
+      setIsLoading(true);
+      const linterInstance = await getLinter();
 
-      // If currently loading, wait
-      if (isLoading) {
-        return;
-      }
+      if (linterInstance) {
+        // Every time the config overrides change, we get the linter's default
+        // config and merge our overrides on top, then apply it.
+        const defaultConfigJSON = await linterInstance.getLintConfigAsJSON();
+        const defaultConfig = JSON.parse(defaultConfigJSON);
+        const mergedRules = { ...defaultConfig, ...configOverrides };
+        linterInstance.setLintConfigWithJSON(JSON.stringify(mergedRules));
 
-      // If in error state, use global error
-      if (globalState === 'error') {
-        setState('error');
-        setError(globalError);
-        return;
-      }
-
-      try {
-        isLoading = true;
-        
-        // Load Harper from CDN using script tag
-        const script = document.createElement('script');
-        script.type = 'module';
-        script.innerHTML = `
-          try {
-            const { WorkerLinter } = await import('https://unpkg.com/harper.js@0.13.0/dist/harper.js');
-            window.HarperWorkerLinter = WorkerLinter;
-            window.dispatchEvent(new CustomEvent('harperLoaded'));
-          } catch (e) {
-            window.dispatchEvent(new CustomEvent('harperError', { detail: e }));
-          }
-        `;
-        document.head.appendChild(script);
-        
-        // Wait for Harper to load
-        await new Promise<void>((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error('Harper loading timeout'));
-          }, 15000);
-          
-          let handleLoad: () => void;
-          let handleError: () => void;
-          
-          const cleanup = () => {
-            clearTimeout(timeout);
-            window.removeEventListener('harperLoaded', handleLoad);
-            window.removeEventListener('harperError', handleError);
-          };
-          
-          handleError = () => {
-            cleanup();
-            reject(new Error('Harper script failed to load'));
-          };
-          
-          handleLoad = () => {
-            cleanup();
-            resolve();
-          };
-          
-          window.addEventListener('harperLoaded', handleLoad, { once: true });
-          window.addEventListener('harperError', handleError, { once: true });
-        });
-        
-        // Create linter instance
-        const WorkerLinterClass = window.HarperWorkerLinter;
-        if (!WorkerLinterClass) {
-          throw new Error('Harper WorkerLinter not found');
-        }
-        
-        const linterInstance = new WorkerLinterClass();
-        
-        // Update global state
-        globalLinter = linterInstance;
-        globalState = 'ready';
-        globalError = null;
-        isLoading = false;
-        
-        // Update local state
+        // Finally, set the configured instance in our state.
         setLinter(linterInstance);
-        setState('ready');
-        setError(null);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load Harper grammar checker';
-        
-        // Update global state
-        globalState = 'error';
-        globalError = errorMessage;
-        isLoading = false;
-        
-        // Update local state
-        setState('error');
-        setError(errorMessage);
       }
+
+      setIsLoading(false);
     };
 
-    loadHarper();
-  }, []);
+    manageLinter();
+  }, [configOverrides]);
 
-  const lint = async (text: string): Promise<HarperSuggestion[]> => {
-    if (!linter || state !== 'ready') {
-      return [];
-    }
-
-    try {
-      const lints = await linter.lint(text);
-      
-      return lints.map((lintItem: Lint, index: number): HarperSuggestion => {
-        const span = lintItem.span();
-        const suggestions = lintItem.suggestions();
-        
-        return {
-          id: `harper-${span.start}-${span.end}-${index}`,
-          type: 'harper',
-          message: lintItem.message(),
-          span,
-          problemText: lintItem.get_problem_text(),
-          replacements: suggestions.map((s: { text: string }) => s.text),
-          startOffset: span.start,
-          endOffset: span.end,
-        };
+  // Effect to run the linter when the document changes
+  useEffect(() => {
+    if (linter && doc) {
+      linter.lint(doc.toString()).then((lints: HarperLint[]) => {
+        const suggestions: SpellingSuggestion[] = lints.map((lint: HarperLint) => {
+          const span = lint.span();
+          return {
+            id: `${span.start}-${span.end}-${lint.message()}`,
+            word: lint.get_problem_text(),
+            startOffset: span.start,
+            endOffset: span.end,
+            suggestions: lint.suggestions().map((s, index) => {
+              const text = s.get_replacement_text();
+              return { id: `${text}-${index}`, text };
+            }),
+            type: lint.lint_kind() === 'Spelling' ? 'spelling' : 'grammar',
+            raw: lint,
+          };
+        });
+        useSuggestionStore.getState().setSpellingSuggestions(suggestions);
       });
-    } catch (err) {
-      return [];
     }
-  };
+  }, [doc, linter]);
 
-  return {
-    linter,
-    state,
-    error,
-    lint,
-  };
-}; 
+  return { isLoading };
+};

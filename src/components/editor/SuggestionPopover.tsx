@@ -2,11 +2,11 @@ import { FloatingContext } from '@floating-ui/react';
 import React from 'react';
 import { AnySuggestion } from '../../store/suggestion/suggestion.types';
 import {
-  ClaritySuggestion,
-  ConcisenessSuggestion,
-  PassiveSuggestion,
-  ReadabilitySuggestion,
-  SpellingSuggestion,
+    ClaritySuggestion,
+    ConcisenessSuggestion,
+    PassiveSuggestion,
+    ReadabilitySuggestion,
+    SpellingSuggestion,
 } from '../../types';
 import ClaritySuggestionPopover from './ClaritySuggestionPopover';
 import ConcisenessSuggestionPopover from './ConcisenessSuggestionPopover';
@@ -18,6 +18,7 @@ interface SuggestionPopoverProps {
   suggestion: AnySuggestion;
   onAccept: (suggestion: AnySuggestion) => void;
   onDismiss: () => void;
+  onIgnore: (suggestion: AnySuggestion) => void;
   style: React.CSSProperties;
   context: FloatingContext;
 }
@@ -25,7 +26,7 @@ interface SuggestionPopoverProps {
 const SuggestionPopover = React.forwardRef<
   HTMLDivElement,
   SuggestionPopoverProps
->(({ suggestion, onAccept, onDismiss, style, context }, ref) => {
+>(({ suggestion, onAccept, onDismiss, onIgnore, style, context }, ref) => {
   const isSpellingSuggestion = (s: AnySuggestion): s is SpellingSuggestion =>
     s.type === 'spelling' || s.type === 'grammar' || s.type === 'style';
 
@@ -50,6 +51,7 @@ const SuggestionPopover = React.forwardRef<
         suggestion={suggestion}
         onAccept={onAccept}
         onDismiss={onDismiss}
+        onIgnore={onIgnore}
         style={style}
         context={context}
       />
@@ -62,6 +64,7 @@ const SuggestionPopover = React.forwardRef<
         ref={ref}
         suggestion={suggestion}
         onDismiss={onDismiss}
+        onIgnore={onIgnore}
         style={style}
         context={context}
       />
@@ -75,6 +78,7 @@ const SuggestionPopover = React.forwardRef<
         suggestion={suggestion}
         onAccept={onAccept}
         onDismiss={onDismiss}
+        onIgnore={onIgnore}
         style={style}
         context={context}
       />
@@ -88,6 +92,7 @@ const SuggestionPopover = React.forwardRef<
         suggestion={suggestion}
         onAccept={onAccept}
         onDismiss={onDismiss}
+        onIgnore={onIgnore}
         style={style}
         context={context}
       />
@@ -101,6 +106,7 @@ const SuggestionPopover = React.forwardRef<
         suggestion={suggestion}
         onAccept={onAccept}
         onDismiss={onDismiss}
+        onIgnore={onIgnore}
         style={style}
         context={context}
       />

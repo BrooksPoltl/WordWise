@@ -12,6 +12,7 @@ interface ConcisenessSuggestionPopoverProps {
   suggestion: ConcisenessSuggestion;
   onAccept: (suggestion: ConcisenessSuggestion) => void;
   onDismiss: () => void;
+  onIgnore: (suggestion: ConcisenessSuggestion) => void;
   style: React.CSSProperties;
   context: FloatingContext;
 }
@@ -19,7 +20,7 @@ interface ConcisenessSuggestionPopoverProps {
 const ConcisenessSuggestionPopover = React.forwardRef<
   HTMLDivElement,
   ConcisenessSuggestionPopoverProps
->(({ suggestion, onAccept, onDismiss, style, context }, ref) => {
+>(({ suggestion, onAccept, onDismiss, onIgnore, style, context }, ref) => {
   const { getFloatingProps } = useInteractions([
     useClick(context),
     useDismiss(context),
@@ -60,7 +61,14 @@ const ConcisenessSuggestionPopover = React.forwardRef<
           </button>
         ))}
       </div>
-      <div className="border-t border-gray-200 mt-2 pt-2 flex justify-end">
+      <div className="border-t border-gray-200 mt-2 pt-2 flex justify-end space-x-2">
+        <button
+          type="button"
+          className="text-xs text-gray-500 hover:text-gray-700"
+          onClick={() => onIgnore(suggestion)}
+        >
+          Ignore
+        </button>
         <button
           type="button"
           className="text-xs text-gray-500 hover:text-gray-700"

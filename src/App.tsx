@@ -1,118 +1,78 @@
-import React, { useEffect } from 'react';
-import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import React, { Suspense, lazy } from 'react';
+import {
+  Navigate,
+  Route,
+  BrowserRouter as Router,
+  Routes,
+} from 'react-router-dom';
 import AuthWrapper from './components/AuthWrapper';
-import CodeMirrorPoc from './components/CodeMirrorPoc';
-import Dashboard from './components/Dashboard';
-import DocumentEditor from './components/DocumentEditor';
-import HarperPoc from './components/HarperPoc';
-import LandingPage from './components/LandingPage';
 import Onboarding from './components/Onboarding';
-import Profile from './components/Profile';
 import { useAuthStore } from './store/auth/auth.store';
+
+// Lazy load components
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const DocumentEditor = lazy(() => import('./components/DocumentEditor'));
+const DocumentList = lazy(() => import('./components/DocumentList'));
+const LandingPage = lazy(() => import('./components/LandingPage'));
+const Profile = lazy(() => import('./components/Profile'));
+const EditorV2 = lazy(() => import('./components/EditorV2'));
 
 const App: React.FC = () => {
   const { user, isInitialized, initializeAuth } = useAuthStore();
 
-  useEffect(() => {
-    // Initialize authentication state listener
+  React.useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
 
-  // Show loading spinner while initializing
   if (!isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading AlignWrite...</p>
-        </div>
+      <div className="flex h-screen items-center justify-center">
+        <div>Loading...</div>
       </div>
     );
   }
 
-  // Helper function to determine if user needs onboarding
-  // More explicit check: if user exists but onboardingCompleted is false or undefined
-  const needsOnboarding = user && (user.onboardingCompleted !== true);
-
-  // Helper function to get redirect path for authenticated users
-  const getAuthenticatedRedirect = () => {
-    if (needsOnboarding) return '/onboarding';
-    return '/dashboard';
-  };
-
-  // Helper function to render protected route element
-  const renderProtectedRoute = (component: React.ReactElement) => {
-    if (!user) return <Navigate to="/" replace />;
-    if (needsOnboarding) return <Navigate to="/onboarding" replace />;
-    return component;
-  };
-
-  // Helper function to render auth route element
-  const renderAuthRoute = () => {
-    if (!user) {
-      return (
-        <AuthWrapper
-          onAuthSuccess={() => {
-            // Authentication success is handled by the auth store
-            // This callback could be used for additional logic if needed
-          }}
-        />
-      );
-    }
-    return <Navigate to={getAuthenticatedRedirect()} replace />;
-  };
-
-  // Helper function to render onboarding route element
-  const renderOnboardingRoute = () => {
-    if (!user) return <Navigate to="/" replace />;
-    if (!needsOnboarding) return <Navigate to="/dashboard" replace />;
-    return <Onboarding />;
-  };
-
   return (
     <Router>
-      <Routes>
-        {/* Landing page for unauthenticated users */}
-        <Route 
-          path="/" 
-          element={
-            user ? <Navigate to={getAuthenticatedRedirect()} replace /> : <LandingPage />
-          } 
-        />
-
-        {/* Auth routes */}
-        <Route path="/auth" element={renderAuthRoute()} />
-
-        {/* Onboarding route */}
-        <Route path="/onboarding" element={renderOnboardingRoute()} />
-
-        {/* Harper POC route - accessible without authentication for testing */}
-        <Route path="/harper-poc" element={<HarperPoc />} />
-
-        {/* New CodeMirror POC Route */}
-        <Route path="/codemirror-poc" element={<CodeMirrorPoc />} />
-
-        {/* Protected routes */}
-        <Route path="/dashboard" element={renderProtectedRoute(<Dashboard />)} />
-
-        <Route path="/profile" element={renderProtectedRoute(<Profile />)} />
-
-        <Route
-          path="/editor/:documentId"
-          element={renderProtectedRoute(<DocumentEditor />)}
-        />
-
-        {/* Catch all route */}
-        <Route
-          path="*"
-          element={
-            <Navigate 
-              to={user ? getAuthenticatedRedirect() : '/'} 
-              replace 
-            />
-          }
-        />
-      </Routes>
+      <Suspense
+        fallback={
+          <div className="flex h-screen items-center justify-center">
+            Loading...
+          </div>
+        }
+      >
+        <Routes>
+          {(() => {
+            if (!user) {
+              return (
+                <>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/auth" element={<AuthWrapper onAuthSuccess={() => {}} />} />
+                  <Route path="/*" element={<Navigate to="/auth" />} />
+                </>
+              );
+            }
+            if (!user.onboardingCompleted) {
+              return (
+                <>
+                  <Route path="/onboarding" element={<Onboarding />} />
+                  <Route path="/*" element={<Navigate to="/onboarding" />} />
+                </>
+              );
+            }
+            return (
+              <>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/documents" element={<DocumentList />} />
+                <Route path="/document/:id" element={<DocumentEditor />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/editor-v2" element={<EditorV2 />} />
+                <Route path="/*" element={<Navigate to="/dashboard" />} />
+              </>
+            );
+          })()}
+        </Routes>
+      </Suspense>
     </Router>
   );
 };

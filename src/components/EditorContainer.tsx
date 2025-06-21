@@ -1,16 +1,3 @@
-import TextEditor from './TextEditor';
+import EditorV2 from './EditorV2';
 
-interface EditorContainerProps {
-  documentId: string;
-  onTitleChange: (newTitle: string) => void;
-}
-
-export const EditorContainer = ({
-  documentId,
-  onTitleChange,
-}: EditorContainerProps) => (
-  <TextEditor
-    documentId={documentId}
-    onTitleChange={onTitleChange}
-  />
-); 
+export const EditorContainer = () => <EditorV2 />; 

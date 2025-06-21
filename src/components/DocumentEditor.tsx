@@ -11,14 +11,11 @@ const DocumentEditor: React.FC = () => {
   const {
     currentDocument,
     fetchDocument,
-    updateDocument,
     loading,
     error,
     clearError,
   } = useDocumentStore();
 
-  const [titleChangeTimeout, setTitleChangeTimeout] =
-    useState<NodeJS.Timeout | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -66,29 +63,6 @@ const DocumentEditor: React.FC = () => {
       clearError();
     };
   }, [documentId, fetchDocument, clearError, user, navigate]);
-
-  const handleTitleChange = (newTitle: string) => {
-    if (!documentId) return;
-
-    // Clear existing timeout
-    if (titleChangeTimeout) {
-      clearTimeout(titleChangeTimeout);
-    }
-
-    // Set new timeout for debounced save
-    const timeout = setTimeout(async () => {
-      try {
-        await updateDocument({
-          id: documentId,
-          title: newTitle,
-        });
-      } catch (updateError) {
-        console.error('Failed to update title:', updateError);
-      }
-    }, 1500);
-
-    setTitleChangeTimeout(timeout);
-  };
 
   const handleBackToDashboard = () => {
     navigate('/dashboard');
@@ -293,15 +267,11 @@ const DocumentEditor: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 h-full overflow-hidden">
-        <div className="max-w-7xl mx-auto h-full">
-          {documentId && currentDocument && (
-            <EditorContainer
-              documentId={documentId}
-              onTitleChange={handleTitleChange}
-            />
-          )}
+      <main className="flex-grow p-4 md:p-6 lg:p-8">
+        <div className="max-w-4xl mx-auto h-full">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden h-full">
+            <EditorContainer />
+          </div>
         </div>
       </main>
     </div>

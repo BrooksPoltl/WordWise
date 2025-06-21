@@ -1,213 +1,235 @@
 import { markdown } from '@codemirror/lang-markdown';
-import { Compartment, EditorState, Extension, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state';
-import { Decoration, DecorationSet } from '@codemirror/view';
-import { EditorView, basicSetup } from 'codemirror';
+import {
+    Compartment,
+    EditorState,
+    Extension,
+    RangeSetBuilder
+} from '@codemirror/state';
+import {
+    Decoration,
+    DecorationSet,
+    EditorView,
+    ViewPlugin,
+    ViewUpdate,
+} from '@codemirror/view';
+import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useHarperLinter } from '../../hooks/useHarperLinter';
+import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
+import { AnySuggestion } from '../../store/suggestion/suggestion.types';
 import { wordwiseTheme } from '../../themes/wordwiseTheme';
-import { HarperSuggestion } from '../../types/harper';
+import {
+    getLinter,
+    Lint,
+    HarperLintConfig as LintConfig,
+} from '../../utils/harperLinter';
+import SuggestionPopover from './SuggestionPopover';
 
-// State effect for updating Harper suggestions
-const updateSuggestionsEffect = StateEffect.define<HarperSuggestion[]>();
+const suggestionDecoration = (suggestion: AnySuggestion) =>
+  Decoration.mark({
+    class: 'harper-suggestion',
+    attributes: {
+      'data-suggestion-id': suggestion.id,
+      'data-suggestion-type': suggestion.type,
+    },
+  });
 
-// State field to manage Harper suggestions
-const harperSuggestionsField = StateField.define<HarperSuggestion[]>({
-  create: () => [],
-  update: (suggestions, tr) => {
-    for (const effect of tr.effects) {
-      if (effect.is(updateSuggestionsEffect)) {
-        return effect.value;
-      }
+const buildDecorations = (
+  view: EditorView,
+  suggestions: AnySuggestion[],
+): DecorationSet => {
+  const builder = new RangeSetBuilder<Decoration>();
+  for (const s of suggestions) {
+    if (s.startOffset < view.viewport.to && s.endOffset > view.viewport.from) {
+      builder.add(s.startOffset, s.endOffset, suggestionDecoration(s));
     }
-    return suggestions;
-  },
-});
+  }
+  return builder.finish();
+};
 
-// State field to manage decorations
-const harperDecorationsField = StateField.define<DecorationSet>({
-  create: () => Decoration.set([]),
-  update: (oldDecorations, tr) => {
-    let decorations = oldDecorations.map(tr.changes);
-    
-    for (const effect of tr.effects) {
-      if (effect.is(updateSuggestionsEffect)) {
-        const suggestions = effect.value;
-        const builder = new RangeSetBuilder<Decoration>();
-        
-        for (const suggestion of suggestions) {
-          const decoration = Decoration.mark({
-            class: 'harper-suggestion',
-            attributes: {
-              'data-suggestion-id': suggestion.id,
-              'data-suggestion-type': suggestion.type,
-              'title': suggestion.message,
-            },
-          });
-          
-          builder.add(suggestion.startOffset, suggestion.endOffset, decoration);
+const suggestionDecorations = (suggestions: AnySuggestion[]) =>
+  ViewPlugin.fromClass(
+    class {
+      decorations: DecorationSet;
+
+      constructor(view: EditorView) {
+        this.decorations = buildDecorations(view, suggestions);
+      }
+
+      update(update: ViewUpdate) {
+        if (update.docChanged || update.viewportChanged) {
+          this.decorations = buildDecorations(update.view, suggestions);
         }
-        
-        decorations = builder.finish();
       }
-    }
-    
-    return decorations;
-  },
-  provide: field => EditorView.decorations.from(field),
-});
+    },
+    {
+      decorations: (v: { decorations: DecorationSet }) => v.decorations,
+    },
+  );
 
 interface CodeMirrorEditorProps {
   initialContent?: string;
   onChange?: (content: string) => void;
-  onSuggestionClick?: (suggestion: HarperSuggestion, from: number, to: number) => void;
   placeholder?: string;
+  config?: LintConfig;
 }
 
 const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   initialContent = '',
   onChange,
-  onSuggestionClick,
   placeholder = 'Start writing...',
+  config,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const clickHandlerCompartment = useRef(new Compartment());
+  const decorationsCompartment = useRef(new Compartment());
 
-  const { lint, state: harperState } = useHarperLinter();
-  const [suggestions, setSuggestions] = useState<HarperSuggestion[]>([]);
-  
-  // Debounced linting
-  const lintTimeoutRef = useRef<NodeJS.Timeout>();
-  
-  const performLinting = useCallback(async (text: string) => {
-    if (harperState !== 'ready') return;
-    
-    try {
-      const newSuggestions = await lint(text);
-      setSuggestions(newSuggestions);
-      
-      // Update editor decorations
-      if (viewRef.current) {
-        viewRef.current.dispatch({
-          effects: updateSuggestionsEffect.of(newSuggestions),
-        });
+  const [content, setContent] = useState(initialContent);
+  const [activeSuggestion, setActiveSuggestion] =
+    useState<AnySuggestion | null>(null);
+
+  useHarperLinter(content, config);
+
+  const spellingSuggestions = useSuggestionStore(state => state.spelling);
+
+  const { x, y, refs, strategy, context } = useFloating({
+    open: !!activeSuggestion,
+    onOpenChange: isOpen => {
+      if (!isOpen) {
+        setActiveSuggestion(null);
       }
-    } catch (error) {
-      console.error('Linting failed:', error);
-    }
-  }, [lint, harperState]);
-  
-  const debouncedLint = useCallback((text: string) => {
-    if (lintTimeoutRef.current) {
-      clearTimeout(lintTimeoutRef.current);
-    }
-    
-    lintTimeoutRef.current = setTimeout(() => {
-      performLinting(text);
-    }, 500);
-  }, [performLinting]);
-  
+    },
+    placement: 'top',
+    strategy: 'fixed',
+    middleware: [offset(8), shift()],
+    whileElementsMounted: autoUpdate,
+  });
+
+  const handleContentChange = useCallback(
+    (newContent: string) => {
+      setContent(newContent);
+      onChange?.(newContent);
+    },
+    [onChange],
+  );
+
+  const handleApplySuggestion = useCallback((_suggestion: AnySuggestion) => {
+    // TODO: Re-implement suggestion application without the deprecated method.
+    // This will likely involve dispatching a transaction to the editor view.
+    // For now, this function is a no-op.
+  }, []);
+
+  const handleIgnoreSuggestion = useCallback(
+    async (suggestionToIgnore: AnySuggestion) => {
+      const linter = await getLinter();
+
+      if (
+        linter &&
+        'raw' in suggestionToIgnore &&
+        suggestionToIgnore.raw instanceof Lint
+      ) {
+        await linter.ignoreLint(content, suggestionToIgnore.raw);
+        setActiveSuggestion(null);
+      }
+    },
+    [content],
+  );
+
+  const handleEditorClick = useCallback(
+    (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      const suggestionElement = target.closest('.harper-suggestion');
+
+      if (suggestionElement) {
+        const suggestionId =
+          suggestionElement.getAttribute('data-suggestion-id');
+        const suggestion = spellingSuggestions.find(s => s.id === suggestionId);
+
+        if (suggestion) {
+          // Set the reference for Floating UI
+          refs.setReference({
+            getBoundingClientRect: () => suggestionElement.getBoundingClientRect(),
+          });
+          setActiveSuggestion(suggestion);
+          return true; // We handled it, but don't prevent default
+        }
+      }
+
+      // If we click anywhere else, close the popover.
+      setActiveSuggestion(null);
+      return false;
+    },
+    [spellingSuggestions, refs],
+  );
+
   // This useEffect is for creating and destroying the editor instance.
   useEffect(() => {
     if (!editorRef.current) return () => {};
-    
+
     const extensions: Extension[] = [
-      basicSetup,
+      EditorView.lineWrapping,
       markdown(),
       wordwiseTheme,
-      harperSuggestionsField,
-      harperDecorationsField,
-      EditorView.updateListener.of((update) => {
+      EditorView.updateListener.of(update => {
         if (update.docChanged) {
-          const text = update.state.doc.toString();
-          onChange?.(text);
-          debouncedLint(text);
+          handleContentChange(update.state.doc.toString());
         }
       }),
-      clickHandlerCompartment.current.of(EditorView.domEventHandlers({})), // Initial empty handler
-      EditorView.contentAttributes.of({ placeholder })
+      EditorView.domEventHandlers({
+        click: event => handleEditorClick(event),
+      }),
+      EditorView.contentAttributes.of({ placeholder: placeholder ?? '' }),
+      decorationsCompartment.current.of(suggestionDecorations([])),
     ];
-    
+
     const startState = EditorState.create({
       doc: initialContent,
       extensions,
     });
-    
+
     const view = new EditorView({
       state: startState,
       parent: editorRef.current,
     });
-    
+
     viewRef.current = view;
-    
-    // Perform initial linting
-    if (initialContent.trim()) {
-      debouncedLint(initialContent);
-    }
-    
+
     return () => {
       view.destroy();
       viewRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // This useEffect is for handling suggestion clicks.
-  // It re-configures the click handler when suggestions change.
+  // This effect is responsible for updating the decorations from the store
   useEffect(() => {
-    if (!viewRef.current || !onSuggestionClick) return;
-
-    const suggestionClickHandler = (event: MouseEvent, view: EditorView) => {
-      const target = event.target as HTMLElement;
-      const suggestionElement = target.closest('.harper-suggestion');
-      
-      if (suggestionElement) {
-        const suggestionId = suggestionElement.getAttribute('data-suggestion-id');
-        if (suggestionId) {
-          const suggestion = suggestions.find(s => s.id === suggestionId);
-          if (suggestion) {
-            const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
-            if (pos !== null) {
-              onSuggestionClick(suggestion, suggestion.startOffset, suggestion.endOffset);
-            }
-          }
-          event.stopPropagation();
-          event.preventDefault();
-          return true;
-        }
-      }
-      return false;
-    };
+    if (!viewRef.current) return;
 
     viewRef.current.dispatch({
-      effects: clickHandlerCompartment.current.reconfigure(
-        EditorView.domEventHandlers({
-          click: suggestionClickHandler,
-        })
+      effects: decorationsCompartment.current.reconfigure(
+        suggestionDecorations(spellingSuggestions),
       ),
     });
-
-  }, [suggestions, onSuggestionClick]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => () => {
-    if (lintTimeoutRef.current) {
-      clearTimeout(lintTimeoutRef.current);
-    }
-  }, []);
+  }, [spellingSuggestions]);
 
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden">
-      <div ref={editorRef} className="min-h-[200px]" />
-      {harperState === 'loading' && (
-        <div className="p-2 text-sm text-gray-500 bg-gray-50 border-t">
-          Loading grammar checker...
-        </div>
-      )}
-      {harperState === 'error' && (
-        <div className="p-2 text-sm text-red-600 bg-red-50 border-t">
-          Grammar checker failed to load
-        </div>
+    <div className="relative w-full h-full">
+      <div ref={editorRef} className="w-full h-full" />
+      {activeSuggestion && (
+        <SuggestionPopover
+          ref={refs.setFloating as React.Ref<HTMLDivElement>}
+          suggestion={activeSuggestion}
+          onAccept={handleApplySuggestion}
+          onDismiss={() => setActiveSuggestion(null)}
+          onIgnore={handleIgnoreSuggestion}
+          style={{
+            position: strategy,
+            top: y ?? 0,
+            left: x ?? 0,
+            zIndex: 100,
+          }}
+          context={context}
+        />
       )}
     </div>
   );

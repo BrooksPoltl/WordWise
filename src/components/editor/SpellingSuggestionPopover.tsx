@@ -12,6 +12,7 @@ interface SpellingSuggestionPopoverProps {
   suggestion: SpellingSuggestion;
   onAccept: (suggestion: SpellingSuggestion) => void;
   onDismiss: () => void;
+  onIgnore: (suggestion: SpellingSuggestion) => void;
   style: React.CSSProperties;
   context: FloatingContext;
 }
@@ -19,7 +20,7 @@ interface SpellingSuggestionPopoverProps {
 const SpellingSuggestionPopover = React.forwardRef<
   HTMLDivElement,
   SpellingSuggestionPopoverProps
->(({ suggestion, onAccept, onDismiss, style, context }, ref) => {
+>(({ suggestion, onAccept, onDismiss, onIgnore, style, context }, ref) => {
   const { getFloatingProps } = useInteractions([
     useClick(context),
     useDismiss(context),
@@ -60,7 +61,14 @@ const SpellingSuggestionPopover = React.forwardRef<
           </button>
         ))}
       </div>
-      <div className="border-t border-gray-200 mt-2 pt-2 flex justify-end">
+      <div className="border-t border-gray-200 mt-2 pt-2 flex justify-end space-x-2">
+        <button
+          type="button"
+          className="text-xs text-gray-500 hover:text-gray-700"
+          onClick={() => onIgnore(suggestion)}
+        >
+          Ignore
+        </button>
         <button
           type="button"
           className="text-xs text-gray-500 hover:text-gray-700"

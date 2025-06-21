@@ -11,6 +11,7 @@ import { ClaritySuggestion } from '../../types';
 interface ClaritySuggestionPopoverProps {
   suggestion: ClaritySuggestion;
   onDismiss: () => void;
+  onIgnore: (suggestion: ClaritySuggestion) => void;
   style: React.CSSProperties;
   context: FloatingContext;
 }
@@ -18,7 +19,7 @@ interface ClaritySuggestionPopoverProps {
 const ClaritySuggestionPopover = React.forwardRef<
   HTMLDivElement,
   ClaritySuggestionPopoverProps
->(({ suggestion, onDismiss, style, context }, ref) => {
+>(({ suggestion, onDismiss, onIgnore, style, context }, ref) => {
   const { getFloatingProps } = useInteractions([
     useClick(context),
     useDismiss(context),
@@ -35,7 +36,14 @@ const ClaritySuggestionPopover = React.forwardRef<
         Clarity Note
       </div>
       <div className="text-sm text-gray-700">{suggestion.explanation}</div>
-      <div className="border-t border-gray-200 mt-2 pt-2 flex justify-end">
+      <div className="border-t border-gray-200 mt-2 pt-2 flex justify-end space-x-2">
+        <button
+          type="button"
+          className="text-xs text-gray-500 hover:text-gray-700"
+          onClick={() => onIgnore(suggestion)}
+        >
+          Ignore
+        </button>
         <button
           type="button"
           className="text-xs text-gray-500 hover:text-gray-700"
