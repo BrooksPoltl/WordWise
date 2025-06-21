@@ -1,4 +1,5 @@
 import { User as FirebaseUser } from 'firebase/auth';
+import { HarperLint } from '../utils/harperLinter';
 
 export interface User {
   uid: string;
@@ -9,6 +10,7 @@ export interface User {
   role?: string;
   persona?: string;
   onboardingCompleted?: boolean;
+  message?: string;
 }
 
 export interface UserPreferences {
@@ -34,6 +36,14 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+}
+
+// Base suggestion type
+export interface BaseSuggestion {
+  id: string;
+  startOffset: number;
+  endOffset: number;
+  raw?: HarperLint;
 }
 
 // Document types
@@ -71,52 +81,35 @@ export interface SuggestionOption {
   text: string;
 }
 
-export interface SpellingSuggestion {
-  id: string;
+export interface SpellingSuggestion extends BaseSuggestion {
   word: string;
-  startOffset: number;
-  endOffset: number;
   suggestions: SuggestionOption[];
   type: 'spelling' | 'grammar' | 'style';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  raw?: any; // Raw lint object from Harper
 }
 
-export interface ClaritySuggestion {
-  id: string;
+export interface ClaritySuggestion extends BaseSuggestion {
   text: string;
-  startOffset: number;
-  endOffset: number;
   suggestions: SuggestionOption[];
   type: 'weasel_word';
   explanation: string;
 }
 
-export interface ConcisenessSuggestion {
-  id: string;
+export interface ConcisenessSuggestion extends BaseSuggestion {
   text: string;
-  startOffset: number;
-  endOffset: number;
   suggestions: SuggestionOption[];
   type: 'conciseness';
   explanation: string;
 }
 
-export interface ReadabilitySuggestion {
-  id: string;
+export interface ReadabilitySuggestion extends BaseSuggestion {
   text: string;
-  startOffset: number;
-  endOffset: number;
   type: 'readability';
   explanation: string;
   suggestions?: SuggestionOption[];
 }
 
-export interface PassiveSuggestion {
-  id: string;
+export interface PassiveSuggestion extends BaseSuggestion {
   text: string;
-  startOffset: number;
-  endOffset: number;
   type: 'passive';
   explanation: string;
   suggestions?: SuggestionOption[];

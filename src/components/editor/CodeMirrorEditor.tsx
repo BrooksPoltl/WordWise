@@ -18,11 +18,6 @@ import { useHarperLinter } from '../../hooks/useHarperLinter';
 import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import { AnySuggestion } from '../../store/suggestion/suggestion.types';
 import { wordwiseTheme } from '../../themes/wordwiseTheme';
-import {
-    getLinter,
-    Lint,
-    HarperLintConfig as LintConfig,
-} from '../../utils/harperLinter';
 import SuggestionPopover from './SuggestionPopover';
 
 const suggestionDecoration = (suggestion: AnySuggestion) =>
@@ -71,24 +66,23 @@ interface CodeMirrorEditorProps {
   initialContent?: string;
   onChange?: (content: string) => void;
   placeholder?: string;
-  config?: LintConfig;
 }
 
 const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   initialContent = '',
   onChange,
   placeholder = 'Start writing...',
-  config,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const decorationsCompartment = useRef(new Compartment());
+  const { linter, forceReLint } = useHarperLinter({
+    toString: () => initialContent,
+  });
 
   const [content, setContent] = useState(initialContent);
   const [activeSuggestion, setActiveSuggestion] =
     useState<AnySuggestion | null>(null);
-
-  useHarperLinter(content, config);
 
   const spellingSuggestions = useSuggestionStore(state => state.spelling);
 
@@ -121,24 +115,26 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
   const handleIgnoreSuggestion = useCallback(
     async (suggestionToIgnore: AnySuggestion) => {
-      const linter = await getLinter();
-
+      // Duck-typing to check if it's a valid HarperLint object
       if (
         linter &&
-        'raw' in suggestionToIgnore &&
-        suggestionToIgnore.raw instanceof Lint
+        suggestionToIgnore.raw &&
+        typeof suggestionToIgnore.raw.span === 'function' &&
+        typeof suggestionToIgnore.raw.suggestions === 'function'
       ) {
         await linter.ignoreLint(content, suggestionToIgnore.raw);
         setActiveSuggestion(null);
+        forceReLint();
       }
     },
-    [content],
+    [linter, content, forceReLint],
   );
 
   const handleEditorClick = useCallback(
     (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      const suggestionElement = target.closest('.harper-suggestion');
+      const suggestionElement = (event.target as HTMLElement).closest(
+        '[data-suggestion-id]',
+      );
 
       if (suggestionElement) {
         const suggestionId =
@@ -146,21 +142,25 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         const suggestion = spellingSuggestions.find(s => s.id === suggestionId);
 
         if (suggestion) {
-          // Set the reference for Floating UI
+          const domRect = suggestionElement.getBoundingClientRect();
           refs.setReference({
-            getBoundingClientRect: () => suggestionElement.getBoundingClientRect(),
+            getBoundingClientRect: () => domRect,
           });
           setActiveSuggestion(suggestion);
-          return true; // We handled it, but don't prevent default
+          return true;
         }
       }
 
-      // If we click anywhere else, close the popover.
       setActiveSuggestion(null);
       return false;
     },
     [spellingSuggestions, refs],
   );
+
+  const clickHandlerRef = useRef(handleEditorClick);
+  useEffect(() => {
+    clickHandlerRef.current = handleEditorClick;
+  }, [handleEditorClick]);
 
   // This useEffect is for creating and destroying the editor instance.
   useEffect(() => {
@@ -176,7 +176,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         }
       }),
       EditorView.domEventHandlers({
-        click: event => handleEditorClick(event),
+        click: event => clickHandlerRef.current(event),
       }),
       EditorView.contentAttributes.of({ placeholder: placeholder ?? '' }),
       decorationsCompartment.current.of(suggestionDecorations([])),

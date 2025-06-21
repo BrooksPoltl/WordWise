@@ -1,5 +1,4 @@
-import React, { Suspense, lazy, useId, useState } from 'react';
-import { HarperLintConfig as LintConfig } from '../utils/harperLinter';
+import { Suspense, lazy } from 'react';
 
 const CodeMirrorEditor = lazy(() => import('./editor/CodeMirrorEditor'));
 
@@ -13,89 +12,30 @@ I like apples, bananas and oranges. He said, "This is a test". We sell books, CD
 
 I think we should probably proceed with the evaluation. Due to the fact that it was late, we decided to make a decision to go home. This is a very long and rambling sentence that goes on for quite a while without getting to the point, which is really just to demonstrate that the long sentence detector is working as intended and will flag this particular piece of text. If we release this now, we might shoot ourselves in the foot. What the hell is going on?`;
 
-const RuleToggle: React.FC<{
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  disabled?: boolean;
-}> = ({ label, checked, onChange, disabled }) => {
-  const id = useId();
-  return (
-    <label
-      htmlFor={id}
-      className="flex items-center space-x-2 cursor-pointer"
-    >
-      <input
-        id={id}
-        type="checkbox"
-        className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-        checked={checked}
-        onChange={e => onChange(e.target.checked)}
-        disabled={disabled}
-      />
-      <span className={`text-sm ${disabled ? 'text-gray-400' : 'text-gray-700'}`}>
-        {label}
-      </span>
-    </label>
-  );
-};
-
-const EditorV2 = () => {
-  const [config, setConfig] = useState<LintConfig>({
-    'oxford-comma': true,
-    'no-oxford-comma': false,
-  });
-
-  const handleOxfordCommaChange = (checked: boolean) => {
-    setConfig({
-      'oxford-comma': checked,
-      'no-oxford-comma': !checked,
-    });
-  };
-
-  return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      <header className="p-4 border-b bg-white">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-xl font-bold">CodeMirror Editor (V2)</h1>
-          <p className="text-sm text-gray-500">
-            This page contains the new CodeMirror editor with Harper.js
-            integration and dynamic rule configuration.
-          </p>
-        </div>
-      </header>
-      <main className="flex-grow p-4 overflow-auto">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-md p-4 mb-4">
-            <h2 className="text-lg font-semibold mb-2">Rule Configuration</h2>
-            <div className="space-y-2">
-              <RuleToggle
-                label="Enforce Oxford Comma"
-                checked={config['oxford-comma'] ?? false}
-                onChange={handleOxfordCommaChange}
-              />
-              <RuleToggle
-                label="Enforce NO Oxford Comma"
-                checked={config['no-oxford-comma'] ?? false}
-                onChange={checked => handleOxfordCommaChange(!checked)}
-              />
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-4">
-            <h2 className="text-lg font-semibold mb-2">Editor</h2>
-            <div className="border rounded-lg overflow-hidden">
-              <Suspense fallback={<div>Loading Editor...</div>}>
-                <CodeMirrorEditor
-                  initialContent={PLACEHOLDER_CONTENT}
-                  config={config}
-                />
-              </Suspense>
-            </div>
+const EditorV2 = () => (
+  <div className="flex flex-col h-screen bg-gray-50">
+    <header className="p-4 border-b bg-white">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-xl font-bold">CodeMirror Editor (V2)</h1>
+        <p className="text-sm text-gray-500">
+          This page contains the new CodeMirror editor with Harper.js
+          integration.
+        </p>
+      </div>
+    </header>
+    <main className="flex-grow p-4 overflow-auto">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <h2 className="text-lg font-semibold mb-2">Editor</h2>
+          <div className="border rounded-lg overflow-hidden">
+            <Suspense fallback={<div>Loading Editor...</div>}>
+              <CodeMirrorEditor initialContent={PLACEHOLDER_CONTENT} />
+            </Suspense>
           </div>
         </div>
-      </main>
-    </div>
-  );
-};
+      </div>
+    </main>
+  </div>
+);
 
 export default EditorV2; 
