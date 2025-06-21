@@ -1,4 +1,3 @@
-import { Editor } from '@tiptap/react';
 import { useEffect } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import {
@@ -13,9 +12,10 @@ import { useSuggestionStore } from '../store/suggestion/suggestion.store';
 import { getLinter, HarperLint } from '../utils/harperLinter';
 import { getHarperDisplayTitle, mapHarperLintKind } from '../utils/harperMapping';
 // import { usePassiveRewrite } from './usePassiveRewrite';
+import { logger } from '../utils/logger';
 
 interface UseSuggestionsProps {
-  editor: Editor | null;
+  text: string;
 }
 
 /**
@@ -76,14 +76,14 @@ const runHarperAnalysis = async (text: string): Promise<HarperLint[]> => {
   try {
     const linter = await getLinter();
     if (!linter) {
-      console.warn('Harper linter not available');
+      logger.warning('Harper linter not available');
       return [];
     }
     
     const lints = await linter.lint(text);
     return lints;
   } catch (error) {
-    console.error('Harper analysis failed:', error);
+    logger.error('Harper analysis failed:', error);
     return [];
   }
 };
@@ -129,13 +129,13 @@ const convertToTypedSuggestions = (suggestions: BaseSuggestion[]) => {
   };
 };
 
-export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
+export const useSuggestions = ({ text }: UseSuggestionsProps) => {
   const { setSuggestions } = useSuggestionStore();
   // const { rewriteSentence: rewritePassive } = usePassiveRewrite();
   // const processedIdsRef = useRef<Set<string>>(new Set());
 
-  const handleAnalysis = useDebouncedCallback(async (text: string) => {
-    if (!text.trim()) {
+  const handleAnalysis = useDebouncedCallback(async (textToAnalyze: string) => {
+    if (!textToAnalyze.trim()) {
       setSuggestions({
         clarity: [],
         conciseness: [],
@@ -152,8 +152,8 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
         // passiveSuggestions,
         harperLints,
       ] = await Promise.all([
-        // analyzePassive(text),
-        runHarperAnalysis(text),
+        // analyzePassive(textToAnalyze),
+        runHarperAnalysis(textToAnalyze),
       ]);
 
       // Process Harper lints into our suggestion format
@@ -176,7 +176,7 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
       //   }
       // });
     } catch (error) {
-      console.error('Failed to analyze text for suggestions:', error);
+      logger.error('Failed to analyze text for suggestions:', error);
       setSuggestions({
         clarity: [],
         conciseness: [],
@@ -188,19 +188,6 @@ export const useSuggestions = ({ editor }: UseSuggestionsProps) => {
   }, 500);
 
   useEffect(() => {
-    if (editor) {
-      const onUpdate = () => {
-        const text = editor.getText();
-        handleAnalysis(text);
-      };
-
-      editor.on('update', onUpdate);
-      onUpdate(); // Initial analysis
-
-      return () => {
-        editor.off('update', onUpdate);
-      };
-    }
-    return () => {}; // Return an empty cleanup function if no editor
-  }, [editor, handleAnalysis]);
+    handleAnalysis(text);
+  }, [text, handleAnalysis]);
 }; 

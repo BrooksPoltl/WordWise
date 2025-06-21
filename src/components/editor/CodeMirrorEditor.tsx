@@ -42,19 +42,6 @@ interface CodeMirrorEditorProps {
   suggestionStore: SuggestionStore;
 }
 
-// Mock TipTap editor interface for useSuggestions hook compatibility
-interface MockEditor {
-  getText: () => string;
-  on: (event: string, callback: () => void) => void;
-  off: (event: string, callback: () => void) => void;
-}
-
-const createMockEditor = (content: string): MockEditor => ({
-  getText: () => content,
-  on: () => {},
-  off: () => {},
-});
-
 const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   initialContent = '',
   onChange,
@@ -68,12 +55,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   const [activeSuggestion, setActiveSuggestion] =
     useState<AnySuggestion | null>(null);
 
-  // Create mock editor for useSuggestions hook
-  const mockEditor = createMockEditor(currentContent);
-  
-  // Initialize suggestion analysis
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  useSuggestions({ editor: mockEditor as any });
+  // Initialize suggestion analysis with current text content
+  useSuggestions({ text: currentContent });
 
   const { x, y, refs, strategy, context } = useFloating({
     open: !!activeSuggestion,
