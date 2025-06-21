@@ -43,6 +43,7 @@ export const analyzeReadability = async (
         return {
           id: `readability-${place.start.offset}`,
           text: String(actual),
+          word: String(actual),
           startOffset: place.start.offset,
           endOffset: place.end.offset,
           type: 'readability',

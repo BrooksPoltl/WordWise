@@ -4,8 +4,8 @@ import { Plugin, PluginKey } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
 import { useSuggestionStore } from '../store/suggestion/suggestion.store';
 import {
-  AnySuggestion,
-  SuggestionCategory,
+    AnySuggestion,
+    SuggestionCategory,
 } from '../store/suggestion/suggestion.types';
 
 type SuggestionType = SuggestionCategory | 'weasel_word' | 'grammar' | 'style';
@@ -207,8 +207,7 @@ export const SuggestionDecorations = Extension.create({
 
           try {
             const actualText = editor.state.doc.textBetween(from, to);
-            const suggestionText =
-              'word' in suggestion ? suggestion.word : suggestion.text;
+            const suggestionText = suggestion.word;
             
             return actualText.toLowerCase() === suggestionText.toLowerCase();
 

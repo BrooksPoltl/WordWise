@@ -1,61 +1,70 @@
 import {
   ClaritySuggestion,
   ConcisenessSuggestion,
+  GrammarSuggestion,
   PassiveSuggestion,
   ReadabilitySuggestion,
-  SpellingSuggestion,
 } from '../../types';
+
+export interface Suggestion {
+  id: string;
+  text: string;
+}
 
 export const SUGGESTION_CATEGORIES = {
   spelling: {
-    label: 'Spelling',
-    color: '#EF4444', // Red-500
+    label: 'Grammar',
+    color: '#ef4444', // Red
   },
   clarity: {
     label: 'Clarity',
-    color: '#3B82F6', // Blue-500
+    color: '#8b5cf6', // Violet
   },
   conciseness: {
     label: 'Conciseness',
-    color: '#10B981', // Green-500
+    color: '#06b6d4', // Cyan
   },
   readability: {
     label: 'Readability',
-    color: '#8B5CF6', // Purple-500
+    color: '#10b981', // Emerald
   },
   passive: {
-    label: 'Passive',
-    color: '#F97316', // Orange-500
+    label: 'Passive Voice',
+    color: '#f97316', // Orange
   },
-} as const;
+};
 
 export type SuggestionCategory = keyof typeof SUGGESTION_CATEGORIES;
 
 export type AnySuggestion =
-  | SpellingSuggestion
   | ClaritySuggestion
   | ConcisenessSuggestion
+  | PassiveSuggestion
   | ReadabilitySuggestion
-  | PassiveSuggestion;
+  | GrammarSuggestion;
 
 export interface SuggestionState {
-  spelling: SpellingSuggestion[];
+  spelling: GrammarSuggestion[];
   clarity: ClaritySuggestion[];
   conciseness: ConcisenessSuggestion[];
-  readability: ReadabilitySuggestion[];
   passive: PassiveSuggestion[];
-  visibility: Record<SuggestionCategory, boolean>;
+  readability: ReadabilitySuggestion[];
 }
 
-export interface SuggestionActions {
-  setSuggestions: (
-    category: SuggestionCategory,
-    suggestions: AnySuggestion[],
-  ) => void;
-  toggleVisibility: (category: SuggestionCategory) => void;
-  // Note: These are kept for the existing spell-check flow but will be phased out.
-  setSpellingSuggestions: (suggestions: SpellingSuggestion[]) => void;
+export interface SuggestionVisibility {
+  spelling: boolean;
+  clarity: boolean;
+  conciseness: boolean;
+  passive: boolean;
+  readability: boolean;
+}
+
+export interface SuggestionStore extends SuggestionState {
+  visibility: SuggestionVisibility;
+  setSuggestions: (suggestions: Partial<SuggestionState>) => void;
+  clearSuggestions: () => void;
+  setSpellingSuggestions: (suggestions: GrammarSuggestion[]) => void;
   clearSpellingSuggestions: () => void;
+  toggleVisibility: (category: SuggestionCategory) => void;
+  // ... other setters if needed
 }
-
-export type SuggestionStore = SuggestionState & SuggestionActions;

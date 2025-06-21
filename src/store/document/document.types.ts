@@ -1,8 +1,8 @@
 import {
-  Document,
-  DocumentCreatePayload,
-  DocumentUpdatePayload,
-  SpellingSuggestion
+    Document,
+    DocumentCreatePayload,
+    DocumentUpdatePayload,
+    GrammarSuggestion
 } from '../../types';
 
 export interface DocumentState {
@@ -10,7 +10,7 @@ export interface DocumentState {
   currentDocument: Document | null;
   loading: boolean;
   error: string | null;
-  suggestions: SpellingSuggestion[];
+  suggestions: GrammarSuggestion[];
   dismissedSuggestionIds: Set<string>;
 
   // Actions
@@ -26,8 +26,7 @@ export interface DocumentState {
   clearError: () => void;
 
   // Suggestion Actions
-  addSuggestion: (suggestion: SpellingSuggestion) => void;
+  addSuggestion: (suggestion: GrammarSuggestion) => void;
   applySuggestion: (suggestionId: string, replacement: string) => void;
   dismissSuggestion: (suggestionId: string) => void;
-  checkSpelling: (text: string) => Promise<void>;
 } 

@@ -67,6 +67,7 @@ export const analyzeClarity = async (
       return {
         id: `clarity-${startOffset}-${index}`,
         text: text.slice(startOffset, endOffset),
+        word: text.slice(startOffset, endOffset),
         startOffset,
         endOffset,
         suggestions: [] as SuggestionOption[],

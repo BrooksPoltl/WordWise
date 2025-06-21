@@ -3,18 +3,17 @@ import {
   Document,
   DocumentCreatePayload,
   DocumentUpdatePayload,
-  SpellingSuggestion,
+  GrammarSuggestion,
 } from '../../types';
 import {
   addSuggestion as addSuggestionAction,
   applySuggestion as applySuggestionAction,
-  checkSpelling as checkSpellingAction,
   createDocument as createDocumentAction,
   deleteDocument as deleteDocumentAction,
   dismissSuggestion as dismissSuggestionAction,
   fetchDocument as fetchDocumentAction,
   fetchDocuments as fetchDocumentsAction,
-  updateDocument as updateDocumentAction,
+  updateDocument as updateDocumentAction
 } from './document.actions';
 import { DocumentState } from './document.types';
 
@@ -25,6 +24,9 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   error: null,
   suggestions: [],
   dismissedSuggestionIds: new Set(),
+  metrics: {
+    // Initialize metrics with default values
+  },
 
   fetchDocuments: (userId: string) => fetchDocumentsAction(set, userId),
 
@@ -48,11 +50,10 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   },
 
   // Suggestion Actions
-  addSuggestion: (suggestion: SpellingSuggestion) =>
+  addSuggestion: (suggestion: GrammarSuggestion) =>
     addSuggestionAction(set, get, suggestion),
   applySuggestion: (suggestionId: string, replacement: string) =>
     applySuggestionAction(set, get, suggestionId, replacement),
   dismissSuggestion: (suggestionId: string) =>
     dismissSuggestionAction(set, get, suggestionId),
-  checkSpelling: (text: string) => checkSpellingAction(set, get, text),
 }));

@@ -60,6 +60,7 @@ export const analyzeConciseness = async (
         return {
           id: `concise-${startOffset}-${index}`,
           text: text.slice(startOffset, endOffset),
+          word: text.slice(startOffset, endOffset),
           startOffset,
           endOffset,
           suggestions: suggestionOptions,

@@ -1,19 +1,18 @@
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    orderBy,
+    query,
+    serverTimestamp,
+    updateDoc,
+    where
 } from "firebase/firestore";
 import { db } from "../../config";
-import { Document, DocumentCreatePayload, DocumentUpdatePayload, SpellingSuggestion } from "../../types";
-import { browserSpellChecker, BrowserSpellChecker } from "../../utils/browserSpellChecker";
+import { Document, DocumentCreatePayload, DocumentUpdatePayload, GrammarSuggestion } from "../../types";
 import { getFriendlyErrorMessage } from "../../utils/errorMessages";
 import { DocumentState } from "./document.types";
 
@@ -254,38 +253,28 @@ export const deleteDocument = async (
   set({ loading: true, error: null });
   try {
     await deleteDoc(doc(db, 'documents', documentId));
-
-    // Update local state
-    const { documents, currentDocument } = get();
+    const { documents } = get();
     const updatedDocuments = documents.filter(document => document.id !== documentId);
-
-    set({
-      documents: updatedDocuments,
-      currentDocument:
-        currentDocument?.id === documentId ? null : currentDocument,
-      loading: false,
-    });
+    set({ documents: updatedDocuments, loading: false });
   } catch (error) {
     set({
       error: getFriendlyErrorMessage(error, 'Failed to delete document'),
       loading: false,
     });
-    throw error;
   }
 };
 
-// Suggestion Actions
 export const addSuggestion = (
   set: DocumentSet,
   get: () => DocumentState,
-  suggestion: SpellingSuggestion,
+  suggestion: GrammarSuggestion,
 ): void => {
   const { suggestions, dismissedSuggestionIds } = get();
 
   // Avoid adding duplicate or dismissed suggestions
   if (
     dismissedSuggestionIds.has(suggestion.id) ||
-    suggestions.some((s: SpellingSuggestion) => s.id === suggestion.id)
+    suggestions.some(s => s.id === suggestion.id)
   ) {
     return;
   }
@@ -299,24 +288,26 @@ export const applySuggestion = (
   suggestionId: string,
   replacement: string,
 ): void => {
-  const { suggestions, currentDocument } = get();
-  if (!currentDocument) return;
+  const { currentDocument } = get();
+  if (!currentDocument || !currentDocument.content) return;
 
-  const targetSuggestion = suggestions.find(s => s.id === suggestionId);
-  if (!targetSuggestion) return;
+  const suggestionToApply = get().suggestions.find(s => s.id === suggestionId);
+  if (!suggestionToApply) return;
 
-  const { updatedText, updatedSuggestions } =
-    BrowserSpellChecker.applySuggestion(
-      currentDocument.content,
-      suggestions,
-      targetSuggestion,
-      replacement,
-    );
+  const newContent =
+    currentDocument.content.substring(0, suggestionToApply.startOffset) +
+    replacement +
+    currentDocument.content.substring(suggestionToApply.endOffset);
 
-  set({
-    currentDocument: { ...currentDocument, content: updatedText },
-    suggestions: updatedSuggestions,
-  });
+  // Update document optimistically and then save
+  set(state => ({
+    currentDocument: state.currentDocument
+      ? { ...state.currentDocument, content: newContent }
+      : null,
+    suggestions: state.suggestions.filter(s => s.id !== suggestionId),
+  }));
+
+  autoSaveDocument(currentDocument.id, newContent);
 };
 
 export const dismissSuggestion = (
@@ -327,76 +318,8 @@ export const dismissSuggestion = (
   const { dismissedSuggestionIds } = get();
   const newDismissedIds = new Set(dismissedSuggestionIds);
   newDismissedIds.add(suggestionId);
-  set({ dismissedSuggestionIds: newDismissedIds });
-};
-
-export const checkSpelling = async (
-  set: DocumentSet,
-  _: () => DocumentState,
-  text: string,
-): Promise<void> => {
-  set({ suggestions: [], error: null });
-  try {
-    const lastSpaceIndex = text.lastIndexOf(' ');
-    const textToCheck =
-      lastSpaceIndex === -1 ? '' : text.substring(0, lastSpaceIndex);
-
-    if (!textToCheck.trim()) {
-      set({ suggestions: [] });
-      return;
-    }
-
-    const isReady = await browserSpellChecker.isReady();
-    if (!isReady) {
-      console.warn('Browser spell checker not ready.');
-      return;
-    }
-
-    const uniqueWords = [
-      ...new Set(textToCheck.match(/\b[\w'’]+\b/g) || []),
-    ].filter(word => !/^\d+$/.test(word));
-    const misspelledWords = (
-      await Promise.all(
-        uniqueWords.map(async word => {
-          const isCorrect = await browserSpellChecker.correct(word);
-          return isCorrect ? null : word;
-        }),
-      )
-    ).filter((word): word is string => word !== null);
-
-    const suggestionPromises = misspelledWords.map(async word => {
-      const allSuggestions = await browserSpellChecker.suggest(word);
-      const suggestions = allSuggestions.slice(0, 3);
-      if (suggestions.length === 0) return [];
-
-      const suggestionOptions = suggestions.map((suggestionText: string) => ({
-        id: crypto.randomUUID(),
-        text: suggestionText,
-      }));
-
-      const regex = new RegExp(`\\b${word}\\b`, 'gi');
-      const newSuggestions: SpellingSuggestion[] = [];
-      let match = regex.exec(text);
-      while (match) {
-        const startOffset = match.index;
-        newSuggestions.push({
-          id: crypto.randomUUID(),
-          word,
-          suggestions: suggestionOptions,
-          startOffset,
-          endOffset: startOffset + word.length,
-          type: 'spelling',
-        });
-        match = regex.exec(text);
-      }
-      return newSuggestions;
-    });
-
-    const suggestions = (await Promise.all(suggestionPromises)).flat();
-    set({ suggestions });
-  } catch (error) {
-    set({
-      error: getFriendlyErrorMessage(error, 'Failed to check spelling'),
-    });
-  }
+  set(state => ({
+    suggestions: state.suggestions.filter(s => s.id !== suggestionId),
+    dismissedSuggestionIds: newDismissedIds,
+  }));
 }; 

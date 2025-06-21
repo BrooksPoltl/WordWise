@@ -1,4 +1,3 @@
-import { markdown } from '@codemirror/lang-markdown';
 import { Diagnostic } from '@codemirror/lint';
 import { EditorState, Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
@@ -6,22 +5,24 @@ import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnySuggestion } from '../../store/suggestion/suggestion.types';
 import { wordwiseTheme } from '../../themes/wordwiseTheme';
+import { GrammarSuggestion } from '../../types';
 import {
     harperDiagnostics,
     harperLintDeco,
-    harperLinterPlugin,
+    harperLinterPlugin
 } from '../../utils/harperLinterSource';
 import SuggestionPopover from './SuggestionPopover';
 
 const diagnosticToSuggestion = (
   diagnostic: Diagnostic,
   doc: EditorState['doc'],
-): AnySuggestion => ({
+): GrammarSuggestion => ({
   id: `${diagnostic.from}-${diagnostic.to}-${diagnostic.message}`,
+  text: doc.sliceString(diagnostic.from, diagnostic.to),
   startOffset: diagnostic.from,
   endOffset: diagnostic.to,
   word: doc.sliceString(diagnostic.from, diagnostic.to),
-  type: 'spelling', // This can be enhanced if the diagnostic has more type info
+  type: 'grammar', // This can be enhanced if the diagnostic has more type info
   suggestions:
     diagnostic.actions
       ?.filter(action => action.name !== 'Ignore')
@@ -74,7 +75,6 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
     const extensions: Extension[] = [
       EditorView.lineWrapping,
-      markdown(),
       wordwiseTheme,
       EditorView.updateListener.of(update => {
         if (update.docChanged) {
@@ -92,7 +92,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
           const diagnostics = view.state.field(harperDiagnostics);
           const clickedDiagnostic = diagnostics.find(
-            d => pos >= d.from && pos <= d.to,
+            d => d.from <= pos && d.to >= pos,
           );
 
           if (clickedDiagnostic) {
@@ -156,25 +156,33 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           ref={refs.setFloating as React.Ref<HTMLDivElement>}
           suggestion={activeSuggestion}
           onAccept={suggestion => {
-            const action = suggestion.raw?.actions?.find(
-              a => a.name === suggestion.suggestions?.[0]?.text,
+            if (!('raw' in suggestion)) return;
+            const grammarSuggestion = suggestion as GrammarSuggestion;
+            const action = grammarSuggestion.raw.actions?.find(
+              (a: { name: string }) => a.name === grammarSuggestion.suggestions?.[0]?.text,
             );
             if (action && viewRef.current) {
               action.apply(
                 viewRef.current,
-                suggestion.startOffset,
-                suggestion.endOffset,
+                grammarSuggestion.startOffset,
+                grammarSuggestion.endOffset,
               );
               setActiveSuggestion(null);
             }
           }}
           onDismiss={() => setActiveSuggestion(null)}
           onIgnore={suggestion => {
-            const ignoreAction = suggestion.raw?.actions?.find(
-              a => a.name === 'Ignore',
+            if (!('raw' in suggestion)) return;
+            const grammarSuggestion = suggestion as GrammarSuggestion;
+            const ignoreAction = grammarSuggestion.raw.actions?.find(
+              (a: { name: string }) => a.name === 'Ignore',
             );
             if (ignoreAction && viewRef.current) {
-              ignoreAction.apply(viewRef.current, 0, 0);
+              ignoreAction.apply(
+                viewRef.current,
+                grammarSuggestion.startOffset,
+                grammarSuggestion.endOffset,
+              );
               setActiveSuggestion(null);
             }
           }}

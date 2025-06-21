@@ -1,5 +1,10 @@
+// This file is temporarily empty.
+// The logic for updating suggestions is now handled differently
+// with the new harper.js linter integration.
+// We can re-evaluate the need for actions here later.
+
 import {
-  SuggestionOption
+    SuggestionOption
 } from '../../types';
 import { useSuggestionStore } from './suggestion.store';
 import { SuggestionCategory } from './suggestion.types';

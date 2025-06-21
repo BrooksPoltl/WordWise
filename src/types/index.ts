@@ -11,6 +11,7 @@ export interface User {
   persona?: string;
   onboardingCompleted?: boolean;
   message?: string;
+  documentType?: string;
 }
 
 export interface UserPreferences {
@@ -38,12 +39,42 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
+export type SuggestionType =
+  | 'spelling'
+  | 'grammar'
+  | 'style'
+  | 'weasel_word'
+  | 'conciseness'
+  | 'readability'
+  | 'passive';
+
+export type Suggestion = {
+  id: string;
+  text: string;
+};
+
+// Legacy type for backward compatibility
+export type SuggestionOption = Suggestion;
+
+// Legacy spelling suggestion type for backward compatibility
+export interface SpellingSuggestion extends BaseSuggestion {
+  type: 'spelling';
+}
+
 // Base suggestion type
 export interface BaseSuggestion {
   id: string;
+  type: SuggestionType;
+  word: string;
+  text: string; // The actual text content of the suggestion
   startOffset: number;
   endOffset: number;
-  raw?: Diagnostic;
+  suggestions?: Suggestion[];
+  explanation?: string;
+}
+
+export interface GrammarSuggestion extends BaseSuggestion {
+  raw: Diagnostic;
 }
 
 // Document types
@@ -75,44 +106,21 @@ export interface DocumentUpdatePayload {
   documentType?: string;
 }
 
-// Spell checking types
-export interface SuggestionOption {
-  id: string;
-  text: string;
-}
-
-export interface SpellingSuggestion extends BaseSuggestion {
-  word: string;
-  suggestions: SuggestionOption[];
-  type: 'spelling' | 'grammar' | 'style';
-}
-
+// All suggestion types now inherit from BaseSuggestion and have consistent properties
 export interface ClaritySuggestion extends BaseSuggestion {
-  text: string;
-  suggestions: SuggestionOption[];
   type: 'weasel_word';
-  explanation: string;
 }
 
 export interface ConcisenessSuggestion extends BaseSuggestion {
-  text: string;
-  suggestions: SuggestionOption[];
   type: 'conciseness';
-  explanation: string;
 }
 
 export interface ReadabilitySuggestion extends BaseSuggestion {
-  text: string;
   type: 'readability';
-  explanation: string;
-  suggestions?: SuggestionOption[];
 }
 
 export interface PassiveSuggestion extends BaseSuggestion {
-  text: string;
   type: 'passive';
-  explanation: string;
-  suggestions?: SuggestionOption[];
 }
 
 export interface WritingMetrics {

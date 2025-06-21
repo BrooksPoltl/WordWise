@@ -1,38 +1,55 @@
 import { create } from 'zustand';
+import { GrammarSuggestion } from '../../types';
 import {
-    SuggestionActions,
-    SuggestionState
+  SuggestionCategory,
+  SuggestionState,
+  SuggestionStore,
+  SuggestionVisibility
 } from './suggestion.types';
 
-export const useSuggestionStore = create<SuggestionState & SuggestionActions>(
-  set => ({
+const initialState: SuggestionState = {
     spelling: [],
     clarity: [],
     conciseness: [],
     readability: [],
     passive: [],
-    visibility: {
-      spelling: true,
-      clarity: true,
-      conciseness: true,
-      readability: true,
-      passive: true,
+};
+
+const initialVisibility: SuggestionVisibility = {
+    spelling: true,
+    clarity: true,
+    conciseness: true,
+    readability: true,
+    passive: true,
+};
+
+export const useSuggestionStore = create<SuggestionStore>(set => ({
+    ...initialState,
+    visibility: initialVisibility,
+
+    setSuggestions: (suggestions: Partial<SuggestionState>) =>
+        set(state => ({
+            ...state,
+            ...suggestions,
+        })),
+
+    clearSuggestions: () => {
+        set({ ...initialState, visibility: initialVisibility });
     },
-    setSuggestions: (category, suggestions) =>
-      set(state => ({
-        ...state,
-        [category]: suggestions,
-      })),
-    toggleVisibility: category =>
-      set(state => ({
-        visibility: {
-          ...state.visibility,
-          [category]: !state.visibility[category],
-        },
-      })),
-    // Kept for backward compatibility with the old spell-check flow
-    setSpellingSuggestions: suggestions =>
-      set({ spelling: suggestions }),
+
+    toggleVisibility: (category: SuggestionCategory) =>
+        set(state => ({
+            ...state,
+            visibility: {
+                ...state.visibility,
+                [category]: !state.visibility[category as keyof SuggestionVisibility],
+            },
+        })),
+
+    // Legacy method names maintained for compatibility
+    // The 'spelling' slice will be used for Harper grammar suggestions in Phase 1
+    setSpellingSuggestions: (suggestions: GrammarSuggestion[]) =>
+        set({ spelling: suggestions }),
+
     clearSpellingSuggestions: () => set({ spelling: [] }),
-  }),
-); 
+})); 

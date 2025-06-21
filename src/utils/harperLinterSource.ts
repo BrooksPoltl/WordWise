@@ -13,6 +13,7 @@ import {
     ignoreLint,
     isLintIgnored,
 } from './harperLinter';
+import { logger } from './logger';
 
 export const setHarperDiagnostics = StateEffect.define<Diagnostic[]>();
 export const harperDiagnostics = StateField.define<Diagnostic[]>({
@@ -64,6 +65,9 @@ export const harperLinterPlugin = ViewPlugin.fromClass(
       const diagnostics: Diagnostic[] = lints
         .filter(lint => !isLintIgnored(lint))
         .map((lint: HarperLint) => {
+          logger.info('Received Harper lint object:', lint);
+          logger.info('Lint kind:', lint.lint_kind());
+          logger.info('Problem text:', lint.get_problem_text());
           const span = lint.span();
           return {
             from: span.start,
