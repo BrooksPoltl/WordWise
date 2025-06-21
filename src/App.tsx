@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import AuthWrapper from './components/AuthWrapper';
+import CodeMirrorPoc from './components/CodeMirrorPoc';
 import Dashboard from './components/Dashboard';
 import DocumentEditor from './components/DocumentEditor';
 import HarperPoc from './components/HarperPoc';
@@ -87,6 +88,9 @@ const App: React.FC = () => {
 
         {/* Harper POC route - accessible without authentication for testing */}
         <Route path="/harper-poc" element={<HarperPoc />} />
+
+        {/* New CodeMirror POC Route */}
+        <Route path="/codemirror-poc" element={<CodeMirrorPoc />} />
 
         {/* Protected routes */}
         <Route path="/dashboard" element={renderProtectedRoute(<Dashboard />)} />

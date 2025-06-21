@@ -27,7 +27,12 @@
     "lint:summary": "./scripts/lint-summary.sh"
   },
   "dependencies": {
+    "@codemirror/lang-markdown": "^6.3.3",
+    "@codemirror/language": "^6.11.1",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.37.2",
     "@floating-ui/react": "^0.27.12",
+    "@lezer/highlight": "^1.2.1",
     "@tiptap/core": "^2.14.0",
     "@tiptap/extension-character-count": "^2.14.0",
     "@tiptap/extension-placeholder": "^2.14.0",
@@ -39,6 +44,8 @@
     "@types/nspell": "^2.1.6",
     "@types/react-router-dom": "^5.3.3",
     "@types/unist": "^3.0.3",
+    "@uiw/react-codemirror": "^4.23.13",
+    "codemirror": "^6.0.2",
     "dictionary-en": "^4.0.0",
     "firebase": "^10.7.1",
     "nlcst-to-string": "^4.0.0",

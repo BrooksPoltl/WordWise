@@ -42,4 +42,7 @@ Thumbs.db
 !src/**/*.d.ts
 
 # Feature docs with separate projects
-feature_docs/harper.js/ 
+feature_docs/harper.js/
+
+# Exclude specific file
+src/components/HarperPoc.tsx 

@@ -8,12 +8,6 @@ interface WorkerLinter {
   lint(text: string): Promise<Lint[]>;
 }
 
-declare global {
-  interface Window {
-    HarperWorkerLinter?: new () => WorkerLinter;
-  }
-}
-
 const HarperPoc: React.FC = () => {
   const [text, setText] = useState('This is an test');
   const [lints, setLints] = useState<Lint[]>([]);
@@ -103,15 +97,15 @@ const HarperPoc: React.FC = () => {
       <ul className="space-y-2">
         {lints.map((lint) => {
           const message = lint.message();
-          //@ts-ignore
+          // @ts-ignore
           console.log('span', lint.span());
         //   //@ts-ignore
         //   console.log('span', lint.span());
-          //@ts-ignore
+          // @ts-ignore
         //   console.log('lint_kind_pretty', lint.lint_kind_pretty());
-          //@ts-ignore
+          // @ts-ignore
           console.log('get_problem_text', lint.get_problem_text());
-          //@ts-ignore
+          // @ts-ignore
           console.log('suggestions', lint.suggestions());
           return (
             <li key={`lint-${message}-${Math.random()}`} className="p-2 bg-white rounded border border-gray-200">
