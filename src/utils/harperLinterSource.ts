@@ -7,12 +7,14 @@ import {
     ViewPlugin,
     ViewUpdate,
 } from '@codemirror/view';
+import type { SuggestionState } from '../store/suggestion/suggestion.types';
 import {
     getLinter,
     HarperLint,
     ignoreLint,
     isLintIgnored,
 } from './harperLinter';
+import { convertToTypedSuggestions, processHarperLints } from './harperMapping';
 import { logger } from './logger';
 
 export const setHarperDiagnostics = StateEffect.define<Diagnostic[]>();
@@ -34,72 +36,89 @@ export const harperDiagnostics = StateField.define<Diagnostic[]>({
   },
 });
 
-export const harperLinterPlugin = ViewPlugin.fromClass(
-  class {
-    debounceTimeout: NodeJS.Timeout | number = -1;
-
-    constructor(private readonly view: EditorView) {
-      this.runLinter();
-    }
-
-    update(update: ViewUpdate) {
-      if (update.docChanged) {
-        clearTimeout(this.debounceTimeout as number);
-        this.debounceTimeout = setTimeout(() => this.runLinter(), 400);
-      }
-    }
-
-    destroy() {
-      clearTimeout(this.debounceTimeout as number);
-    }
-
-    runLinter = async () => {
-      const linterInstance = await getLinter();
-      if (!linterInstance) {
-        this.view.dispatch({ effects: setHarperDiagnostics.of([]) });
-        return;
+export const createHarperLinterPlugin = (onSuggestionsUpdate: (suggestions: SuggestionState) => void) => 
+  ViewPlugin.fromClass(
+    class {
+      constructor(private readonly view: EditorView) {
+        this.runLinter();
       }
 
-      const docString = this.view.state.doc.toString();
-      const lints = await linterInstance.lint(docString);
-      const diagnostics: Diagnostic[] = lints
-        .filter(lint => !isLintIgnored(lint))
-        .map((lint: HarperLint) => {
-          logger.info('Received Harper lint object:', lint);
-          logger.info('Lint kind:', lint.lint_kind());
-          logger.info('Problem text:', lint.get_problem_text());
-          const span = lint.span();
-          return {
-            from: span.start,
-            to: span.end,
-            severity: 'warning',
-            message: lint.message(),
-            actions: [
-              ...lint.suggestions().map(s => ({
-                name: s.get_replacement_text(),
-                apply: (v: EditorView, from: number, to: number) => {
-                  v.dispatch({
-                    changes: { from, to, insert: s.get_replacement_text() },
-                  });
+      update(update: ViewUpdate) {
+        if (update.docChanged) {
+          this.runLinter();
+        }
+      }
+
+      runLinter = async () => {
+        const linterInstance = await getLinter();
+        if (!linterInstance) {
+          this.view.dispatch({ effects: setHarperDiagnostics.of([]) });
+          
+          // Clear suggestion store if callback provided
+          if (onSuggestionsUpdate) {
+            onSuggestionsUpdate({
+              clarity: [],
+              conciseness: [],
+              readability: [],
+              passive: [],
+              grammar: [],
+            });
+          }
+          return;
+        }
+
+        const docString = this.view.state.doc.toString();
+        const lints = await linterInstance.lint(docString);
+          try {
+            const harperSuggestions = processHarperLints(lints.filter(lint => !isLintIgnored(lint)));
+            const typedHarperSuggestions = convertToTypedSuggestions(harperSuggestions);
+            
+            onSuggestionsUpdate({
+              clarity: typedHarperSuggestions.clarity,
+              conciseness: typedHarperSuggestions.conciseness,
+              readability: typedHarperSuggestions.readability,
+              passive: [], // No passive analysis for now
+              grammar: typedHarperSuggestions.grammar,
+            });
+          } catch (error) {
+            logger.error('Failed to update suggestion store:', error);
+          }
+
+        const diagnostics: Diagnostic[] = lints
+          .filter(lint => !isLintIgnored(lint))
+          .map((lint: HarperLint) => {
+            const span = lint.span();
+            return {
+              from: span.start,
+              to: span.end,
+              severity: 'warning',
+              message: lint.message(),
+              actions: [
+                ...lint.suggestions().map(s => ({
+                  name: s.get_replacement_text(),
+                  apply: (v: EditorView, from: number, to: number) => {
+                    v.dispatch({
+                      changes: { from, to, insert: s.get_replacement_text() },
+                    });
+                  },
+                })),
+                {
+                  name: 'Ignore',
+                  apply: () => {
+                    ignoreLint(lint);
+                    this.runLinter();
+                  },
                 },
-              })),
-              {
-                name: 'Ignore',
-                apply: () => {
-                  ignoreLint(lint);
-                  this.runLinter();
-                },
-              },
-            ],
-          };
-        });
+              ],
+            };
+          });
 
-      if (this.view.state.doc.toString() === docString) {
-        this.view.dispatch({ effects: setHarperDiagnostics.of(diagnostics) });
-      }
-    };
-  },
-);
+        if (this.view.state.doc.toString() === docString) {
+          this.view.dispatch({ effects: setHarperDiagnostics.of(diagnostics) });
+        }
+      };
+    },
+  );
 
 const suggestionUnderline = Decoration.mark({
   class: 'wordwise-lint-warning',

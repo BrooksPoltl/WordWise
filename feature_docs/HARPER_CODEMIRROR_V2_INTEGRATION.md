@@ -59,8 +59,17 @@ This document outlines a phased approach to integrate the Harper grammar engine 
 | **P3** | **Simplify useSuggestions Architecture** | Major refactor: Removed unnecessary editor dependency from `useSuggestions` hook. Now accepts text directly instead of requiring a mock TipTap editor interface, eliminating coupling and complexity. | • **Edit:** `src/hooks/useSuggestions.ts`<br/>• **Edit:** `src/components/editor/CodeMirrorEditor.tsx`<br/>• **Remove:** Mock editor pattern | Task 17 | ✅ **Complete** |
 | **P3** | **Clean Up Debug Logging** | Removed debug logger calls that were used to identify and fix the re-rendering issues. Kept only essential error logging for production use. | • **Edit:** `src/hooks/useSuggestions.ts`<br/>• **Edit:** `src/components/editor/CodeMirrorEditor.tsx` | Task 18 | ✅ **Complete** |
 | **P3** | **Eliminate useSuggestions Hook** | Removed the `useSuggestions` hook entirely and replaced it with direct state management in the component. Created utility functions for Harper analysis and mapping. This eliminates unnecessary abstraction and simplifies the architecture. | • **Delete:** `src/hooks/useSuggestions.ts`<br/>• **Edit:** `src/components/editor/CodeMirrorEditor.tsx`<br/>• **Edit:** `src/utils/harperMapping.ts`<br/>• **Edit:** `src/utils/harperLinter.ts` | Task 19 | ✅ **Complete** |
+| **P3** | **Fix Suggestion Application Re-rendering** | Fixed issue where applying suggestions would revert due to immediate re-analysis. Added flag to temporarily disable Harper analysis during suggestion application, preventing the apply-revert cycle. | • **Edit:** `src/components/editor/CodeMirrorEditor.tsx` | Task 20 | ✅ **Complete** |
 
-### **Phase 4: Backend Integration**
+### **Phase 4: WebWorker Architecture Fix**
+
+*Goal: Resolve the fundamental architectural issue causing suggestion reversion by eliminating duplicate Harper instances.*
+
+| Priority | Task Description | Implementation Details | Code Pointers | Dependencies | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **P4** | **Eliminate Duplicate Harper Analysis** | **Root Cause:** We were running Harper twice - once in `harperLinterPlugin` (CodeMirror's native way) and once in our custom `handleHarperAnalysis`. This caused WebWorker timing conflicts and suggestion reversion. **Solution:** Modified `harperLinterSource.ts` to include a factory function `createHarperLinterPlugin()` that accepts a callback to update the suggestion store directly, eliminating the need for separate Harper analysis. | • **Edit:** `src/utils/harperLinterSource.ts`<br/>• **Edit:** `src/components/editor/CodeMirrorEditor.tsx`<br/>• **Remove:** Duplicate Harper analysis logic | Phase 3 | ✅ **Complete** |
+
+### **Phase 5: Backend Integration**
 
 *Goal: Integrate the Harper linter with the backend to enable autosaving and additional features.*
 

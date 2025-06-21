@@ -3,7 +3,6 @@ import { EditorState, Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useDebouncedCallback } from 'use-debounce';
 import {
     createSuggestionDecorationExtension,
     dispatchSuggestionUpdate
@@ -12,14 +11,11 @@ import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import { AnySuggestion, SuggestionStore } from '../../store/suggestion/suggestion.types';
 import { wordwiseTheme } from '../../themes/wordwiseTheme';
 import { GrammarSuggestion } from '../../types';
-import { runHarperAnalysis } from '../../utils/harperLinter';
 import {
+    createHarperLinterPlugin,
     harperDiagnostics,
-    harperLintDeco,
-    harperLinterPlugin
+    harperLintDeco
 } from '../../utils/harperLinterSource';
-import { convertToTypedSuggestions, processHarperLints } from '../../utils/harperMapping';
-import { logger } from '../../utils/logger';
 import SuggestionPopover from './SuggestionPopover';
 
 const convertDiagnosticToGrammarSuggestion = (
@@ -54,53 +50,10 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const [currentContent, setCurrentContent] = useState(initialContent);
   const { setSuggestions } = useSuggestionStore();
 
   const [activeSuggestion, setActiveSuggestion] =
     useState<AnySuggestion | null>(null);
-
-  // Debounced Harper analysis function
-  const handleHarperAnalysis = useDebouncedCallback(async (text: string) => {
-    if (!text.trim()) {
-      setSuggestions({
-        clarity: [],
-        conciseness: [],
-        readability: [],
-        passive: [],
-        grammar: [],
-      });
-      return;
-    }
-
-    try {
-      const harperLints = await runHarperAnalysis(text);
-      const harperSuggestions = processHarperLints(harperLints);
-      const typedHarperSuggestions = convertToTypedSuggestions(harperSuggestions);
-
-      setSuggestions({
-        clarity: typedHarperSuggestions.clarity,
-        conciseness: typedHarperSuggestions.conciseness,
-        readability: typedHarperSuggestions.readability,
-        passive: [], // No passive analysis for now
-        grammar: typedHarperSuggestions.grammar,
-      });
-    } catch (error) {
-      logger.error('Failed to analyze text for suggestions:', error);
-      setSuggestions({
-        clarity: [],
-        conciseness: [],
-        readability: [],
-        passive: [],
-        grammar: [],
-      });
-    }
-  }, 500);
-
-  // Trigger analysis when content changes
-  useEffect(() => {
-    handleHarperAnalysis(currentContent);
-  }, [currentContent, handleHarperAnalysis]);
 
   const { x, y, refs, strategy, context } = useFloating({
     open: !!activeSuggestion,
@@ -117,7 +70,6 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
   const handleContentChange = useCallback(
     (newContent: string) => {
-      setCurrentContent(newContent);
       onChange?.(newContent);
     },
     [onChange],
@@ -174,7 +126,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         }
       }),
       EditorView.contentAttributes.of({ placeholder: placeholder ?? '' }),
-      harperLinterPlugin,
+      // Use the new factory function to create Harper plugin with suggestion store integration
+      createHarperLinterPlugin(setSuggestions),
       harperLintDeco,
       harperDiagnostics,
       createSuggestionDecorationExtension(),
@@ -254,23 +207,12 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     });
 
     viewRef.current = view;
-
-    // Initial decoration update
-    const allSuggestions = [
-      ...suggestionStore.grammar,
-      ...suggestionStore.clarity,
-      ...suggestionStore.conciseness,
-      ...suggestionStore.readability,
-      ...suggestionStore.passive,
-    ];
     
-    dispatchSuggestionUpdate(view, allSuggestions, suggestionStore.visibility);
-
     return () => {
       view.destroy();
       viewRef.current = null;
     };
-  }, [initialContent, placeholder, handleContentChange, refs, findSuggestionAtPos, suggestionStore]);
+  }, [initialContent, placeholder, handleContentChange, refs, findSuggestionAtPos, setSuggestions]);
 
   // Handle suggestion actions
   const handleAcceptSuggestion = useCallback((suggestion: AnySuggestion) => {
@@ -355,7 +297,16 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
   return (
     <div className="relative w-full h-full">
-      <div ref={editorRef} className="w-full h-full" />
+      <div 
+        ref={editorRef} 
+        className="w-full h-full"
+        style={{
+          minHeight: '200px',
+          border: '1px solid #ccc',
+          borderRadius: '4px',
+          padding: '8px'
+        }}
+      />
       {activeSuggestion && (
         <SuggestionPopover
           ref={refs.setFloating as React.Ref<HTMLDivElement>}
