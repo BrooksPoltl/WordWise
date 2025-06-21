@@ -3,6 +3,7 @@ import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-d
 import AuthWrapper from './components/AuthWrapper';
 import Dashboard from './components/Dashboard';
 import DocumentEditor from './components/DocumentEditor';
+import HarperPoc from './components/HarperPoc';
 import LandingPage from './components/LandingPage';
 import Onboarding from './components/Onboarding';
 import Profile from './components/Profile';
@@ -83,6 +84,9 @@ const App: React.FC = () => {
 
         {/* Onboarding route */}
         <Route path="/onboarding" element={renderOnboardingRoute()} />
+
+        {/* Harper POC route - accessible without authentication for testing */}
+        <Route path="/harper-poc" element={<HarperPoc />} />
 
         {/* Protected routes */}
         <Route path="/dashboard" element={renderProtectedRoute(<Dashboard />)} />

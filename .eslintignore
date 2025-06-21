@@ -39,4 +39,7 @@ Thumbs.db
 
 # Generated files
 *.d.ts
-!src/**/*.d.ts 
+!src/**/*.d.ts
+
+# Feature docs with separate projects
+feature_docs/harper.js/ 
