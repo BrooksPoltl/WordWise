@@ -12,32 +12,22 @@ const ResponsiveToolbar: React.FC<ResponsiveToolbarProps> = ({ editorView }) => 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const handleBold = () => {
-        console.log('[ResponsiveToolbar] handleBold: editorView:', editorView);
-        console.log('[ResponsiveToolbar] handleBold: editorView.state exists:', !!editorView?.state);
         toggleMark(editorView, '**');
         setIsMobileMenuOpen(false);
     };
     const handleItalic = () => {
-        console.log('[ResponsiveToolbar] handleItalic: editorView:', editorView);
-        console.log('[ResponsiveToolbar] handleItalic: editorView.state exists:', !!editorView?.state);
         toggleMark(editorView, '*');
         setIsMobileMenuOpen(false);
     };
     const handleH1 = () => {
-        console.log('[ResponsiveToolbar] handleH1: editorView:', editorView);
-        console.log('[ResponsiveToolbar] handleH1: editorView.state exists:', !!editorView?.state);
         toggleHeader(editorView, 1);
         setIsMobileMenuOpen(false);
     };
     const handleH2 = () => {
-        console.log('[ResponsiveToolbar] handleH2: editorView:', editorView);
-        console.log('[ResponsiveToolbar] handleH2: editorView.state exists:', !!editorView?.state);
         toggleHeader(editorView, 2);
         setIsMobileMenuOpen(false);
     };
     const handleH3 = () => {
-        console.log('[ResponsiveToolbar] handleH3: editorView:', editorView);
-        console.log('[ResponsiveToolbar] handleH3: editorView.state exists:', !!editorView?.state);
         toggleHeader(editorView, 3);
         setIsMobileMenuOpen(false);
     };

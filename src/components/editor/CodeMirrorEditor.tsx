@@ -3,11 +3,13 @@ import { Diagnostic } from '@codemirror/lint';
 import { EditorState, Extension, Prec } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
-import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   createSuggestionDecorationExtension,
   dispatchSuggestionUpdate
 } from '../../extensions/SuggestionDecorations';
+import { WysiwygDecorations } from '../../extensions/WysiwygDecorations';
+import { useEditorStore } from '../../store/editor/editor.store';
 import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import { AnySuggestion, SuggestionStore } from '../../store/suggestion/suggestion.types';
 import { wordwiseTheme } from '../../themes/wordwiseTheme';
@@ -77,21 +79,22 @@ interface CodeMirrorEditorProps {
   onChange?: (content: string) => void;
   placeholder?: string;
   suggestionStore: SuggestionStore;
-  onViewReady?: () => void;
+  onViewReady?: (view: EditorView) => void;
 }
 
-const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditorProps>(({
+const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   initialContent = '',
   onChange,
   placeholder = 'Start writing...',
   suggestionStore,
   onViewReady,
-}, ref) => {
+}) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const [currentEditorView, setCurrentEditorView] = useState<EditorView | null>(null);
   const { setSuggestions } = useSuggestionStore();
-  const analysisSessionRef = useRef<object | null>(null); // Track current analysis session
+  const editorMode = useEditorStore((state) => state.mode);
+
+  const analysisSessionRef = useRef<object | null>(null);
   const suggestionInteractionLock = useRef(false);
 
   const [activeSuggestion, setActiveSuggestion] =
@@ -304,6 +307,10 @@ const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditorProps>(
       Prec.high(keymap.of(defaultKeymap)),
     ];
 
+    if (editorMode === 'wysiwyg') {
+      extensions.push(WysiwygDecorations());
+    }
+
     const startState = EditorState.create({
       doc: initialContent,
       extensions,
@@ -314,17 +321,15 @@ const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditorProps>(
       parent: editorRef.current,
     });
 
-    setCurrentEditorView(view);
     viewRef.current = view;
-    onViewReady?.();
+    onViewReady?.(view);
     
     return () => {
       view.destroy();
-      setCurrentEditorView(null);
       viewRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialContent, placeholder, handleContentChange, findSuggestionAtPosStable, setSuggestionsWithSession, onViewReady]); // refs accessed directly in click handler
+  }, [initialContent, placeholder, handleContentChange, findSuggestionAtPosStable, setSuggestionsWithSession, onViewReady, editorMode]); // refs accessed directly in click handler
 
   // Handle suggestion actions
   const handleAcceptSuggestion = useCallback(
@@ -417,10 +422,6 @@ const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditorProps>(
     setActiveSuggestion(null);
   }, []);
 
-  useImperativeHandle(ref, () => ({
-    view: currentEditorView,
-  }), [currentEditorView]);
-
   return (
     <div className="relative w-full h-full">
       <div 
@@ -449,7 +450,7 @@ const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditorProps>(
       )}
     </div>
   );
-});
+};
 
 CodeMirrorEditor.displayName = 'CodeMirrorEditor';
 

@@ -1,14 +1,15 @@
+import { EditorView } from '@codemirror/view';
 import React from 'react';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { useDocumentStore } from '../../store/document/document.store';
 import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
-import CodeMirrorEditor, { CodeMirrorEditorRef } from './CodeMirrorEditor';
+import CodeMirrorEditor from './CodeMirrorEditor';
 
 interface DocumentCodeMirrorEditorProps {
-  onViewReady?: () => void;
+  onViewReady?: (view: EditorView) => void;
 }
 
-export const DocumentCodeMirrorEditor = React.forwardRef<CodeMirrorEditorRef, DocumentCodeMirrorEditorProps>(({ onViewReady }, ref) => {
+export const DocumentCodeMirrorEditor: React.FC<DocumentCodeMirrorEditorProps> = ({ onViewReady }) => {
     const { currentDocument } = useDocumentStore();
     const suggestionStore = useSuggestionStore();
     
@@ -20,13 +21,12 @@ export const DocumentCodeMirrorEditor = React.forwardRef<CodeMirrorEditorRef, Do
 
     return (
         <CodeMirrorEditor
-            ref={ref}
             initialContent={currentDocument.content}
             suggestionStore={suggestionStore}
             onChange={debouncedSave}
             onViewReady={onViewReady}
         />
     );
-});
+};
 
 DocumentCodeMirrorEditor.displayName = 'DocumentCodeMirrorEditor'; 

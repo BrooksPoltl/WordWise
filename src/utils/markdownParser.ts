@@ -1,32 +1,33 @@
-import remarkParse from 'remark-parse';
-import remarkRetext from 'remark-retext';
 import retextEnglish from 'retext-english';
 import { unified } from 'unified';
 import { Node } from 'unist';
+import { VFile } from 'vfile';
 
-// Define the processor pipeline
-const markdownProcessor = unified()
-  .use(remarkParse)
-  .use(
-    remarkRetext,
-    unified().use(retextEnglish),
-  );
+// Define the structure of our parsed nodes if necessary
+// For now, we'll rely on the default nodes from retext
 
 /**
- * Parses a markdown string and returns a unist Node (the AST).
- * The AST will be compatible with retext.
- * @param markdown - The markdown string to parse.
- * @returns The root unist Node of the parsed AST.
+ * A simple markdown parser using the unified and retext ecosystem.
+ * This is the foundation for our WYSIWYG editor's visual mode.
+ *
+ * @param text The markdown text to parse.
+ * @returns The VFile processed by the pipeline.
  */
-export const parseMarkdown = (markdown: string): Node => {
-  const ast = markdownProcessor.parse(markdown);
-  return ast;
+export const parseMarkdown = (text: string): VFile => {
+  const processor = unified()
+    .use(retextEnglish);
+    // Add more retext plugins here for syntax highlighting, etc.
+
+  const vfile = new VFile(text);
+  const ast = processor.parse(vfile);
+  processor.runSync(ast, vfile);
+
+  return vfile;
 };
 
 /**
- * A type guard to check if a node is a valid unist Node.
- * @param node - The node to check.
- * @returns True if the node is a valid unist Node.
+ * Type guard to check if an object is a unist Node.
+ * @param data The object to check.
+ * @returns True if the object is a Node, false otherwise.
  */
-export const isNode = (node: unknown): node is Node =>
-    typeof node === 'object' && node !== null && 'type' in node; 
+export const isNode = (data: unknown): data is Node => typeof data === 'object' && data !== null && 'type' in data; 
