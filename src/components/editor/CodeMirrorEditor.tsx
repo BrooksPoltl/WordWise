@@ -4,17 +4,17 @@ import { EditorView } from '@codemirror/view';
 import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    createSuggestionDecorationExtension,
-    dispatchSuggestionUpdate
+  createSuggestionDecorationExtension,
+  dispatchSuggestionUpdate
 } from '../../extensions/SuggestionDecorations';
 import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import { AnySuggestion, SuggestionStore } from '../../store/suggestion/suggestion.types';
 import { wordwiseTheme } from '../../themes/wordwiseTheme';
 import { GrammarSuggestion } from '../../types';
 import {
-    createHarperLinterPlugin,
-    harperDiagnostics,
-    harperLintDeco
+  createHarperLinterPlugin,
+  harperDiagnostics,
+  harperLintDeco
 } from '../../utils/harperLinterSource';
 import SuggestionPopover from './SuggestionPopover';
 
@@ -110,6 +110,28 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       );
     }
   }, [suggestionStore]);
+
+  // Clear activeSuggestion if it no longer exists in the store
+  useEffect(() => {
+    if (activeSuggestion) {
+      // Get all current suggestions from store
+      const { grammar, clarity, conciseness, readability, passive } = suggestionStore;
+      const allCurrentSuggestions: AnySuggestion[] = [
+        ...grammar,
+        ...clarity, 
+        ...conciseness,
+        ...readability,
+        ...passive,
+      ];
+      
+      // Check if the active suggestion still exists
+      const stillExists = allCurrentSuggestions.some(s => s.id === activeSuggestion.id);
+      
+      if (!stillExists) {
+        setActiveSuggestion(null); // Clear stale suggestion
+      }
+    }
+  }, [suggestionStore, activeSuggestion]);
 
   useEffect(() => {
     if (!editorRef.current) return () => {};
