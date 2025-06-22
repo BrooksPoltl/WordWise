@@ -5,10 +5,13 @@ import { EDITOR_CONFIG } from '../constants/editorConstants';
 import { useAuthStore } from '../store/auth/auth.store';
 import { autoSaveDocument } from '../store/document/document.actions';
 import { useDocumentStore } from '../store/document/document.store';
+import { AdvisoryModal } from './editor/AdvisoryModal';
 import { DocumentCodeMirrorEditor } from './editor/DocumentCodeMirrorEditor';
 import DocumentSettingsBar from './editor/DocumentSettingsBar';
+import EditorHeader from './editor/EditorHeader';
 import ResponsiveToolbar from './editor/ResponsiveToolbar';
 import UpdateContextModal from './editor/UpdateContextModal';
+
 // import { EditorContainer } from './EditorContainer'; - This will be removed and replaced later
 
 const DocumentEditor: React.FC = () => {
@@ -49,8 +52,7 @@ const DocumentEditor: React.FC = () => {
     }
   }, [currentDocument]);
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTitle = e.target.value;
+  const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);
 
     if (titleTimeoutRef.current) {
@@ -267,15 +269,14 @@ const DocumentEditor: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-grow overflow-auto p-4 md:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto h-full">
-          <input
-            type="text"
-            value={title}
-            onChange={handleTitleChange}
-            placeholder="Document Title"
-            className="w-full text-4xl font-bold p-2 mb-4 bg-transparent focus:outline-none"
+          <EditorHeader
+            title={title}
+            onTitleChange={handleTitleChange}
+            loading={storeLoading}
+            detectedTone={null}
+            documentContent={currentDocument?.content || ''}
           />
           <DocumentSettingsBar
             onOpenContextModal={() => setIsContextModalOpen(true)}
@@ -296,6 +297,7 @@ const DocumentEditor: React.FC = () => {
           loading={storeLoading}
         />
       </main>
+      <AdvisoryModal />
     </div>
   );
 };
