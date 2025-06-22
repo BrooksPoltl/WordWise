@@ -18,6 +18,7 @@ const DocumentEditor: React.FC = () => {
     fetchDocument,
     loading: storeLoading,
     error,
+    updateDocument,
   } = useDocumentStore();
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -62,13 +63,13 @@ const DocumentEditor: React.FC = () => {
 
   const handleDocumentTypeChange = async (newType: string) => {
     if (documentId) {
-      autoSaveDocument(documentId, { documentType: newType });
+      updateDocument({ id: documentId, documentType: newType });
     }
   };
 
   const handleContextUpdate = async (newContext: string) => {
     if (documentId) {
-      autoSaveDocument(documentId, { context: newContext });
+      updateDocument({ id: documentId, context: newContext });
       setIsContextModalOpen(false);
     }
   };
