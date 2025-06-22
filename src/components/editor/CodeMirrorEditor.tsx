@@ -1,6 +1,6 @@
 import { defaultKeymap } from '@codemirror/commands';
 import { Diagnostic } from '@codemirror/lint';
-import { EditorState, Extension } from '@codemirror/state';
+import { EditorState, Extension, Prec } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -52,6 +52,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const { setSuggestions } = useSuggestionStore();
+  const analysisSessionRef = useRef<object | null>(null); // Track current analysis session
 
   const [activeSuggestion, setActiveSuggestion] =
     useState<AnySuggestion | null>(null);
@@ -75,6 +76,29 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     },
     [onChange],
   );
+
+  // Race-condition-safe suggestion setter
+  const setSuggestionsWithSession = useCallback((suggestions: any) => {
+    const currentSession = {};
+    analysisSessionRef.current = currentSession;
+    
+    // Create a wrapper that checks session validity
+    const sessionAwareSetter = (results: any) => {
+      // Only update if this is still the current session
+      if (analysisSessionRef.current === currentSession) {
+        setSuggestions(results);
+      }
+      // Silently ignore stale results
+    };
+    
+    // If suggestions is a function (callback style), wrap it
+    if (typeof suggestions === 'function') {
+      return suggestions(sessionAwareSetter);
+    } else {
+      // Direct call
+      sessionAwareSetter(suggestions);
+    }
+  }, [setSuggestions]);
 
   // Find suggestion at a given position - create a stable version for the editor
   const findSuggestionAtPosStable = useCallback((pos: number): AnySuggestion | null => {
@@ -139,7 +163,6 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
     const extensions: Extension[] = [
       EditorView.lineWrapping,
-      keymap.of(defaultKeymap), // Add default keyboard bindings including Enter
       wordwiseTheme,
       EditorView.updateListener.of(update => {
         if (update.docChanged) {
@@ -147,19 +170,18 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
         }
       }),
       EditorView.contentAttributes.of({ placeholder: placeholder ?? '' }),
-      // Use the new factory function to create Harper plugin with suggestion store integration
-      createHarperLinterPlugin(setSuggestions),
+      createHarperLinterPlugin(setSuggestionsWithSession),
       harperLintDeco,
       harperDiagnostics,
       createSuggestionDecorationExtension(),
-      EditorView.domEventHandlers({
+      Prec.high(EditorView.domEventHandlers({
         click: (event: MouseEvent, view: EditorView) => {
           const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
           if (pos === null) return;
 
-          // First try to find a suggestion from our store
           const storeSuggestion = findSuggestionAtPosStable(pos);
           if (storeSuggestion) {
+            event.preventDefault();
             refs.setReference({
               getBoundingClientRect: () => {
                 const rect = view.coordsAtPos(pos);
@@ -182,13 +204,13 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
             return;
           }
 
-          // Fallback to Harper diagnostics (for direct Harper integration)
           const diagnostics = view.state.field(harperDiagnostics);
           const clickedDiagnostic = diagnostics.find(
             d => d.from <= pos && d.to >= pos,
           );
 
           if (clickedDiagnostic) {
+            event.preventDefault();
             const suggestion = convertDiagnosticToGrammarSuggestion(clickedDiagnostic);
 
             refs.setReference({
@@ -210,11 +232,13 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
               },
             });
             setActiveSuggestion(suggestion);
-          } else {
-            setActiveSuggestion(null);
-          }
+            return;
+          } 
+          
+          setActiveSuggestion(null);
         },
-      }),
+      })),
+      Prec.high(keymap.of(defaultKeymap)),
     ];
 
     const startState = EditorState.create({
@@ -234,7 +258,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       viewRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialContent, placeholder, handleContentChange, findSuggestionAtPosStable, setSuggestions]); // refs accessed directly in click handler
+  }, [initialContent, placeholder, handleContentChange, findSuggestionAtPosStable, setSuggestionsWithSession]); // refs accessed directly in click handler
 
   // Handle suggestion actions
   const handleAcceptSuggestion = useCallback((suggestion: AnySuggestion) => {
