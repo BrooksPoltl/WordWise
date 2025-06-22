@@ -45,6 +45,10 @@ export const generateAdvisoryCommentsCall = async (documentContent: string): Pro
       
       // Validate that we found the text
       if (startIndex === -1) {
+        logger.warning(`Could not find text in document for comment ${index}:`, {
+          searchText: comment.originalText?.substring(0, 50),
+          reason: comment.reason
+        });
         return;
       }
       
@@ -53,6 +57,11 @@ export const generateAdvisoryCommentsCall = async (documentContent: string): Pro
       const matches = actualText === comment.originalText;
       
       if (!matches) {
+        logger.warning(`Text extraction mismatch for comment ${index}:`, {
+          expected: comment.originalText?.substring(0, 50),
+          actual: actualText?.substring(0, 50),
+          reason: comment.reason
+        });
         return;
       }
       
@@ -68,6 +77,7 @@ export const generateAdvisoryCommentsCall = async (documentContent: string): Pro
       });
     });
 
+    logger.info(`Generated ${validComments.length} advisory comments from ${data.length} API responses`);
     return validComments;
   } catch (error) {
     logger.error('Error generating advisory comments:', error);

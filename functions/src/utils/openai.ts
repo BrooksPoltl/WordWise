@@ -23,7 +23,7 @@ export async function getOpenAICompletion(
   const client = getOpenAIClient();
   try {
     const response = await client.chat.completions.create({
-      model: "gpt-4-turbo-preview",
+      model: "gpt-4o-mini", // Updated to faster, more cost-effective model
       messages: [{ role: "user", content: prompt }],
       max_tokens: maxTokens,
       temperature: 0.2, // Lower temperature for more deterministic, factual responses
@@ -42,7 +42,7 @@ export async function getOpenAICompletion(
 }
 
 /**
- * Generate advisory comments for document improvement using OpenAI
+ * Generate advisory comments for document improvement using OpenAI with concurrent requests
  */
 export async function generateAdvisoryComments(documentContent: string): Promise<any[]> {
   const client = getOpenAIClient();
@@ -51,60 +51,159 @@ export async function generateAdvisoryComments(documentContent: string): Promise
   console.log('📄 Document content length:', documentContent.length);
   console.log('📄 Document content preview:', JSON.stringify(documentContent.substring(0, 200)));
   
-  const prompt = `You are an expert writing assistant and editor, specializing in providing high-level, structural, and argumentative feedback on business and technical documents. Your goal is to help users strengthen their writing by focusing on substance, not just style.
+  // Define the advisory categories for concurrent processing
+  const advisoryCategories = [
+    {
+      name: "Strengthen a Claim",
+      prompt: `You are an expert writing assistant. Analyze the following document and identify opportunities to strengthen claims with data, statistics, or concrete examples.
 
-You will be given a document as a single block of text. Your task is to analyze this text and identify opportunities for improvement based *only* on the following advisory categories:
-
-1.  **Strengthen a Claim**: Identify a subjective statement, an opinion, or a claim made without sufficient proof. Suggest that the user add a specific data point, a statistic, or a concrete example.
-2.  **Define a Key Term/Acronym**: Find specialized jargon or an acronym that has not been defined. Suggest that the user add a brief definition for clarity.
-3.  **Improve Structural Flow**: Detect paragraphs that are overly long, dense, or contain multiple disconnected ideas. Suggest breaking the paragraph into smaller, more focused units.
-4.  **Add a Clear Call to Action**: Find sections that describe a problem or situation but do not guide the reader on the next steps. Suggest adding a concluding sentence that summarizes the main point or states the desired action.
-5.  **Acknowledge Alternatives**: When a specific solution or proposal is presented, identify the absence of context about other options. Suggest that the user briefly mention alternatives that were considered to strengthen their case.
+Find subjective statements, opinions, or claims made without sufficient proof. For each instance, suggest adding specific data points, statistics, or concrete examples.
 
 **CRITICAL WHITESPACE HANDLING:**
-The document text contains important whitespace, line breaks, and formatting. You MUST preserve the exact character positions when calculating startIndex and endIndex. Do NOT normalize or modify whitespace when determining text positions.
+The document text contains important whitespace, line breaks, and formatting. You MUST preserve the exact character positions.
 
 **Output Format:**
-You MUST return your response as a valid JSON array of objects. Each object represents a single piece of advice. Your entire response must be ONLY the JSON array, with no other text, explanations, or markdown formatting.
-
-The format for each object in the array MUST be as follows:
+Return ONLY a valid JSON array. Each object must have this exact format:
 {
-  "reason": "<The advisory category, e.g., 'Strengthen a Claim'>",
-  "originalText": "<A unique, substantial snippet of text (minimum 20 characters) from the document that your advice pertains to. Include enough context to make this text unique within the document.>",
-  "explanation": "<Your concise advice, written in the second person (e.g., 'Consider adding a data point...')>"
+  "reason": "Strengthen a Claim",
+  "originalText": "<A unique, substantial snippet (minimum 20 characters) from the document>",
+  "explanation": "<Concise advice in second person, e.g., 'Consider adding a data point...'>"
 }
 
-**Constraints:**
--   **DO NOT** provide grammatical corrections, stylistic rewrites, or spelling suggestions. Focus exclusively on the five advisory categories listed above.
--   The originalText field must be a substantial, unique snippet (minimum 20 characters) that appears exactly once in the document.
--   Choose text snippets that are distinctive and unlikely to appear multiple times in the document.
--   **DO NOT** include startIndex or endIndex - we will calculate these on the frontend.
--   If you find no instances that fit these categories, you MUST return an empty array: [].
+If no instances found, return: []
 
-Document to analyze:
-${JSON.stringify(documentContent)}`;
+Document: ${JSON.stringify(documentContent)}`
+    },
+    {
+      name: "Define a Key Term/Acronym",
+      prompt: `You are an expert writing assistant. Analyze the following document and identify specialized jargon or acronyms that need definition.
+
+Find technical terms, industry jargon, or acronyms that haven't been defined and would benefit from clarification.
+
+**CRITICAL WHITESPACE HANDLING:**
+The document text contains important whitespace, line breaks, and formatting. You MUST preserve the exact character positions.
+
+**Output Format:**
+Return ONLY a valid JSON array. Each object must have this exact format:
+{
+  "reason": "Define a Key Term/Acronym",
+  "originalText": "<A unique, substantial snippet (minimum 20 characters) from the document>",
+  "explanation": "<Concise advice in second person, e.g., 'Consider defining this term...'>"
+}
+
+If no instances found, return: []
+
+Document: ${JSON.stringify(documentContent)}`
+    },
+    {
+      name: "Improve Structural Flow",
+      prompt: `You are an expert writing assistant. Analyze the following document and identify structural flow improvements.
+
+Find paragraphs that are overly long, dense, or contain multiple disconnected ideas that should be broken into smaller, focused units.
+
+**CRITICAL WHITESPACE HANDLING:**
+The document text contains important whitespace, line breaks, and formatting. You MUST preserve the exact character positions.
+
+**Output Format:**
+Return ONLY a valid JSON array. Each object must have this exact format:
+{
+  "reason": "Improve Structural Flow",
+  "originalText": "<A unique, substantial snippet (minimum 20 characters) from the document>",
+  "explanation": "<Concise advice in second person, e.g., 'Consider breaking this into smaller paragraphs...'>"
+}
+
+If no instances found, return: []
+
+Document: ${JSON.stringify(documentContent)}`
+    },
+    {
+      name: "Add a Clear Call to Action",
+      prompt: `You are an expert writing assistant. Analyze the following document and identify opportunities for clear calls to action.
+
+Find sections that describe problems or situations but don't guide the reader on next steps. Suggest adding concluding sentences or action items.
+
+**CRITICAL WHITESPACE HANDLING:**
+The document text contains important whitespace, line breaks, and formatting. You MUST preserve the exact character positions.
+
+**Output Format:**
+Return ONLY a valid JSON array. Each object must have this exact format:
+{
+  "reason": "Add a Clear Call to Action",
+  "originalText": "<A unique, substantial snippet (minimum 20 characters) from the document>",
+  "explanation": "<Concise advice in second person, e.g., 'Consider adding a clear next step...'>"
+}
+
+If no instances found, return: []
+
+Document: ${JSON.stringify(documentContent)}`
+    },
+    {
+      name: "Acknowledge Alternatives",
+      prompt: `You are an expert writing assistant. Analyze the following document and identify opportunities to acknowledge alternatives.
+
+Find specific solutions or proposals that lack context about other options. Suggest mentioning alternatives that were considered.
+
+**CRITICAL WHITESPACE HANDLING:**
+The document text contains important whitespace, line breaks, and formatting. You MUST preserve the exact character positions.
+
+**Output Format:**
+Return ONLY a valid JSON array. Each object must have this exact format:
+{
+  "reason": "Acknowledge Alternatives",
+  "originalText": "<A unique, substantial snippet (minimum 20 characters) from the document>",
+  "explanation": "<Concise advice in second person, e.g., 'Consider mentioning alternative approaches...'>"
+}
+
+If no instances found, return: []
+
+Document: ${JSON.stringify(documentContent)}`
+    }
+  ];
 
   try {
-    const response = await client.chat.completions.create({
-      model: "gpt-4-turbo-preview",
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 2048,
-      temperature: 0.2,
+    // Make concurrent requests for each advisory category
+    console.log('🚀 Starting concurrent advisory requests for', advisoryCategories.length, 'categories');
+    
+    const requests = advisoryCategories.map(async (category) => {
+      try {
+        const response = await client.chat.completions.create({
+          model: "gpt-4o-mini", // Faster, more cost-effective model
+          messages: [{ role: "user", content: category.prompt }],
+          max_tokens: 1024, // Reduced since each request is more focused
+          temperature: 0.2,
+        });
+
+        const content = response.choices[0]?.message?.content?.trim();
+        if (!content) {
+          console.warn(`No content for category: ${category.name}`);
+          return [];
+        }
+
+        // Clean up the response in case it has markdown formatting
+        let cleanContent = content;
+        if (cleanContent.startsWith('```')) {
+          cleanContent = cleanContent.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+        }
+
+        const suggestions = JSON.parse(cleanContent);
+        const validSuggestions = Array.isArray(suggestions) ? suggestions : [];
+        console.log(`✅ ${category.name}: ${validSuggestions.length} suggestions`);
+        return validSuggestions;
+      } catch (error) {
+        console.error(`Error processing category ${category.name}:`, error);
+        return []; // Return empty array for failed requests to avoid breaking the whole process
+      }
     });
 
-    const content = response.choices[0]?.message?.content?.trim();
-    if (!content) {
-      throw new Error("No content in OpenAI response");
-    }
-
-    // Clean up the response in case it has markdown formatting
-    let cleanContent = content;
-    if (cleanContent.startsWith('```')) {
-      cleanContent = cleanContent.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-    }
-
-    const suggestions = JSON.parse(cleanContent);
-    return Array.isArray(suggestions) ? suggestions : [];
+    // Wait for all concurrent requests to complete
+    const results = await Promise.all(requests);
+    
+    // Flatten all results into a single array
+    const allSuggestions = results.flat();
+    
+    console.log(`🎯 Total advisory suggestions: ${allSuggestions.length}`);
+    return allSuggestions;
+    
   } catch (error) {
     console.error("Error generating advisory comments:", error);
     throw new Error("Failed to generate advisory comments from OpenAI.");
