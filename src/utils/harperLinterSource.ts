@@ -1,18 +1,18 @@
 import { Diagnostic } from '@codemirror/lint';
 import { StateEffect, StateField } from '@codemirror/state';
 import {
-    Decoration,
-    DecorationSet,
-    EditorView,
-    ViewPlugin,
-    ViewUpdate,
+  Decoration,
+  DecorationSet,
+  EditorView,
+  ViewPlugin,
+  ViewUpdate,
 } from '@codemirror/view';
 import type { SuggestionState } from '../store/suggestion/suggestion.types';
 import {
-    getLinter,
-    HarperLint,
-    ignoreLint,
-    isLintIgnored,
+  getLinter,
+  HarperLint,
+  ignoreLint,
+  isLintIgnored,
 } from './harperLinter';
 import { convertToTypedSuggestions, processHarperLints } from './harperMapping';
 import { logger } from './logger';
@@ -69,6 +69,8 @@ export const createHarperLinterPlugin = (onSuggestionsUpdate: (suggestions: Sugg
 
         const docString = this.view.state.doc.toString();
         const lints = await linterInstance.lint(docString);
+
+        if (this.view.state.doc.toString() === docString) {
           try {
             const harperSuggestions = processHarperLints(lints.filter(lint => !isLintIgnored(lint)));
             const typedHarperSuggestions = convertToTypedSuggestions(harperSuggestions);
@@ -84,36 +86,38 @@ export const createHarperLinterPlugin = (onSuggestionsUpdate: (suggestions: Sugg
             logger.error('Failed to update suggestion store:', error);
           }
 
-        const diagnostics: Diagnostic[] = lints
-          .filter(lint => !isLintIgnored(lint))
-          .map((lint: HarperLint) => {
-            const span = lint.span();
-            return {
-              from: span.start,
-              to: span.end,
-              severity: 'warning',
-              message: lint.message(),
-              actions: [
-                ...lint.suggestions().map(s => ({
-                  name: s.get_replacement_text(),
-                  apply: (v: EditorView, from: number, to: number) => {
-                    v.dispatch({
-                      changes: { from, to, insert: s.get_replacement_text() },
-                    });
+          const diagnostics: Diagnostic[] = lints
+            .filter(lint => !isLintIgnored(lint))
+            .map((lint: HarperLint) => {
+              const span = lint.span();
+              return {
+                from: span.start,
+                to: span.end,
+                severity: 'warning',
+                message: JSON.stringify({
+                  title: lint.lint_kind(),
+                  text: lint.message(),
+                }),
+                actions: [
+                  ...lint.suggestions().map(s => ({
+                    name: s.get_replacement_text(),
+                    apply: (v: EditorView, from: number, to: number) => {
+                      v.dispatch({
+                        changes: { from, to, insert: s.get_replacement_text() },
+                      });
+                    },
+                  })),
+                  {
+                    name: 'Ignore',
+                    apply: () => {
+                      ignoreLint(lint);
+                      this.runLinter();
+                    },
                   },
-                })),
-                {
-                  name: 'Ignore',
-                  apply: () => {
-                    ignoreLint(lint);
-                    this.runLinter();
-                  },
-                },
-              ],
-            };
-          });
-
-        if (this.view.state.doc.toString() === docString) {
+                ],
+              };
+            });
+            
           this.view.dispatch({ effects: setHarperDiagnostics.of(diagnostics) });
         }
       };

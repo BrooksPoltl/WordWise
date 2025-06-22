@@ -21,20 +21,43 @@ import SuggestionPopover from './SuggestionPopover';
 
 const convertDiagnosticToGrammarSuggestion = (
   diagnostic: Diagnostic,
-): GrammarSuggestion => ({
-  id: `${diagnostic.from}-${diagnostic.to}-${diagnostic.message}`,
-  text: diagnostic.message,
-  startOffset: diagnostic.from,
-  endOffset: diagnostic.to,
-  word: '', // Will be populated from the actual text
-  type: 'grammar',
-  title: 'Grammar', // Default title for CodeMirror diagnostics
-  suggestions: diagnostic.actions?.map((action) => ({
-    id: action.name,
-    text: action.name,
-  })) || [],
-  raw: diagnostic, // Storing the raw diagnostic for actions
-});
+): GrammarSuggestion => {
+  try {
+    const { title, text } = JSON.parse(diagnostic.message);
+    return {
+      id: `${diagnostic.from}-${diagnostic.to}-${text}`,
+      text,
+      startOffset: diagnostic.from,
+      endOffset: diagnostic.to,
+      word: '', // Will be populated from the actual text
+      type: 'grammar',
+      title: title || 'Grammar',
+      suggestions:
+        diagnostic.actions?.map(action => ({
+          id: action.name,
+          text: action.name,
+        })) || [],
+      raw: diagnostic, // Storing the raw diagnostic for actions
+    };
+  } catch (e) {
+    // Fallback for messages that are not JSON
+    return {
+      id: `${diagnostic.from}-${diagnostic.to}-${diagnostic.message}`,
+      text: diagnostic.message,
+      startOffset: diagnostic.from,
+      endOffset: diagnostic.to,
+      word: '', // Will be populated from the actual text
+      type: 'grammar',
+      title: 'Grammar', // Default title for CodeMirror diagnostics
+      suggestions:
+        diagnostic.actions?.map(action => ({
+          id: action.name,
+          text: action.name,
+        })) || [],
+      raw: diagnostic, // Storing the raw diagnostic for actions
+    };
+  }
+};
 
 interface CodeMirrorEditorProps {
   initialContent?: string;
