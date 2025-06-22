@@ -5,7 +5,6 @@ import {
   SuggestionCategory,
 } from '../../store/suggestion/suggestion.types';
 import { BaseSuggestion, SuggestionAction, SuggestionType } from '../../types';
-import { logger } from '../../utils/logger';
 
 interface SuggestionPopoverProps {
   suggestion: AnySuggestion;
@@ -124,14 +123,6 @@ const SuggestionPopover = React.forwardRef<
   };
 
   const renderMessage = (s: BaseSuggestion) => {
-    logger.debug('renderMessage called with suggestion:', {
-      type: s.type,
-      explanation: s.explanation,
-      actions: s.actions,
-      hasActions: !!s.actions,
-      firstActionType: s.actions?.[0]?.type,
-      firstActionText: s.actions?.[0]?.type === 'replace' ? s.actions[0].text : undefined
-    });
 
     if (s.type === 'spelling' && s.actions?.[0]?.type === 'replace') {
       return (

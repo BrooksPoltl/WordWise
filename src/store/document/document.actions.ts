@@ -70,7 +70,7 @@ export const fetchDocument = async (
   set: DocumentSet,
   documentId: string,
 ): Promise<Document | null> => {
-  logger.info(`Fetching document with ID: ${documentId}`);
+
   set({ loading: true, error: null });
   try {
     const docRef = doc(db, "documents", documentId);

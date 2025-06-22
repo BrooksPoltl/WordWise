@@ -18,7 +18,7 @@ export const usePassiveRewrite = () => {
     const cachedRewrite = rewriteCache.get('passive', suggestion.text);
     if (cachedRewrite) {
       updateSuggestion('passive', suggestion.id, cachedRewrite);
-      logger.info('Using cached rewrite for passive suggestion:', cachedRewrite);
+  
       return;
     }
 

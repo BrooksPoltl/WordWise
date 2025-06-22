@@ -296,6 +296,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       createSuggestionDecorationExtension(),
       createAdvisoryDecorationExtension(),
       Prec.high(EditorView.domEventHandlers({
+        paste: () => false, // Don't prevent default paste behavior
         click: (event: MouseEvent, view: EditorView) => {
           const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
           const currentComments = commentsRef.current; // Use ref to get current comments

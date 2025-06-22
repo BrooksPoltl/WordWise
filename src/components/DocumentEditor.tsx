@@ -1,5 +1,5 @@
 import { EditorView } from '@codemirror/view';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EDITOR_CONFIG } from '../constants/editorConstants';
 import { useToneAnalysis } from '../hooks/useToneAnalysis';
@@ -33,6 +33,7 @@ const DocumentEditor: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [title, setTitle] = useState('');
+  const [currentContent, setCurrentContent] = useState('');
   const titleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isContextModalOpen, setIsContextModalOpen] = useState(false);
   const [isComponentLoading, setIsComponentLoading] = useState(true);
@@ -53,6 +54,7 @@ const DocumentEditor: React.FC = () => {
   useEffect(() => {
     if (currentDocument) {
       setTitle(currentDocument.title);
+      setCurrentContent(currentDocument.content);
     }
   }, [currentDocument]);
 
@@ -66,6 +68,12 @@ const DocumentEditor: React.FC = () => {
       detectToneImmediate(currentDocument.content);
     }
   }, [currentDocument, detectToneImmediate]);
+
+  // Memoize the content change handler to prevent infinite re-renders
+  const handleContentChange = useCallback((content: string) => {
+    setCurrentContent(content);
+    detectTone(content);
+  }, [detectTone]);
 
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);
@@ -220,12 +228,6 @@ const DocumentEditor: React.FC = () => {
             </div>
 
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
-                <span>
-                  Last updated:{' '}
-                  {currentDocument.updatedAt.toLocaleDateString()}
-                </span>
-              </div>
               
               {/* Profile Dropdown */}
               <div className="relative" ref={dropdownRef}>
@@ -295,12 +297,13 @@ const DocumentEditor: React.FC = () => {
             currentDocumentType={currentDocument?.documentType}
             userRole={user?.role}
             onDocumentTypeChange={handleDocumentTypeChange}
+            currentContent={currentContent}
           />
           <div className="bg-white rounded-lg shadow-lg overflow-hidden h-full">
             {editorView && <ResponsiveToolbar editorView={editorView} detectedTone={detectedTone} />}
             <DocumentCodeMirrorEditor 
               onViewReady={setEditorView} 
-              onContentChange={detectTone}
+              onContentChange={handleContentChange}
             />
           </div>
         </div>

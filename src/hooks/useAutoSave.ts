@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { EDITOR_CONFIG } from '../constants/editorConstants';
 import { autoSaveDocument } from '../store/document/document.actions';
-import { logger } from '../utils/logger';
 
 /**
  * A hook for debouncing and auto-saving document content changes.
@@ -22,12 +21,12 @@ export const useAutoSave = (documentId: string) => {
 
       // Set a new timer to save the content
       timeoutRef.current = setTimeout(() => {
-        logger.info('Auto-saving document...', { documentId });
+    
         
         // Fire-and-forget auto-save - no await, no state updates needed
         autoSaveDocument(documentId, { content: newContent });
         
-        logger.info('Auto-save initiated (fire-and-forget).', { documentId });
+        
       }, EDITOR_CONFIG.AUTO_SAVE_DELAY);
     },
     [documentId],

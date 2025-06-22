@@ -15,7 +15,7 @@ const getLintId = (lint: harper.Lint) => {
 export const ignoreLint = (lint: harper.Lint) => {
   const id = getLintId(lint);
   ignoredLints.add(id);
-  logger.info(`Ignoring lint: ${id}`);
+
 };
 
 export const isLintIgnored = (lint: harper.Lint) => {
@@ -34,7 +34,7 @@ export const getLinter = async (): Promise<harper.WorkerLinter | null> => {
   }
 
   try {
-    logger.info('Initializing Harper linter for the first time...');
+
     const linter = new harper.WorkerLinter({
       binary: new harper.BinaryModule(
         'https://cdn.jsdelivr.net/npm/harper.js/dist/harper_wasm_bg.wasm',
@@ -43,7 +43,7 @@ export const getLinter = async (): Promise<harper.WorkerLinter | null> => {
     });
 
     await linter.setLintConfig(harperLinterRules);
-    logger.info('Default Harper Linter Config set.');
+    
 
     linterInstance = linter;
     logger.success('Harper linter singleton initialized successfully.');
@@ -59,13 +59,13 @@ export const reconfigureLinter = async (newConfig: harper.LintConfig) => {
 
   if (linter) {
     await linter.setLintConfig(newConfig);
-    logger.info('Harper linter reconfigured with new rules.', newConfig);
+
   }
 };
 
 export type {
-    Lint as HarperLint,
-    LintConfig as HarperLintConfig, Suggestion as HarperSuggestion, WorkerLinter as HarperWorkerLinter
+  Lint as HarperLint,
+  LintConfig as HarperLintConfig, Suggestion as HarperSuggestion, WorkerLinter as HarperWorkerLinter
 } from 'harper.js';
 
 export const { Lint } = harper;

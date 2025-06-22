@@ -26,7 +26,7 @@ export const generateAdvisoryCommentsCall = async (
   documentContent: string
 ): Promise<AdvisoryComment[]> => {
   try {
-    logger.info('🔍 Requesting advisory comments for document content');
+
     
     const requestAdvisoryComments = httpsCallable(functions, 'requestAdvisoryComments');
     const result = await requestAdvisoryComments({ documentContent });
@@ -39,7 +39,7 @@ export const generateAdvisoryCommentsCall = async (
       return [];
     }
 
-    logger.info(`✅ Received ${suggestions.length} advisory suggestions from OpenAI`);
+    
 
     // Process each suggestion and find its position in the document
     const comments: AdvisoryComment[] = [];
@@ -72,7 +72,7 @@ export const generateAdvisoryCommentsCall = async (
             };
 
             comments.push(comment);
-            logger.debug(`✅ Processed advisory comment: ${comment.reason} at ${comment.startIndex}-${comment.endIndex}`);
+    
           }
         }
       } catch (error) {
@@ -81,7 +81,7 @@ export const generateAdvisoryCommentsCall = async (
       }
     }
 
-    logger.info(`🎯 Successfully processed ${comments.length} advisory comments`);
+    
     return comments;
   } catch (error) {
     logger.error('Failed to generate advisory comments:', error);

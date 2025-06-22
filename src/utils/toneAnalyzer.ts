@@ -21,7 +21,7 @@ class ToneAnalyzerService {
    * @returns A promise that resolves to the detected tone.
    */
   public async analyzeTone(text: string): Promise<Tone | null> {
-    logger.info('Calling toneDetect function...');
+  
     if (!text.trim()) {
       logger.warning('Text is empty, returning null tone.');
       return null;
@@ -40,7 +40,7 @@ class ToneAnalyzerService {
         throw new Error(error || 'API error during tone detection');
       }
 
-      logger.info('Tone detected successfully.', { tone });
+
       return tone;
     } catch (error) {
       logger.error('Error calling toneDetect callable:', error);
