@@ -1,6 +1,7 @@
+import { defaultKeymap } from '@codemirror/commands';
 import { Diagnostic } from '@codemirror/lint';
 import { EditorState, Extension } from '@codemirror/state';
-import { EditorView } from '@codemirror/view';
+import { EditorView, keymap } from '@codemirror/view';
 import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -138,6 +139,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
     const extensions: Extension[] = [
       EditorView.lineWrapping,
+      keymap.of(defaultKeymap), // Add default keyboard bindings including Enter
       wordwiseTheme,
       EditorView.updateListener.of(update => {
         if (update.docChanged) {

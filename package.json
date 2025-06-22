@@ -27,6 +27,7 @@
     "lint:summary": "./scripts/lint-summary.sh"
   },
   "dependencies": {
+    "@codemirror/commands": "^6.8.1",
     "@codemirror/lang-markdown": "^6.3.3",
     "@codemirror/language": "^6.11.1",
     "@codemirror/lint": "^6.8.5",
