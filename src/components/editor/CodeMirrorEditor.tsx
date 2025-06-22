@@ -11,7 +11,7 @@ import {
 import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import { AnySuggestion, SuggestionStore } from '../../store/suggestion/suggestion.types';
 import { wordwiseTheme } from '../../themes/wordwiseTheme';
-import { GrammarSuggestion } from '../../types';
+import { GrammarSuggestion, SuggestionAction } from '../../types';
 import {
   createHarperLinterPlugin,
   harperDiagnostics,
@@ -81,7 +81,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   const [activeSuggestion, setActiveSuggestion] =
     useState<AnySuggestion | null>(null);
 
-  const { x, y, refs, strategy, context } = useFloating({
+  const { x, y, refs, strategy } = useFloating({
     open: !!activeSuggestion,
     onOpenChange: isOpen => {
       if (!isOpen) {
@@ -295,64 +295,74 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   }, [initialContent, placeholder, handleContentChange, findSuggestionAtPosStable, setSuggestionsWithSession]); // refs accessed directly in click handler
 
   // Handle suggestion actions
-  const handleAcceptSuggestion = useCallback((suggestion: AnySuggestion) => {
-    if (!viewRef.current) return;
+  const handleAcceptSuggestion = useCallback(
+    (suggestion: AnySuggestion, action?: SuggestionAction) => {
+      if (!viewRef.current) return;
 
-    // Handle Harper suggestions with actions
-    if ('actions' in suggestion && suggestion.actions && suggestion.actions.length > 0) {
-      const firstAction = suggestion.actions[0];
-      const view = viewRef.current;
-      
-      switch (firstAction.type) {
-        case 'replace':
-          view.dispatch({
-            changes: {
-              from: suggestion.startOffset,
-              to: suggestion.endOffset,
-              insert: firstAction.text,
-            },
-          });
-          break;
-        case 'remove':
-          view.dispatch({
-            changes: {
-              from: suggestion.startOffset,
-              to: suggestion.endOffset,
-              insert: '',
-            },
-          });
-          break;
-        case 'insert_after':
-          view.dispatch({
-            changes: {
-              from: suggestion.endOffset,
-              to: suggestion.endOffset,
-              insert: firstAction.text,
-            },
-          });
-          break;
-        default:
-          // Unknown action type, do nothing
-          break;
+      // Use the provided action if available, otherwise default to the first action
+      const selectedAction =
+        action ||
+        ('actions' in suggestion &&
+          suggestion.actions &&
+          suggestion.actions.length > 0
+          ? suggestion.actions[0]
+          : undefined);
+
+      if (selectedAction) {
+        const view = viewRef.current;
+        switch (selectedAction.type) {
+          case 'replace':
+            view.dispatch({
+              changes: {
+                from: suggestion.startOffset,
+                to: suggestion.endOffset,
+                insert: selectedAction.text,
+              },
+            });
+            break;
+          case 'remove':
+            view.dispatch({
+              changes: {
+                from: suggestion.startOffset,
+                to: suggestion.endOffset,
+                insert: '',
+              },
+            });
+            break;
+          case 'insert_after':
+            view.dispatch({
+              changes: {
+                from: suggestion.endOffset,
+                to: suggestion.endOffset,
+                insert: selectedAction.text,
+              },
+            });
+            break;
+          default:
+            // Unknown action type, do nothing
+            break;
+        }
       }
-    }
-    // Handle legacy grammar suggestions with raw diagnostics
-    else if ('raw' in suggestion) {
-      const grammarSuggestion = suggestion as GrammarSuggestion;
-      const action = grammarSuggestion.raw.actions?.find(
-        (a: { name: string }) => a.name === grammarSuggestion.suggestions?.[0]?.text,
-      );
-      if (action) {
-        action.apply(
-          viewRef.current,
-          grammarSuggestion.startOffset,
-          grammarSuggestion.endOffset,
+      // Handle legacy grammar suggestions with raw diagnostics
+      else if ('raw' in suggestion) {
+        const grammarSuggestion = suggestion as GrammarSuggestion;
+        const legacyAction = grammarSuggestion.raw.actions?.find(
+          (a: { name: string }) =>
+            a.name === grammarSuggestion.suggestions?.[0]?.text,
         );
+        if (legacyAction) {
+          legacyAction.apply(
+            viewRef.current,
+            grammarSuggestion.startOffset,
+            grammarSuggestion.endOffset,
+          );
+        }
       }
-    }
 
-    setActiveSuggestion(null);
-  }, []);
+      setActiveSuggestion(null);
+    },
+    [],
+  );
 
   const handleIgnoreSuggestion = useCallback((suggestion: AnySuggestion) => {
     if (!viewRef.current) return;
@@ -392,7 +402,6 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           ref={refs.setFloating as React.Ref<HTMLDivElement>}
           suggestion={activeSuggestion}
           onAccept={handleAcceptSuggestion}
-          onDismiss={() => setActiveSuggestion(null)}
           onIgnore={handleIgnoreSuggestion}
           style={{
             position: strategy,
@@ -400,7 +409,6 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
             left: x ?? 0,
             zIndex: 100,
           }}
-          context={context}
         />
       )}
     </div>

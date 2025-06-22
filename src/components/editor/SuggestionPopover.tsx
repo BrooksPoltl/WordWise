@@ -1,142 +1,152 @@
-import { FloatingContext } from '@floating-ui/react';
 import React from 'react';
-import { AnySuggestion } from '../../store/suggestion/suggestion.types';
-// import {
-//   PassiveSuggestion
-// } from '../../types';
-// import PassiveSuggestionPopover from './PassiveSuggestionPopover';
+import {
+  AnySuggestion,
+  SUGGESTION_CATEGORIES,
+} from '../../store/suggestion/suggestion.types';
+import { BaseSuggestion, SuggestionAction } from '../../types';
 
 interface SuggestionPopoverProps {
   suggestion: AnySuggestion;
-  onAccept: (suggestion: AnySuggestion) => void;
-  onDismiss: () => void;
+  onAccept: (suggestion: AnySuggestion, action?: SuggestionAction) => void;
   onIgnore: (suggestion: AnySuggestion) => void;
   style: React.CSSProperties;
-  context: FloatingContext;
 }
+
+const appearanceMap: {
+  [key: string]: {
+    color: string;
+    bgColor: string;
+    borderColor: string;
+    buttonBgColor: string;
+    buttonHoverBgColor: string;
+    buttonRingColor: string;
+  };
+} = {
+  grammar: {
+    color: SUGGESTION_CATEGORIES.grammar.color,
+    bgColor: 'bg-red-50',
+    borderColor: 'border-red-200',
+    buttonBgColor: 'bg-red-500',
+    buttonHoverBgColor: 'hover:bg-red-600',
+    buttonRingColor: 'focus:ring-red-500',
+  },
+  spelling: {
+    color: '#ef4444', // red-500
+    bgColor: 'bg-red-50',
+    borderColor: 'border-red-200',
+    buttonBgColor: 'bg-red-500',
+    buttonHoverBgColor: 'hover:bg-red-600',
+    buttonRingColor: 'focus:ring-red-500',
+  },
+  clarity: {
+    color: SUGGESTION_CATEGORIES.clarity.color,
+    bgColor: 'bg-violet-50',
+    borderColor: 'border-violet-200',
+    buttonBgColor: 'bg-violet-500',
+    buttonHoverBgColor: 'hover:bg-violet-600',
+    buttonRingColor: 'focus:ring-violet-500',
+  },
+  conciseness: {
+    color: SUGGESTION_CATEGORIES.conciseness.color,
+    bgColor: 'bg-cyan-50',
+    borderColor: 'border-cyan-200',
+    buttonBgColor: 'bg-cyan-500',
+    buttonHoverBgColor: 'hover:bg-cyan-600',
+    buttonRingColor: 'focus:ring-cyan-500',
+  },
+  readability: {
+    color: SUGGESTION_CATEGORIES.readability.color,
+    bgColor: 'bg-emerald-50',
+    borderColor: 'border-emerald-200',
+    buttonBgColor: 'bg-emerald-500',
+    buttonHoverBgColor: 'hover:bg-emerald-600',
+    buttonRingColor: 'focus:ring-emerald-500',
+  },
+  passive: {
+    color: SUGGESTION_CATEGORIES.passive.color,
+    bgColor: 'bg-orange-50',
+    borderColor: 'border-orange-200',
+    buttonBgColor: 'bg-orange-500',
+    buttonHoverBgColor: 'hover:bg-orange-600',
+    buttonRingColor: 'focus:ring-orange-500',
+  },
+};
+
+const getSuggestionAppearance = (
+  type: AnySuggestion['type'],
+) => appearanceMap[type] || appearanceMap.spelling; // Default to spelling
 
 const SuggestionPopover = React.forwardRef<
   HTMLDivElement,
   SuggestionPopoverProps
->(({ suggestion, onAccept, onDismiss, onIgnore, style, context: _context }, ref) => {
-  const isHarperSuggestion = (s: AnySuggestion): boolean =>
-    s.type === 'spelling' || s.type === 'grammar' || s.type === 'style' ||
-    s.type === 'weasel_word' || s.type === 'conciseness' || s.type === 'readability';
+>(({ suggestion, onAccept, onIgnore, style }, ref) => {
+  const appearance = getSuggestionAppearance(
+    suggestion.type,
+  );
 
-  // const isPassiveSuggestion = (s: AnySuggestion): s is PassiveSuggestion =>
-  //   s.type === 'passive';
+  const handleFix = () => {
+    const primaryAction =
+      'actions' in suggestion && suggestion.actions?.[0]
+        ? suggestion.actions[0]
+        : undefined;
 
-  if (isHarperSuggestion(suggestion)) {
-    // Enhanced Harper suggestion handler for all Harper-powered suggestions
-    return (
-      <div
-        ref={ref}
-        style={style}
-        className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 max-w-xs"
-      >
-        <div className="text-sm font-medium text-gray-900 mb-2">
-          {suggestion.title || 'Writing Suggestion'}
-        </div>
-        <div className="text-sm text-gray-600 mb-3">
-          {suggestion.explanation || 'Improvement suggested'}
-        </div>
-        
-        {/* Render Harper actions if available */}
-        {'actions' in suggestion && suggestion.actions && suggestion.actions.length > 0 ? (
-          <div className="space-y-2">
-            <div className="text-xs text-gray-500 mb-1">Suggestions:</div>
-            <div className="flex flex-wrap gap-1 mb-3">
-              {suggestion.actions.map((action, index) => {
-                let buttonText = 'Apply';
-                let buttonTitle = `Apply: ${action.type}`;
-                
-                if (action.type === 'replace') {
-                  buttonText = action.text;
-                  buttonTitle = `Apply: ${action.text}`;
-                } else if (action.type === 'remove') {
-                  buttonText = 'Remove';
-                  buttonTitle = 'Apply: Remove';
-                } else if (action.type === 'insert_after') {
-                  buttonText = `Add "${action.text}"`;
-                  buttonTitle = `Apply: Add "${action.text}"`;
-                }
-                
-                return (
-                  <button
-                    key={`${suggestion.id}-action-${action.type}-${action.type === 'replace' ? action.text : index}`}
-                    type="button"
-                    onClick={() => onAccept(suggestion)}
-                    className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
-                    title={buttonTitle}
-                  >
-                    {buttonText}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={onDismiss}
-                className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
-              >
-                Dismiss
-              </button>
-              <button
-                type="button"
-                onClick={() => onIgnore(suggestion)}
-                className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
-              >
-                Ignore
-              </button>
-            </div>
-          </div>
-        ) : (
-          // Fallback for legacy suggestions without actions
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => onAccept(suggestion)}
-              className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
-            >
-              Accept
-            </button>
-            <button
-              type="button"
-              onClick={onDismiss}
-              className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
-            >
-              Dismiss
-            </button>
-            <button
-              type="button"
-              onClick={() => onIgnore(suggestion)}
-              className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300"
-            >
-              Ignore
-            </button>
-          </div>
-        )}
+    onAccept(suggestion, primaryAction);
+  };
+
+  const renderMessage = (s: BaseSuggestion) => {
+    if (s.type === 'spelling' && s.actions?.[0]?.type === 'replace') {
+      return (
+        <span>
+          Did you mean <strong>{s.actions[0].text}</strong>?
+        </span>
+      );
+    }
+    return s.explanation || 'Improvement suggestion';
+  };
+
+  const fixButtonText =
+    'actions' in suggestion &&
+    suggestion.actions?.[0]?.type === 'replace' &&
+    suggestion.actions?.[0].text
+      ? suggestion.actions[0].text
+      : 'Fix';
+
+  return (
+    <div
+      ref={ref}
+      style={style}
+      className={`rounded-lg border p-4 shadow-lg max-w-sm ${appearance.bgColor} ${appearance.borderColor}`}
+      role="dialog"
+      aria-labelledby="suggestion-title"
+    >
+      <div className="flex items-center mb-2">
+        <span
+          className="h-3 w-3 rounded-full mr-2"
+          style={{ backgroundColor: appearance.color }}
+        />
+        <h3 id="suggestion-title" className="font-semibold text-gray-800">
+          {suggestion.title}
+        </h3>
       </div>
-    );
-  }
-
-  // Commented out passive voice handling
-  // if (isPassiveSuggestion(suggestion)) {
-  //   return (
-  //     <PassiveSuggestionPopover
-  //       ref={ref}
-  //       suggestion={suggestion}
-  //       onAccept={onAccept}
-  //       onDismiss={onDismiss}
-  //       onIgnore={onIgnore}
-  //       style={style}
-  //       context={context}
-  //     />
-  //   );
-  // }
-
-  return null;
+      <div className="text-gray-700 mb-4 ml-5">{renderMessage(suggestion)}</div>
+      <div className="flex items-center gap-2 ml-5">
+        <button
+          type="button"
+          onClick={handleFix}
+          className={`px-4 py-1.5 text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${appearance.buttonBgColor} ${appearance.buttonHoverBgColor} ${appearance.buttonRingColor}`}
+        >
+          {fixButtonText}
+        </button>
+        <button
+          type="button"
+          onClick={() => onIgnore(suggestion)}
+          className="text-gray-600 font-medium hover:text-gray-800"
+        >
+          Ignore
+        </button>
+      </div>
+    </div>
+  );
 });
 
 SuggestionPopover.displayName = 'SuggestionPopover';
