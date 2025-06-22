@@ -5,16 +5,16 @@ import { EditorView, keymap } from '@codemirror/view';
 import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    createSuggestionDecorationExtension,
-    dispatchSuggestionUpdate
+  createSuggestionDecorationExtension,
+  dispatchSuggestionUpdate
 } from '../../extensions/SuggestionDecorations';
 import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import { AnySuggestion, SuggestionStore } from '../../store/suggestion/suggestion.types';
 import { wordwiseTheme } from '../../themes/wordwiseTheme';
 import { GrammarSuggestion, SuggestionAction } from '../../types';
 import {
-    createHarperLinterPlugin,
-    harperDiagnostics,
+  createHarperLinterPlugin,
+  harperDiagnostics,
 } from '../../utils/harperLinterSource';
 import SuggestionPopover from './SuggestionPopover';
 

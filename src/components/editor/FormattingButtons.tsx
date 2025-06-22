@@ -1,4 +1,4 @@
-import { Bold, Heading1, Heading2, Heading3, Italic } from 'lucide-react';
+import { Bold, Heading1, Heading2, Heading3, Italic, Link, Table } from 'lucide-react';
 import React from 'react';
 
 interface FormattingButtonProps {
@@ -24,9 +24,11 @@ interface FormattingButtonsProps {
     onH1: () => void;
     onH2: () => void;
     onH3: () => void;
+    onLink: () => void;
+    onTable: () => void;
 }
 
-const FormattingButtons: React.FC<FormattingButtonsProps> = ({ onBold, onItalic, onH1, onH2, onH3 }) => (
+const FormattingButtons: React.FC<FormattingButtonsProps> = ({ onBold, onItalic, onH1, onH2, onH3, onLink, onTable }) => (
   <div className="flex items-center space-x-1">
     <FormattingButton onClick={onBold} aria-label="Bold">
       <Bold className="w-5 h-5" />
@@ -42,6 +44,12 @@ const FormattingButtons: React.FC<FormattingButtonsProps> = ({ onBold, onItalic,
     </FormattingButton>
     <FormattingButton onClick={onH3} aria-label="Heading 3">
         <Heading3 className="w-5 h-5" />
+    </FormattingButton>
+    <FormattingButton onClick={onLink} aria-label="Insert Link">
+        <Link className="w-5 h-5" />
+    </FormattingButton>
+    <FormattingButton onClick={onTable} aria-label="Insert Table">
+        <Table className="w-5 h-5" />
     </FormattingButton>
   </div>
 );

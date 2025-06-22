@@ -40,4 +40,53 @@ export const toggleHeader = (view: EditorView | null, level: number) => {
         const change = { from: line.from, to: line.from, insert: prefix };
         dispatch({ changes: change });
     }
+};
+
+export const toggleLink = (view: EditorView | null) => {
+  if (!view) return;
+
+  const { state, dispatch } = view;
+  const { from, to } = state.selection.main;
+  const selection = state.doc.sliceString(from, to);
+
+  const url = prompt('Enter the URL:');
+  if (url) {
+    const change = {
+      from,
+      to,
+      insert: `[${selection}](${url})`,
+    };
+    dispatch({ changes: change });
+  }
+};
+
+export const insertTable = (view: EditorView | null) => {
+  if (!view) return;
+
+  const rowsStr = prompt('Enter number of rows:', '2');
+  const colsStr = prompt('Enter number of columns:', '2');
+
+  const rows = parseInt(rowsStr || '2', 10);
+  const cols = parseInt(colsStr || '2', 10);
+
+  if (Number.isNaN(rows) || Number.isNaN(cols) || rows <= 0 || cols <= 0) {
+    alert('Please enter valid numbers for rows and columns.');
+    return;
+  }
+
+  let table = '';
+
+  // Header
+  table += `| ${Array(cols).fill('Header').join(' | ')} |\n`;
+  
+  // Separator
+  table += `| ${Array(cols).fill('---').join(' | ')} |\n`;
+
+  // Body
+  for (let i = 0; i < rows; i += 1) {
+    table += `| ${Array(cols).fill('Cell').join(' | ')} |\n`;
+  }
+
+  const { state, dispatch } = view;
+  dispatch(state.replaceSelection(table));
 }; 

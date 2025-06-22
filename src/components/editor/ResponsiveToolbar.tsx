@@ -1,7 +1,7 @@
 import { EditorView } from '@codemirror/view';
 import { Menu } from 'lucide-react';
 import React, { useState } from 'react';
-import { toggleHeader, toggleMark } from '../../utils/editorCommands';
+import { insertTable, toggleHeader, toggleLink, toggleMark } from '../../utils/editorCommands';
 import FormattingButtons from './FormattingButtons';
 
 interface ResponsiveToolbarProps {
@@ -32,6 +32,16 @@ const ResponsiveToolbar: React.FC<ResponsiveToolbarProps> = ({ editorView }) => 
         setIsMobileMenuOpen(false);
     };
 
+    const handleLink = () => {
+        toggleLink(editorView);
+        setIsMobileMenuOpen(false);
+    };
+
+    const handleTable = () => {
+        insertTable(editorView);
+        setIsMobileMenuOpen(false);
+    };
+
   return (
     <div className="bg-gray-100 p-2 rounded-t-md border-b flex justify-between items-center relative">
       <div className="hidden md:flex">
@@ -41,6 +51,8 @@ const ResponsiveToolbar: React.FC<ResponsiveToolbarProps> = ({ editorView }) => 
             onH1={handleH1}
             onH2={handleH2}
             onH3={handleH3}
+            onLink={handleLink}
+            onTable={handleTable}
         />
       </div>
       
@@ -63,6 +75,8 @@ const ResponsiveToolbar: React.FC<ResponsiveToolbarProps> = ({ editorView }) => 
                 onH1={handleH1}
                 onH2={handleH2}
                 onH3={handleH3}
+                onLink={handleLink}
+                onTable={handleTable}
             />
         </div>
       )}

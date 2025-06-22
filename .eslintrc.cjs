@@ -192,5 +192,11 @@ module.exports = {
         'import/no-extraneous-dependencies': 'off',
       },
     },
+    {
+      files: ['src/utils/editorCommands.ts'],
+      rules: {
+        'no-alert': 'off',
+      },
+    },
   ],
 }; 
