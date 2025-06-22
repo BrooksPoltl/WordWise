@@ -6,12 +6,12 @@ import {
   Routes,
 } from 'react-router-dom';
 import AuthWrapper from './components/AuthWrapper';
+import DocumentEditor from './components/DocumentEditor';
 import Onboarding from './components/Onboarding';
 import { useAuthStore } from './store/auth/auth.store';
 
 // Lazy load components
 const Dashboard = lazy(() => import('./components/Dashboard'));
-const DocumentEditor = lazy(() => import('./components/DocumentEditor'));
 const DocumentList = lazy(() => import('./components/DocumentList'));
 const LandingPage = lazy(() => import('./components/LandingPage'));
 const Profile = lazy(() => import('./components/Profile'));
@@ -63,7 +63,7 @@ const App: React.FC = () => {
               <>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/documents" element={<DocumentList />} />
-                <Route path="/document/:id" element={<DocumentEditor />} />
+                <Route path="/editor/:id" element={<DocumentEditor />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/*" element={<Navigate to="/dashboard" />} />
               </>

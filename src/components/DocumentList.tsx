@@ -35,7 +35,7 @@ const DocumentList: React.FC = () => {
   };
 
   const handleDocumentCreated = (documentId: string) => {
-    navigate(`/document/${documentId}`);
+    navigate(`/editor/${documentId}`);
   };
 
   const handleDeleteDocument = async (documentId: string) => {
@@ -201,10 +201,10 @@ const DocumentList: React.FC = () => {
               <div
                 role="button"
                 tabIndex={0}
-                onClick={() => navigate(`/document/${doc.id}`)}
+                onClick={() => navigate(`/editor/${doc.id}`)}
                 onKeyPress={e => {
                   if (e.key === 'Enter' || e.key === ' ') {
-                    navigate(`/document/${doc.id}`);
+                    navigate(`/editor/${doc.id}`);
                   }
                 }}
                 className="cursor-pointer flex-grow"

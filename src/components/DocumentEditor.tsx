@@ -92,11 +92,6 @@ const DocumentEditor: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/');
-      return undefined;
-    }
-
     if (documentId) {
       fetchDocument(documentId);
     }
@@ -104,7 +99,7 @@ const DocumentEditor: React.FC = () => {
     return () => {
       clearError();
     };
-  }, [documentId, fetchDocument, clearError, user, navigate]);
+  }, [documentId, fetchDocument, clearError]);
 
   const handleBackToDashboard = () => {
     navigate('/dashboard');

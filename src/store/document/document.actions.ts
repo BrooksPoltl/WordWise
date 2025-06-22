@@ -1,19 +1,20 @@
 import {
-    addDoc,
-    collection,
-    deleteDoc,
-    doc,
-    getDoc,
-    getDocs,
-    orderBy,
-    query,
-    serverTimestamp,
-    updateDoc,
-    where
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  orderBy,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where
 } from "firebase/firestore";
 import { db } from "../../config";
 import { Document, DocumentCreatePayload, DocumentUpdatePayload, GrammarSuggestion } from "../../types";
 import { getFriendlyErrorMessage } from "../../utils/errorMessages";
+import { logger } from "../../utils/logger";
 import { DocumentState } from "./document.types";
 
 type DocumentSet = (
@@ -69,12 +70,14 @@ export const fetchDocument = async (
   set: DocumentSet,
   documentId: string,
 ): Promise<Document | null> => {
+  logger.info(`Fetching document with ID: ${documentId}`);
   set({ loading: true, error: null });
   try {
     const docRef = doc(db, "documents", documentId);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
+      logger.success(`Document found: ${documentId}`);
       const data = docSnap.data();
       const document: Document = {
         id: docSnap.id,
@@ -92,9 +95,11 @@ export const fetchDocument = async (
       set({ currentDocument: document, loading: false });
       return document;
     }
+    logger.warning(`Document not found: ${documentId}`);
     set({ error: "Document not found", loading: false });
     return null;
   } catch (error) {
+    logger.error(`Failed to fetch document: ${documentId}`, error);
     set({
       error: getFriendlyErrorMessage(error, "Failed to fetch document"),
       loading: false,

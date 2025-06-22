@@ -194,6 +194,20 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     }
   }, [suggestionStore, activeSuggestion]);
 
+  // This effect synchronizes the editor content with the `initialContent` prop.
+  // It's crucial for scenarios where the document is loaded asynchronously.
+  useEffect(() => {
+    if (viewRef.current && initialContent !== viewRef.current.state.doc.toString()) {
+      viewRef.current.dispatch({
+        changes: {
+          from: 0,
+          to: viewRef.current.state.doc.length,
+          insert: initialContent,
+        },
+      });
+    }
+  }, [initialContent]);
+
   useEffect(() => {
     if (!editorRef.current) return () => {};
 
