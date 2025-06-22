@@ -5,7 +5,9 @@ import {
   ViewPlugin,
   ViewUpdate
 } from '@codemirror/view';
+import { EDITOR_CONFIG } from '../constants/editorConstants';
 import type { SuggestionState } from '../store/suggestion/suggestion.types';
+import { debounce } from './debounce';
 import {
   getLinter,
   HarperLint,
@@ -37,13 +39,16 @@ export const harperDiagnostics = StateField.define<Diagnostic[]>({
 export const createHarperLinterPlugin = (onSuggestionsUpdate: (suggestions: SuggestionState) => void) => 
   ViewPlugin.fromClass(
     class {
+      debouncedRunLinter: () => void;
+
       constructor(private readonly view: EditorView) {
-        this.runLinter();
+        this.debouncedRunLinter = debounce(() => this.runLinter(), EDITOR_CONFIG.LINTER_DEBOUNCE_DELAY);
+        this.debouncedRunLinter();
       }
 
       update(update: ViewUpdate) {
         if (update.docChanged) {
-          this.runLinter();
+          this.debouncedRunLinter();
         }
       }
 

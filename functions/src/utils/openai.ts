@@ -62,6 +62,7 @@ You MUST return your response as a valid JSON array of objects. Each object repr
 
 The format for each object in the array MUST be as follows:
 {
+  "reason": "<The advisory category, e.g., 'Strengthen a Claim'>",
   "originalText": "<The exact, verbatim text from the document that your advice pertains to.>",
   "explanation": "<Your concise advice, written in the second person (e.g., 'Consider adding a data point...')>",
   "startIndex": "<The starting character index of originalText within the full document as a number>",

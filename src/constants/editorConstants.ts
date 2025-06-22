@@ -23,4 +23,5 @@ export const TONE_EMOJI_MAP: Record<Tone, string> = {
 export const EDITOR_CONFIG = {
   AUTO_SAVE_DELAY: 3000,
   TONE_ANALYSIS_DELAY: 5000,
+  LINTER_DEBOUNCE_DELAY: 500,
 } as const; 
