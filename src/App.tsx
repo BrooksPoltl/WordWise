@@ -15,7 +15,6 @@ const DocumentEditor = lazy(() => import('./components/DocumentEditor'));
 const DocumentList = lazy(() => import('./components/DocumentList'));
 const LandingPage = lazy(() => import('./components/LandingPage'));
 const Profile = lazy(() => import('./components/Profile'));
-const EditorV2 = lazy(() => import('./components/EditorV2'));
 
 const App: React.FC = () => {
   const { user, isInitialized, initializeAuth } = useAuthStore();
@@ -66,7 +65,6 @@ const App: React.FC = () => {
                 <Route path="/documents" element={<DocumentList />} />
                 <Route path="/document/:id" element={<DocumentEditor />} />
                 <Route path="/profile" element={<Profile />} />
-                <Route path="/editor-v2" element={<EditorV2 />} />
                 <Route path="/*" element={<Navigate to="/dashboard" />} />
               </>
             );

@@ -25,7 +25,7 @@ export const useAutoSave = (documentId: string) => {
         logger.info('Auto-saving document...', { documentId });
         
         // Fire-and-forget auto-save - no await, no state updates needed
-        autoSaveDocument(documentId, newContent);
+        autoSaveDocument(documentId, { content: newContent });
         
         logger.info('Auto-save initiated (fire-and-forget).', { documentId });
       }, EDITOR_CONFIG.AUTO_SAVE_DELAY);

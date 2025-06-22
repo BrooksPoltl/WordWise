@@ -226,22 +226,49 @@ export const updateDocument = async (
  */
 export const autoSaveDocument = (
   documentId: string,
-  content: string,
+  update: {
+    content?: string;
+    title?: string;
+    documentType?: string;
+    context?: string;
+  },
 ): void => {
   const docRef = doc(db, 'documents', documentId);
-  const updateData = {
-    content,
-    wordCount: content
-      .split(/\s+/)
-      .filter(word => word.length > 0).length,
-    characterCount: content.length,
+  const updateData: {
+    updatedAt: ReturnType<typeof serverTimestamp>;
+    title?: string;
+    content?: string;
+    wordCount?: number;
+    characterCount?: number;
+    documentType?: string;
+    context?: string;
+  } = {
     updatedAt: serverTimestamp(),
   };
 
-  // Fire and forget - don't await, just catch errors silently
-  updateDoc(docRef, updateData).catch((error) => {
-    // Log error but don't throw - this is fire-and-forget
-    console.warn('Auto-save failed (will retry on next change):', error);
+  if (update.title !== undefined) {
+    updateData.title = update.title;
+  }
+
+  if (update.content !== undefined) {
+    updateData.content = update.content;
+    updateData.wordCount = update.content
+      .split(/\s+/)
+      .filter(word => word.length > 0).length;
+    updateData.characterCount = update.content.length;
+  }
+
+  if (update.documentType !== undefined) {
+    updateData.documentType = update.documentType;
+  }
+
+  if (update.context !== undefined) {
+    updateData.context = update.context;
+  }
+  
+  updateDoc(docRef, updateData).catch(error => {
+    // We don't set error state on auto-save to avoid UI disruption
+    console.error("Auto-save failed:", error);
   });
 };
 
@@ -307,7 +334,7 @@ export const applySuggestion = (
     suggestions: state.suggestions.filter(s => s.id !== suggestionId),
   }));
 
-  autoSaveDocument(currentDocument.id, newContent);
+  autoSaveDocument(currentDocument.id, { content: newContent });
 };
 
 export const dismissSuggestion = (
