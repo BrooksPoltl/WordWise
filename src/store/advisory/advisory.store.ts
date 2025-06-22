@@ -79,7 +79,13 @@ export const useAdvisoryStore = create<AdvisoryStore>()(
       setError: (error) => 
         set({ error }),
 
-      refreshComments: async (documentContent: string, documentId: string) => {
+      refreshComments: async (
+        documentContent: string, 
+        documentId: string, 
+        documentType: string = '', 
+        documentContext: string = '', 
+        userContext: string = ''
+      ) => {
         const currentState = get();
         
         // Don't refresh if already loading
@@ -96,7 +102,13 @@ export const useAdvisoryStore = create<AdvisoryStore>()(
           set({ isLoading: true, error: null });
           
           // Keep existing comments visible until new ones are ready
-          const comments = await generateAdvisoryCommentsCall(documentContent);
+          const comments = await generateAdvisoryCommentsCall(
+            documentContent, 
+            documentId, 
+            documentType, 
+            documentContext, 
+            userContext
+          );
           
           // Use setComments to ensure proper filtering of dismissed hashes for this document
           const { setComments } = get();

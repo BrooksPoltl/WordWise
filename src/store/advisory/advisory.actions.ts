@@ -13,6 +13,10 @@ interface OpenAISuggestion {
 
 const isValidReason = (reason: string): reason is AdvisoryComment['reason'] => {
   const validReasons: AdvisoryComment['reason'][] = [
+    'Implementation Feasibility',
+    'Domain Expertise',
+    'Risk Assessment',
+    'Competitive Context',
     'Strengthen a Claim',
     'Define a Key Term/Acronym',
     'Improve Structural Flow',
@@ -23,13 +27,30 @@ const isValidReason = (reason: string): reason is AdvisoryComment['reason'] => {
 };
 
 export const generateAdvisoryCommentsCall = async (
-  documentContent: string
+  documentContent: string,
+  documentId: string,
+  documentType: string = '',
+  documentContext: string = '',
+  userContext: string = ''
 ): Promise<AdvisoryComment[]> => {
   try {
-
+    
+    // Debug logging to check parameters
+    logger.debug('generateAdvisoryCommentsCall parameters:', {
+      documentId,
+      documentContentLength: documentContent?.length,
+      documentType,
+      documentContext,
+      userContext
+    });
     
     const requestAdvisoryComments = httpsCallable(functions, 'requestAdvisoryComments');
-    const result = await requestAdvisoryComments({ documentContent });
+    const result = await requestAdvisoryComments({ 
+      documentContent,
+      documentType,
+      documentContext,
+      userContext
+    });
     
     // The result.data contains the array of advisory suggestions from OpenAI
     const suggestions = result.data as OpenAISuggestion[];

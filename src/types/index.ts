@@ -190,7 +190,7 @@ export interface AdvisoryComment {
   explanation: string;
   startIndex: number;
   endIndex: number;
-  reason: 'Strengthen a Claim' | 'Define a Key Term/Acronym' | 'Improve Structural Flow' | 'Add a Clear Call to Action' | 'Acknowledge Alternatives';
+  reason: 'Implementation Feasibility' | 'Domain Expertise' | 'Risk Assessment' | 'Competitive Context' | 'Strengthen a Claim' | 'Define a Key Term/Acronym' | 'Improve Structural Flow' | 'Add a Clear Call to Action' | 'Acknowledge Alternatives';
   dismissed?: boolean;
 }
 

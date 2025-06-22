@@ -87,6 +87,95 @@ This section tests the new AI Advisory Comments feature that provides high-level
     2.  **Single Sentence:** "This is a test." - Should handle gracefully.
     3.  **Very Short Document:** A few sentences - Should provide appropriate feedback or indicate no suggestions.
 
+### Test Case A4: Context-Aware Advisory Comments (Product Manager)
+*   **Objective:** Verify that the AI provides context-aware recommendations based on user role, document type, and document context.
+*   **Setup Requirements:**
+    1.  **User Profile Setup:**
+        - Role: Product Manager
+        - Persona: "Senior PM at B2B SaaS company with 5+ years experience. Focus on data-driven decisions, user research, and stakeholder alignment. Working primarily with engineering and design teams on customer-facing features."
+    2.  **Document Type:** Product Requirements Document (PRD)
+    3.  **Document Context:** "Mobile banking app for small business owners. Target audience includes engineering team, design team, and executive stakeholders. Must meet regulatory compliance requirements and launch Q2 2024."
+
+*   **Test Document:**
+    ```
+    PRD: Small Business Mobile Banking Features
+
+    Overview
+    We're building new features for small business owners who need mobile banking solutions. The current app doesn't meet their needs very well.
+
+    Problem Statement
+    Small businesses struggle with banking on mobile devices. They need better tools to manage their finances. Our research shows they want improved functionality.
+
+    User Stories
+    - As a small business owner, I want to transfer money between accounts
+    - As a user, I want to view account balances
+    - As a business owner, I want to pay vendors
+
+    Technical Implementation
+    The mobile app will integrate with our existing banking APIs. We'll use React Native for cross-platform development. The backend services are already built and can handle the additional load.
+
+    Success Criteria
+    We expect positive user feedback and increased app usage. The feature should be better than competitors.
+
+    Timeline
+    Launch should happen soon. Development will take some time but we need to be quick to market.
+
+    Regulatory Requirements
+    Banking apps need to follow certain rules and regulations for financial transactions.
+    ```
+
+*   **Expected Context-Aware Recommendations (Blue colored):**
+    1.  **Audience-Specific Suggestions:**
+        - "For executive stakeholders, consider adding specific business impact metrics and ROI projections."
+        - "Given your engineering audience, include more technical requirements such as API rate limits, error handling, and security protocols."
+
+    2.  **Role-Specific PM Guidance:**
+        - "As a PM, you should include user research data to support the problem statement. Consider adding survey results, user interview quotes, or usage analytics."
+        - "Missing acceptance criteria for user stories. Each story should include specific, testable conditions for engineering team."
+
+    3.  **Domain-Specific Insights:**
+        - "For mobile banking apps targeting small businesses, consider offline functionality for areas with poor connectivity."
+        - "Given the B2B SaaS context, include integration requirements with common business tools like QuickBooks or accounting software."
+
+    4.  **Regulatory Compliance Guidance:**
+        - "Since this is a banking app with regulatory requirements, specify which regulations apply (PCI DSS, SOX, etc.) and include security requirements."
+        - "Consider adding a dedicated compliance section detailing data protection and financial transaction security measures."
+
+    5.  **Timeline & Resource Planning:**
+        - "For Q2 2024 launch, provide specific milestones and dependencies. Consider including resource allocation and risk mitigation strategies."
+
+*   **Testing Steps:**
+    1.  Set up user profile with specified role and persona
+    2.  Create new document and select "Product Requirements Document (PRD)" as document type
+    3.  Fill in document context field with provided context
+    4.  Paste the test document content
+    5.  Click "Get Feedback" button
+    6.  Verify context-aware recommendations appear in **blue** color
+    7.  Check that suggestions reference:
+        - User role (PM-specific advice)
+        - Document context (mobile banking, B2B, regulatory requirements)
+        - Target audience (engineering, design, executives)
+        - Domain expertise (B2B SaaS, small business needs)
+    8.  Verify blue styling in both card view and modal view
+    9.  Test dismissing context-aware recommendations independently of other advisory comments
+
+*   **Expected Behavior:**
+    - Context-aware recommendations appear alongside standard advisory comments
+    - Blue visual styling distinguishes context recommendations from amber ones
+    - Suggestions demonstrate understanding of PM role and B2B SaaS context
+    - Recommendations are substantive and actionable for the specific use case
+    - No regression in existing advisory comment functionality
+
+### Test Case A5: Context-Aware Edge Cases
+*   **Objective:** Verify graceful handling of context-aware feature with missing or minimal context.
+*   **Test Scenarios:**
+    1.  **No Document Context:** User persona set, document type selected, but context field empty
+    2.  **No User Persona:** Document context filled, but user persona not set
+    3.  **Generic Context:** Vague context like "writing a document for work"
+    4.  **Mismatched Context:** Software Engineer user writing PRD (role mismatch)
+
+*   **Expected Behavior:** System should degrade gracefully, potentially providing fewer context-specific suggestions but not breaking.
+
 ---
 
 ## II. Comprehensive & Combined Suggestions

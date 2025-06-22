@@ -6,13 +6,21 @@ import { withValidation } from "../utils/validation";
 // Define the schema for the requestAdvisoryComments function's input
 const requestAdvisoryCommentsSchema = z.object({
   documentContent: z.string().min(1, { message: "Document content must be provided." }),
+  userContext: z.string().optional(),
+  documentContext: z.string().optional(),
+  documentType: z.string().optional(),
 });
 
 // The core advisory comments generation logic
 const requestAdvisoryCommentsHandler = withValidation(
   requestAdvisoryCommentsSchema,
-  async ({ documentContent }, _auth) => {
-    const suggestions = await generateAdvisoryComments(documentContent);
+  async ({ documentContent, userContext = '', documentContext = '', documentType = '' }, _auth) => {
+    const suggestions = await generateAdvisoryComments(
+      documentContent,
+      userContext,
+      documentContext,
+      documentType
+    );
     return suggestions;
   },
 );

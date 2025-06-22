@@ -15,7 +15,13 @@ export interface AdvisoryActions {
   dismissCommentPermanently: (comment: AdvisoryComment, documentId: string) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
-  refreshComments: (documentContent: string, documentId: string) => Promise<void>;
+  refreshComments: (
+    documentContent: string, 
+    documentId: string, 
+    documentType?: string, 
+    documentContext?: string, 
+    userContext?: string
+  ) => Promise<void>;
 }
 
 export interface AdvisoryStore extends AdvisoryState, AdvisoryActions {} 

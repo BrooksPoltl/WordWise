@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ADVISORY_MIN_CONTENT_LENGTH } from '../../constants/advisoryConstants';
 import { DOCUMENT_TYPES_BY_ROLE } from '../../constants/documentConstants';
 import { useAdvisoryStore } from '../../store/advisory';
+import { useAuthStore } from '../../store/auth/auth.store';
 import { useDocumentStore } from '../../store/document/document.store';
 import { AdvisoryModal } from './AdvisoryModal';
 
@@ -27,6 +28,7 @@ const DocumentSettingsBar: React.FC<DocumentSettingsBarProps> = ({
   // Advisory functionality
   const { refreshComments, comments, isLoading: advisoryLoading } = useAdvisoryStore();
   const { currentDocument } = useDocumentStore();
+  const { user } = useAuthStore();
 
   const getAvailableTypes = () => {
     let allTypes: string[] = [];
@@ -56,7 +58,13 @@ const DocumentSettingsBar: React.FC<DocumentSettingsBarProps> = ({
   // Advisory button handlers
   const handleRequestAdvisory = async () => {
     if (currentContent && currentDocument?.id) {
-      await refreshComments(currentContent, currentDocument.id);
+      await refreshComments(
+        currentContent, 
+        currentDocument.id,
+        currentDocumentType || '',
+        currentDocument.context || '',
+        user?.persona || ''
+      );
     }
   };
 
