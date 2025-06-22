@@ -9,10 +9,10 @@ import { EDITOR_CONFIG } from '../constants/editorConstants';
 import type { SuggestionState } from '../store/suggestion/suggestion.types';
 import { debounce } from './debounce';
 import {
-  getLinter,
   HarperLint,
   ignoreLint,
   isLintIgnored,
+  runHarperAnalysis,
 } from './harperLinter';
 import { convertToTypedSuggestions, processHarperLints } from './harperMapping';
 import { logger } from './logger';
@@ -53,25 +53,10 @@ export const createHarperLinterPlugin = (onSuggestionsUpdate: (suggestions: Sugg
       }
 
       runLinter = async () => {
-        const linterInstance = await getLinter();
-        if (!linterInstance) {
-          this.view.dispatch({ effects: setHarperDiagnostics.of([]) });
-          
-          // Clear suggestion store if callback provided
-          if (onSuggestionsUpdate) {
-            onSuggestionsUpdate({
-              clarity: [],
-              conciseness: [],
-              readability: [],
-              passive: [],
-              grammar: [],
-            });
-          }
-          return;
-        }
-
         const docString = this.view.state.doc.toString();
-        const lints = await linterInstance.lint(docString);
+        
+        // Use our runHarperAnalysis function which includes text normalization and debugging
+        const lints = await runHarperAnalysis(docString);
 
         if (this.view.state.doc.toString() === docString) {
           try {
