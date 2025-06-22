@@ -3,8 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth/auth.store';
 import { useDocumentStore } from '../store/document/document.store';
 import { Document } from '../types';
+import { runHarperAnalysis } from '../utils/harperLinter';
 import DocumentList from './DocumentList';
 import FeatureShowcaseSection from './dashboard/FeatureShowcaseSection';
+
+const getScoreColor = (score: number) => {
+  if (score >= 90) return 'text-green-600';
+  if (score >= 70) return 'text-yellow-600';
+  return 'text-red-600';
+};
 
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuthStore();
@@ -12,6 +19,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [analysisScore, setAnalysisScore] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
@@ -48,6 +56,44 @@ const Dashboard: React.FC = () => {
       fetchDocuments(user.uid);
     }
   }, [user?.uid, fetchDocuments]);
+
+  useEffect(() => {
+    const calculateScore = async () => {
+      if (documents.length === 0) {
+        setAnalysisScore(null);
+        return;
+      }
+
+      let totalChars = 0;
+      let errorChars = 0;
+
+      const promises = documents.map(async (doc) => {
+        if (!doc.content) return { chars: 0, errors: 0 };
+        
+        const lints = await runHarperAnalysis(doc.content);
+        const chars = doc.content.length;
+        
+        if (lints.length === 0) return { chars, errors: 0 };
+        
+        const spans = lints.map(lint => lint.span());
+        const errors = spans.reduce((sum, span) => sum + (span.end - span.start), 0);
+        
+        return { chars, errors };
+      });
+
+      const results = await Promise.all(promises);
+      
+      results.forEach(result => {
+        totalChars += result.chars;
+        errorChars += result.errors;
+      });
+
+      const score = totalChars > 0 ? 100 - (errorChars / totalChars) * 100 : 100;
+      setAnalysisScore(Math.max(0, score));
+    };
+
+    calculateScore();
+  }, [documents]);
 
   if (!user) {
     return (
@@ -280,7 +326,13 @@ const Dashboard: React.FC = () => {
                             Document Analysis Score
                           </dt>
                           <dd className="text-lg font-medium text-gray-900">
-                            <span className="text-green-600 font-medium">Coming Soon</span>
+                            {analysisScore !== null ? (
+                              <span className={getScoreColor(analysisScore)}>
+                                {Math.round(analysisScore)}%
+                              </span>
+                            ) : (
+                              <span className="text-gray-500">Analyzing...</span>
+                            )}
                           </dd>
                         </dl>
                       </div>
