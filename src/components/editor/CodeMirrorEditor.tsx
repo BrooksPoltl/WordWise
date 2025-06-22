@@ -5,14 +5,13 @@ import { EditorView, keymap } from '@codemirror/view';
 import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    createAdvisoryDecorationExtension,
-    dispatchAdvisoryUpdate
+  createAdvisoryDecorationExtension,
+  dispatchAdvisoryUpdate
 } from '../../extensions/AdvisoryDecorations';
 import {
-    createSuggestionDecorationExtension,
-    dispatchSuggestionUpdate
+  createSuggestionDecorationExtension,
+  dispatchSuggestionUpdate
 } from '../../extensions/SuggestionDecorations';
-import { useAdvisoryAutoRefresh } from '../../hooks/useAdvisoryAutoRefresh';
 import { useAdvisoryStore } from '../../store/advisory';
 import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import { AnySuggestion, SuggestionStore } from '../../store/suggestion/suggestion.types';
@@ -20,9 +19,10 @@ import { wordwiseTheme } from '../../themes/wordwiseTheme';
 import { AdvisoryComment, GrammarSuggestion, SuggestionAction } from '../../types';
 import { findAdvisoryCommentAtPosition } from '../../utils/advisoryComments';
 import {
-    createHarperLinterPlugin,
-    harperDiagnostics,
+  createHarperLinterPlugin,
+  harperDiagnostics,
 } from '../../utils/harperLinterSource';
+import { logger } from '../../utils/logger';
 import AdvisoryPopover from './AdvisoryPopover';
 import SuggestionPopover from './SuggestionPopover';
 
@@ -111,9 +111,9 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   // Advisory state
   const [activeAdvisoryComment, setActiveAdvisoryComment] =
     useState<AdvisoryComment | null>(null);
-
-  // Advisory auto-refresh
-  useAdvisoryAutoRefresh(initialContent, { enabled: true });
+  
+  // Track editor readiness to prevent decoration timing issues
+  const [isEditorReady, setIsEditorReady] = useState(false);
 
   // Floating UI for suggestions
   const { x, y, refs, strategy } = useFloating({
@@ -198,10 +198,23 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
   // Update advisory decorations when advisory store changes
   useEffect(() => {
-    if (viewRef.current) {
+    if (viewRef.current && isEditorReady) {
+      logger.debug(`🎨 Updating advisory decorations with ${comments.length} comments:`, comments);
+      // Add enhanced debug logging
+      logger.debug(`📍 Advisory comments details:`, comments.map(c => ({
+        id: c.id,
+        startIndex: c.startIndex,
+        endIndex: c.endIndex,
+        reason: c.reason,
+        dismissed: c.dismissed,
+        originalText: c.originalText ? `${c.originalText.substring(0, 30)}...` : 'N/A'
+      })));
       dispatchAdvisoryUpdate(viewRef.current, comments);
+      logger.debug('✅ Advisory decoration dispatch completed');
+    } else {
+      logger.debug(`⚠️ Editor not ready for advisory decorations - viewRef: ${!!viewRef.current}, isReady: ${isEditorReady}`);
     }
-  }, [comments]);
+  }, [comments, isEditorReady]);
 
   // Update decorations when suggestion store changes
   useEffect(() => {
@@ -393,14 +406,16 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     });
 
     viewRef.current = view;
+    setIsEditorReady(true);
     onViewReady?.(view);
     
     return () => {
       view.destroy();
       viewRef.current = null;
+      setIsEditorReady(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialContent, placeholder, handleContentChange, findSuggestionAtPosStable, setSuggestionsWithSession, onViewReady, comments]);
+  }, [initialContent, placeholder, handleContentChange, findSuggestionAtPosStable, setSuggestionsWithSession, onViewReady]);
 
   // Handle suggestion actions
   const handleAcceptSuggestion = useCallback(

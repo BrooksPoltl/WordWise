@@ -6,7 +6,6 @@ import { useToneAnalysis } from '../hooks/useToneAnalysis';
 import { useAuthStore } from '../store/auth/auth.store';
 import { autoSaveDocument } from '../store/document/document.actions';
 import { useDocumentStore } from '../store/document/document.store';
-import { AdvisoryModal } from './editor/AdvisoryModal';
 import { DocumentCodeMirrorEditor } from './editor/DocumentCodeMirrorEditor';
 import DocumentSettingsBar from './editor/DocumentSettingsBar';
 import { EditorHeader } from './editor/EditorHeader';
@@ -313,7 +312,6 @@ const DocumentEditor: React.FC = () => {
           loading={storeLoading}
         />
       </main>
-      <AdvisoryModal />
     </div>
   );
 };

@@ -5,8 +5,6 @@ import { logger } from '../../utils/logger';
 interface AdvisoryCommentsResponse {
   originalText: string;
   explanation: string;
-  startIndex: number;
-  endIndex: number;
   reason: string;
 }
 
@@ -29,6 +27,11 @@ export const generateAdvisoryCommentsCall = async (documentContent: string): Pro
     const functions = getFunctions();
     const requestAdvisoryComments = httpsCallable(functions, 'requestAdvisoryComments');
     
+    logger.debug('📤 Sending document content for advisory analysis:', {
+      length: documentContent.length,
+      preview: documentContent.substring(0, 100)
+    });
+    
     const result = await requestAdvisoryComments({ documentContent });
     const data = result.data as AdvisoryCommentsResponse[];
     
@@ -37,19 +40,57 @@ export const generateAdvisoryCommentsCall = async (documentContent: string): Pro
       return [];
     }
     
-    // Transform API response to AdvisoryComment format
-    const comments: AdvisoryComment[] = data.map((comment: AdvisoryCommentsResponse, index: number) => ({
-      id: `advisory-${Date.now()}-${index}`,
-      type: 'anchored' as const,
-      originalText: comment.originalText || '',
-      explanation: comment.explanation || '',
-      startIndex: typeof comment.startIndex === 'number' ? comment.startIndex : 0,
-      endIndex: typeof comment.endIndex === 'number' ? comment.endIndex : 0,
-      reason: isValidReason(comment.reason) ? comment.reason : 'Strengthen a Claim',
-      dismissed: false,
-    }));
+    // Transform API response to AdvisoryComment format with validation
+    const validComments: AdvisoryComment[] = [];
     
-    return comments;
+    data.forEach((comment, index) => {
+      // Find the text position in the document content
+      const startIndex = documentContent.indexOf(comment.originalText);
+      const endIndex = startIndex !== -1 ? startIndex + comment.originalText.length : 0;
+      
+      // Validate that we found the text
+      if (startIndex === -1) {
+        logger.warning(`❌ Could not find text in document for comment ${index}:`, {
+          searchText: comment.originalText,
+          documentLength: documentContent.length
+        });
+        return;
+      }
+      
+      // Double-check the match
+      const actualText = documentContent.slice(startIndex, endIndex);
+      const matches = actualText === comment.originalText;
+      
+      if (!matches) {
+        logger.warning(`❌ Text extraction mismatch for comment ${index}:`, {
+          expected: comment.originalText,
+          actual: actualText,
+          startIndex,
+          endIndex,
+          documentLength: documentContent.length
+        });
+        return;
+      }
+      
+      logger.debug(`✅ Text position found for comment ${index}:`, {
+        text: `${comment.originalText.substring(0, 50)}...`,
+        startIndex,
+        endIndex
+      });
+      
+      validComments.push({
+        id: `advisory-${Date.now()}-${index}`,
+        type: 'anchored' as const,
+        originalText: comment.originalText || '',
+        explanation: comment.explanation || '',
+        startIndex,
+        endIndex,
+        reason: isValidReason(comment.reason) ? comment.reason : 'Strengthen a Claim',
+        dismissed: false,
+      });
+    });
+    
+    return validComments;
   } catch (error) {
     logger.error('Error generating advisory comments:', error);
     throw error;

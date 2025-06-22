@@ -1,6 +1,7 @@
 import { Extension, StateEffect, StateField } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView } from '@codemirror/view';
 import { AdvisoryComment } from '../types';
+import { logger } from '../utils/logger';
 
 // Get CSS class for advisory comment reason
 const getAdvisoryCssClass = (reason: AdvisoryComment['reason']): string => {
@@ -39,22 +40,44 @@ export const advisoryDecorationField = StateField.define<DecorationSet>({
       if (effect.is(updateAdvisoryComments)) {
         const { comments } = effect.value;
         
+        logger.debug(`🔥 Advisory decoration field update triggered with ${comments.length} comments`);
+        
         // Filter visible (non-dismissed) comments
         const visibleComments = comments.filter(comment => !comment.dismissed);
         
+        logger.debug(`🔍 Processing ${visibleComments.length} visible advisory comments for decorations:`, visibleComments);
+        
+        // Check document length
+        const docLength = tr.newDoc.length;
+        logger.debug(`📄 Document length: ${docLength}`);
+        
         // Create decorations
-        const decorationRanges = visibleComments.map(comment => {
-          const cssClass = getAdvisoryCssClass(comment.reason);
-          return Decoration.mark({
-            class: cssClass,
-            attributes: {
-              'data-advisory-id': comment.id,
-              'data-advisory-reason': comment.reason,
+        const decorationRanges = visibleComments
+          .filter(comment => {
+            // Validate indices before creating decorations
+            if (comment.startIndex >= docLength || comment.endIndex > docLength) {
+              logger.warning(`⚠️ Comment ${comment.id} has invalid indices: ${comment.startIndex}-${comment.endIndex} (doc length: ${docLength})`);
+              return false;
             }
-          }).range(comment.startIndex, comment.endIndex);
-        });
+            return true;
+          })
+          .map(comment => {
+            const cssClass = getAdvisoryCssClass(comment.reason);
+            logger.debug(`🎯 Creating decoration for comment ${comment.id}: ${comment.startIndex}-${comment.endIndex} with class ${cssClass}`);
+            
+            return Decoration.mark({
+              class: cssClass,
+              attributes: {
+                'data-advisory-id': comment.id,
+                'data-advisory-reason': comment.reason,
+              }
+            }).range(comment.startIndex, comment.endIndex);
+          });
+        
+        logger.debug(`💫 Created ${decorationRanges.length} advisory decoration ranges`);
         
         newDecorations = Decoration.set(decorationRanges, true);
+        logger.debug(`✨ Applied ${decorationRanges.length} advisory decorations to editor`);
       }
     }
     
@@ -105,7 +128,10 @@ export const dispatchAdvisoryUpdate = (
   view: EditorView,
   comments: AdvisoryComment[]
 ) => {
+  logger.debug('🎨 Dispatching advisory update with comments:', comments);
+  logger.debug(`📊 Editor view state - doc length: ${view.state.doc.length}, selection: ${view.state.selection.main.from}-${view.state.selection.main.to}`);
   view.dispatch({
     effects: updateAdvisoryComments.of({ comments })
   });
+  logger.debug('🚀 Advisory update effect dispatched successfully');
 }; 

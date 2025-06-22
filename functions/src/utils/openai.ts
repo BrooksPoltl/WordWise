@@ -47,6 +47,10 @@ export async function getOpenAICompletion(
 export async function generateAdvisoryComments(documentContent: string): Promise<any[]> {
   const client = getOpenAIClient();
   
+  // Debug: Log the exact content being analyzed
+  console.log('📄 Document content length:', documentContent.length);
+  console.log('📄 Document content preview:', JSON.stringify(documentContent.substring(0, 200)));
+  
   const prompt = `You are an expert writing assistant and editor, specializing in providing high-level, structural, and argumentative feedback on business and technical documents. Your goal is to help users strengthen their writing by focusing on substance, not just style.
 
 You will be given a document as a single block of text. Your task is to analyze this text and identify opportunities for improvement based *only* on the following advisory categories:
@@ -57,26 +61,28 @@ You will be given a document as a single block of text. Your task is to analyze 
 4.  **Add a Clear Call to Action**: Find sections that describe a problem or situation but do not guide the reader on the next steps. Suggest adding a concluding sentence that summarizes the main point or states the desired action.
 5.  **Acknowledge Alternatives**: When a specific solution or proposal is presented, identify the absence of context about other options. Suggest that the user briefly mention alternatives that were considered to strengthen their case.
 
+**CRITICAL WHITESPACE HANDLING:**
+The document text contains important whitespace, line breaks, and formatting. You MUST preserve the exact character positions when calculating startIndex and endIndex. Do NOT normalize or modify whitespace when determining text positions.
+
 **Output Format:**
 You MUST return your response as a valid JSON array of objects. Each object represents a single piece of advice. Your entire response must be ONLY the JSON array, with no other text, explanations, or markdown formatting.
 
 The format for each object in the array MUST be as follows:
 {
   "reason": "<The advisory category, e.g., 'Strengthen a Claim'>",
-  "originalText": "<The exact, verbatim text from the document that your advice pertains to.>",
-  "explanation": "<Your concise advice, written in the second person (e.g., 'Consider adding a data point...')>",
-  "startIndex": "<The starting character index of originalText within the full document as a number>",
-  "endIndex": "<The ending character index of originalText within the full document as a number>"
+  "originalText": "<A unique, substantial snippet of text (minimum 20 characters) from the document that your advice pertains to. Include enough context to make this text unique within the document.>",
+  "explanation": "<Your concise advice, written in the second person (e.g., 'Consider adding a data point...')>"
 }
 
 **Constraints:**
 -   **DO NOT** provide grammatical corrections, stylistic rewrites, or spelling suggestions. Focus exclusively on the five advisory categories listed above.
--   The originalText field in your JSON output must be an *exact* substring of the input document.
--   The startIndex and endIndex values must correspond precisely to the location of originalText. endIndex should be startIndex + originalText.length.
+-   The originalText field must be a substantial, unique snippet (minimum 20 characters) that appears exactly once in the document.
+-   Choose text snippets that are distinctive and unlikely to appear multiple times in the document.
+-   **DO NOT** include startIndex or endIndex - we will calculate these on the frontend.
 -   If you find no instances that fit these categories, you MUST return an empty array: [].
 
 Document to analyze:
-"${documentContent}"`;
+${JSON.stringify(documentContent)}`;
 
   try {
     const response = await client.chat.completions.create({

@@ -62,6 +62,8 @@ export const useAdvisoryStore = create<AdvisoryStore>((set, get) => ({
       
       const comments = await generateAdvisoryCommentsCall(documentContent);
       
+      logger.debug(`📝 Generated ${comments.length} advisory comments:`, comments);
+      
       set({ 
         comments,
         isLoading: false,
@@ -69,7 +71,7 @@ export const useAdvisoryStore = create<AdvisoryStore>((set, get) => ({
         lastAnalysisTimestamp: Date.now()
       });
       
-      logger.debug(`Generated ${comments.length} advisory comments`);
+      logger.debug(`✅ Advisory comments set in store: ${comments.length} comments`);
     } catch (error) {
       logger.error('Failed to refresh advisory comments:', error);
       set({ 
