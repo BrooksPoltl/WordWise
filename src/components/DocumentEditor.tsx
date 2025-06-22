@@ -4,8 +4,10 @@ import { EDITOR_CONFIG } from '../constants/editorConstants';
 import { useAuthStore } from '../store/auth/auth.store';
 import { autoSaveDocument } from '../store/document/document.actions';
 import { useDocumentStore } from '../store/document/document.store';
+import { CodeMirrorEditorRef } from './editor/CodeMirrorEditor';
 import { DocumentCodeMirrorEditor } from './editor/DocumentCodeMirrorEditor';
 import DocumentSettingsBar from './editor/DocumentSettingsBar';
+import ResponsiveToolbar from './editor/ResponsiveToolbar';
 import UpdateContextModal from './editor/UpdateContextModal';
 // import { EditorContainer } from './EditorContainer'; - This will be removed and replaced later
 
@@ -28,6 +30,8 @@ const DocumentEditor: React.FC = () => {
   const titleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isContextModalOpen, setIsContextModalOpen] = useState(false);
   const [isComponentLoading, setIsComponentLoading] = useState(true);
+  const [isEditorReady, setIsEditorReady] = useState(false);
+  const editorRef = useRef<CodeMirrorEditorRef | null>(null);
 
   useEffect(() => {
     if (documentId) {
@@ -281,7 +285,8 @@ const DocumentEditor: React.FC = () => {
             onDocumentTypeChange={handleDocumentTypeChange}
           />
           <div className="bg-white rounded-lg shadow-lg overflow-hidden h-full">
-            <DocumentCodeMirrorEditor />
+            {isEditorReady && <ResponsiveToolbar editorView={editorRef.current?.view || null} />}
+            <DocumentCodeMirrorEditor ref={editorRef} onViewReady={() => setIsEditorReady(true)} />
           </div>
         </div>
         <UpdateContextModal

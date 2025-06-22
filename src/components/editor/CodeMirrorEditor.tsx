@@ -3,7 +3,7 @@ import { Diagnostic } from '@codemirror/lint';
 import { EditorState, Extension, Prec } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
   createSuggestionDecorationExtension,
   dispatchSuggestionUpdate
@@ -68,21 +68,28 @@ const convertDiagnosticToGrammarSuggestion = (
   }
 };
 
+export interface CodeMirrorEditorRef {
+  view: EditorView | null;
+}
+
 interface CodeMirrorEditorProps {
   initialContent?: string;
   onChange?: (content: string) => void;
   placeholder?: string;
   suggestionStore: SuggestionStore;
+  onViewReady?: () => void;
 }
 
-const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
+const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditorProps>(({
   initialContent = '',
   onChange,
   placeholder = 'Start writing...',
   suggestionStore,
-}) => {
+  onViewReady,
+}, ref) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  const [currentEditorView, setCurrentEditorView] = useState<EditorView | null>(null);
   const { setSuggestions } = useSuggestionStore();
   const analysisSessionRef = useRef<object | null>(null); // Track current analysis session
   const suggestionInteractionLock = useRef(false);
@@ -307,14 +314,17 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       parent: editorRef.current,
     });
 
+    setCurrentEditorView(view);
     viewRef.current = view;
+    onViewReady?.();
     
     return () => {
       view.destroy();
+      setCurrentEditorView(null);
       viewRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialContent, placeholder, handleContentChange, findSuggestionAtPosStable, setSuggestionsWithSession]); // refs accessed directly in click handler
+  }, [initialContent, placeholder, handleContentChange, findSuggestionAtPosStable, setSuggestionsWithSession, onViewReady]); // refs accessed directly in click handler
 
   // Handle suggestion actions
   const handleAcceptSuggestion = useCallback(
@@ -407,6 +417,10 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     setActiveSuggestion(null);
   }, []);
 
+  useImperativeHandle(ref, () => ({
+    view: currentEditorView,
+  }), [currentEditorView]);
+
   return (
     <div className="relative w-full h-full">
       <div 
@@ -435,6 +449,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       )}
     </div>
   );
-};
+});
+
+CodeMirrorEditor.displayName = 'CodeMirrorEditor';
 
 export default CodeMirrorEditor; 

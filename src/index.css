@@ -247,3 +247,61 @@ h6 {
 .cm-focused {
   outline: none !important;
 }
+
+/* WYSIWYG Editor Styles */
+.cm-bold {
+    font-weight: bold;
+}
+
+.cm-italic {
+    font-style: italic;
+}
+
+.cm-header-1 {
+    font-size: 2em;
+    font-weight: bold;
+}
+
+.cm-header-2 {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.cm-header-3 {
+    font-size: 1.25em;
+    font-weight: bold;
+}
+
+.cm-blockquote {
+    border-left: 4px solid #ccc;
+    padding-left: 10px;
+    color: #666;
+    font-style: italic;
+}
+
+.cm-code-block {
+    background-color: #f4f4f4;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+.cm-list-item {
+    padding-left: 20px;
+}
+
+.cm-link {
+    color: #0366d6;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.cm-table-row {
+    display: table-row;
+}
+
+.cm-table-cell {
+    display: table-cell;
+    border: 1px solid #ccc;
+    padding: 8px;
+}

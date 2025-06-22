@@ -2,24 +2,31 @@ import React from 'react';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { useDocumentStore } from '../../store/document/document.store';
 import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
-import CodeMirrorEditor from './CodeMirrorEditor';
+import CodeMirrorEditor, { CodeMirrorEditorRef } from './CodeMirrorEditor';
 
-export const DocumentCodeMirrorEditor: React.FC = () => {
-  const { currentDocument } = useDocumentStore();
-  const suggestionStore = useSuggestionStore();
-  
-  // This hook will handle debounced saving
-  const { debouncedSave } = useAutoSave(currentDocument?.id || '');
+interface DocumentCodeMirrorEditorProps {
+  onViewReady?: () => void;
+}
 
-  if (!currentDocument) {
-    return <div>Loading document...</div>;
-  }
+export const DocumentCodeMirrorEditor = React.forwardRef<CodeMirrorEditorRef, DocumentCodeMirrorEditorProps>(({ onViewReady }, ref) => {
+    const { currentDocument } = useDocumentStore();
+    const suggestionStore = useSuggestionStore();
+    
+    const { debouncedSave } = useAutoSave(currentDocument?.id || '');
 
-  return (
-    <CodeMirrorEditor
-      initialContent={currentDocument.content}
-      suggestionStore={suggestionStore}
-      onChange={debouncedSave}
-    />
-  );
-}; 
+    if (!currentDocument) {
+        return <div>Loading document...</div>;
+    }
+
+    return (
+        <CodeMirrorEditor
+            ref={ref}
+            initialContent={currentDocument.content}
+            suggestionStore={suggestionStore}
+            onChange={debouncedSave}
+            onViewReady={onViewReady}
+        />
+    );
+});
+
+DocumentCodeMirrorEditor.displayName = 'DocumentCodeMirrorEditor'; 

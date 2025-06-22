@@ -173,8 +173,8 @@ const SuggestionPopover = React.forwardRef<
           {normalizeDisplayTitle(suggestion.title)}
         </h3>
       </div>
-      <div className="text-gray-700 mb-4 ml-5">{renderMessage(suggestion)}</div>
-      <div className="flex items-center gap-2 ml-5">
+      <div className="text-gray-700 mb-4 ml-3 sm:ml-5">{renderMessage(suggestion)}</div>
+      <div className="flex items-center gap-2 ml-3 sm:ml-5">
         {shouldShowFixButton && (
           <button
             type="button"
@@ -187,7 +187,7 @@ const SuggestionPopover = React.forwardRef<
         <button
           type="button"
           onClick={() => onIgnore(suggestion)}
-          className="text-gray-600 font-medium hover:text-gray-800"
+          className="text-gray-600 font-medium hover:text-gray-800 px-2 py-1"
         >
           Ignore
         </button>
