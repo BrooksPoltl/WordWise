@@ -16,17 +16,28 @@ const DocumentEditor: React.FC = () => {
   const {
     currentDocument,
     fetchDocument,
-    loading,
+    loading: storeLoading,
     error,
-    clearError,
   } = useDocumentStore();
 
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [title, setTitle] = useState(currentDocument?.title || '');
+  const [title, setTitle] = useState('');
   const titleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isContextModalOpen, setIsContextModalOpen] = useState(false);
+  const [isComponentLoading, setIsComponentLoading] = useState(true);
+
+  useEffect(() => {
+    if (documentId) {
+      setIsComponentLoading(true);
+      fetchDocument(documentId).finally(() => {
+        setIsComponentLoading(false);
+      });
+    } else {
+      setIsComponentLoading(false);
+    }
+  }, [documentId, fetchDocument]);
 
   useEffect(() => {
     if (currentDocument) {
@@ -91,19 +102,7 @@ const DocumentEditor: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (documentId) {
-      fetchDocument(documentId);
-    }
-
-    return () => {
-      clearError();
-    };
-  }, [documentId, fetchDocument, clearError]);
-
-  const handleBackToDashboard = () => {
-    navigate('/dashboard');
-  };
+  const isLoading = storeLoading || isComponentLoading;
 
   if (!user) {
     return (
@@ -113,7 +112,7 @@ const DocumentEditor: React.FC = () => {
     );
   }
 
-  if (loading && !currentDocument) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -134,7 +133,7 @@ const DocumentEditor: React.FC = () => {
           </h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button type="button"
-            onClick={handleBackToDashboard}
+            onClick={() => navigate('/dashboard')}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Back to Dashboard
@@ -156,7 +155,7 @@ const DocumentEditor: React.FC = () => {
             The document you&apos;re looking for doesn&apos;t exist.
           </p>
           <button type="button"
-            onClick={handleBackToDashboard}
+            onClick={() => navigate('/dashboard')}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Back to Dashboard
@@ -175,7 +174,7 @@ const DocumentEditor: React.FC = () => {
             <div className="flex items-center space-x-4">
               <button
                 type="button"
-                onClick={handleBackToDashboard}
+                onClick={() => navigate('/dashboard')}
                 className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <svg
@@ -289,7 +288,7 @@ const DocumentEditor: React.FC = () => {
           onClose={() => setIsContextModalOpen(false)}
           onSave={handleContextUpdate}
           initialContext={currentDocument?.context || ''}
-          loading={loading}
+          loading={storeLoading}
         />
       </main>
     </div>

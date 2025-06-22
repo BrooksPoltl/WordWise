@@ -63,7 +63,7 @@ const App: React.FC = () => {
               <>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/documents" element={<DocumentList />} />
-                <Route path="/editor/:id" element={<DocumentEditor />} />
+                <Route path="/editor/:documentId" element={<DocumentEditor />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/*" element={<Navigate to="/dashboard" />} />
               </>
