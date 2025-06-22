@@ -1,81 +1,179 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { ADVISORY_CATEGORIES } from '../../constants/advisoryConstants';
 import { useAdvisoryStore } from '../../store/advisory';
-import AdvisoryCard from './AdvisoryCard';
 
-export const AdvisoryModal: React.FC = () => {
-  const { comments, isLoading, error, dismissComment } = useAdvisoryStore();
+interface AdvisoryModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
-  // Since we're now using inline comments, this modal can be simplified
-  // or potentially removed entirely in favor of the inline popover system
+export const AdvisoryModal: React.FC<AdvisoryModalProps> = ({ isOpen, onClose }) => {
+  const { comments, dismissComment, dismissCommentPermanently } = useAdvisoryStore();
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Filter to only visible (non-dismissed) comments
   const visibleComments = comments.filter(comment => !comment.dismissed);
+  const currentComment = visibleComments[currentIndex];
 
-  if (visibleComments.length === 0 && !isLoading && !error) {
+  // Reset to first comment when modal opens or comments change
+  useEffect(() => {
+    if (isOpen && visibleComments.length > 0) {
+      setCurrentIndex(0);
+    }
+  }, [isOpen, visibleComments.length]);
+
+  // Close modal if no comments left
+  useEffect(() => {
+    if (isOpen && visibleComments.length === 0) {
+      onClose();
+    }
+  }, [isOpen, visibleComments.length, onClose]);
+
+  if (!isOpen || !currentComment) {
     return null;
   }
 
+  const category = ADVISORY_CATEGORIES[currentComment.reason];
+
+  const handleNext = () => {
+    if (currentIndex < visibleComments.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const handleDismissTemporary = () => {
+    dismissComment(currentComment.id);
+    // Auto-advance to next comment or close if this was the last
+    if (currentIndex >= visibleComments.length - 1) {
+      if (currentIndex > 0) {
+        setCurrentIndex(currentIndex - 1);
+      } else {
+        onClose();
+      }
+    }
+  };
+
+  const handleDismissPermanent = () => {
+    dismissCommentPermanently(currentComment);
+    // Auto-advance to next comment or close if this was the last
+    if (currentIndex >= visibleComments.length - 1) {
+      if (currentIndex > 0) {
+        setCurrentIndex(currentIndex - 1);
+      } else {
+        onClose();
+      }
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Advisory Comments
-          </h2>
-          <p className="text-sm text-gray-600 mt-1">
-            AI-powered suggestions to improve your document
-          </p>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-amber-50 rounded-lg border border-amber-200 shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-amber-200">
+          <div className="flex items-center">
+            <span className="h-4 w-4 rounded-full bg-amber-500 mr-3" />
+            <h2 className="text-xl font-semibold text-amber-900">
+              {category?.label || 'Advisory Comment'}
+            </h2>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-amber-700">
+              {currentIndex + 1} of {visibleComments.length}
+            </span>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-amber-600 hover:text-amber-800 p-1 rounded hover:bg-amber-100"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        <div className="px-6 py-4 max-h-96 overflow-y-auto">
-          {isLoading && (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
-              <span className="ml-3 text-gray-600">Analyzing document...</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
-              <div className="flex">
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">
-                    Error generating suggestions
-                  </h3>
-                  <div className="mt-2 text-sm text-red-700">
-                    <p>{error}</p>
-                  </div>
-                </div>
+        {/* Content */}
+        <div className="p-6">
+          {/* Original Text */}
+          {currentComment.originalText && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-amber-800 mb-2">Selected Text:</h3>
+              <div className="bg-amber-100 rounded-lg px-4 py-3 text-amber-900 border-l-4 border-amber-400">
+                &ldquo;{currentComment.originalText}&rdquo;
               </div>
             </div>
           )}
 
-          {!isLoading && !error && visibleComments.length === 0 && (
-            <div className="text-center py-8">
-              <div className="text-gray-400 mb-2">
-                <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-1">No suggestions available</h3>
-              <p className="text-gray-600">
-                Your document looks good! Try writing more content to get AI-powered suggestions.
+          {/* Explanation */}
+          <div className="mb-6">
+            <h3 className="text-sm font-medium text-amber-800 mb-2">Suggestion:</h3>
+            <p className="text-amber-800 leading-relaxed">
+              {currentComment.explanation}
+            </p>
+          </div>
+
+          {/* Category Description */}
+          {category?.description && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-amber-800 mb-2">About This Category:</h3>
+              <p className="text-sm text-amber-700">
+                {category.description}
               </p>
             </div>
           )}
+        </div>
 
-          {!isLoading && !error && visibleComments.length > 0 && (
-            <div className="space-y-4">
-              <div className="text-sm text-gray-600 mb-4">
-                Found {visibleComments.length} suggestion{visibleComments.length !== 1 ? 's' : ''} for improvement:
-              </div>
-              {visibleComments.map((comment) => (
-                <AdvisoryCard
-                  key={comment.id}
-                  comment={comment}
-                  onDismiss={dismissComment}
-                />
-              ))}
-            </div>
-          )}
+        {/* Footer */}
+        <div className="flex items-center justify-between p-6 border-t border-amber-200 bg-amber-25">
+          {/* Navigation */}
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              onClick={handlePrevious}
+              disabled={currentIndex === 0}
+              className="px-3 py-2 text-sm text-amber-700 hover:text-amber-900 disabled:text-amber-400 disabled:cursor-not-allowed flex items-center"
+            >
+              <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={currentIndex >= visibleComments.length - 1}
+              className="px-3 py-2 text-sm text-amber-700 hover:text-amber-900 disabled:text-amber-400 disabled:cursor-not-allowed flex items-center"
+            >
+              Next
+              <svg className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center space-x-3">
+            <button
+              type="button"
+              onClick={handleDismissTemporary}
+              className="px-4 py-2 text-sm text-amber-700 hover:text-amber-900 border border-amber-300 hover:border-amber-400 rounded hover:bg-amber-100"
+            >
+              Skip This Time
+            </button>
+            <button
+              type="button"
+              onClick={handleDismissPermanent}
+              className="px-4 py-2 text-sm text-white bg-amber-600 hover:bg-amber-700 rounded border border-amber-600 hover:border-amber-700"
+            >
+              Never Show Again
+            </button>
+          </div>
         </div>
       </div>
     </div>

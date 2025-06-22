@@ -139,4 +139,41 @@ export const findTextPositionInDocument = (
   const endIndex = startIndex + cleanTargetText.length;
   
   return { startIndex, endIndex };
-}; 
+};
+
+/**
+ * Create a hash for a text + category combination for dismissal tracking
+ */
+export const createAdvisoryHash = (text: string, category: string): string => {
+  // Simple hash function for text + category combination
+  const combined = `${text.trim().toLowerCase()}::${category}`;
+  let hash = 0;
+  for (let i = 0; i < combined.length; i += 1) {
+    const char = combined.charCodeAt(i);
+    hash = (hash * 31) + char;
+    hash = Math.abs(hash) % 2147483647; // Keep it within bounds
+  }
+  return hash.toString(36);
+};
+
+/**
+ * Check if a comment should be filtered out based on dismissed hashes
+ */
+export const shouldFilterComment = (
+  comment: AdvisoryComment,
+  dismissedHashes: Set<string>
+): boolean => {
+  if (!comment.originalText || !comment.reason) return false;
+  
+  const hash = createAdvisoryHash(comment.originalText, comment.reason);
+  return dismissedHashes.has(hash);
+};
+
+/**
+ * Filter comments based on dismissed hashes
+ */
+export const filterDismissedComments = (
+  comments: AdvisoryComment[],
+  dismissedHashes: Set<string>
+): AdvisoryComment[] => 
+  comments.filter(comment => !shouldFilterComment(comment, dismissedHashes)); 
