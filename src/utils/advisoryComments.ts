@@ -26,14 +26,16 @@ const getTextNodesInElement = (element: HTMLElement): Text[] => {
 export const findAdvisoryCommentAtPosition = (
   comments: AdvisoryComment[],
   position: number
-): AdvisoryComment | null => (
-  comments.find(
-    comment => 
-      !comment.dismissed &&
-      comment.startIndex <= position && 
-      comment.endIndex >= position
-  ) || null
-);
+): AdvisoryComment | null => {
+  const comment = comments.find(
+    (c) =>
+      !c.dismissed &&
+      c.startIndex <= position &&
+      c.endIndex >= position
+  );
+
+  return comment || null;
+};
 
 /**
  * Validate advisory comment indices against document content
@@ -117,4 +119,24 @@ export const getVisibleAdvisoryComments = (
   comments: AdvisoryComment[]
 ): AdvisoryComment[] => (
   comments.filter(comment => !comment.dismissed)
-); 
+);
+
+export const findTextPositionInDocument = (
+  documentContent: string,
+  targetText: string
+): { startIndex: number; endIndex: number } | null => {
+  if (!targetText || targetText.length < 20) {
+    return null;
+  }
+
+  const cleanTargetText = targetText.trim();
+  const startIndex = documentContent.indexOf(cleanTargetText);
+  
+  if (startIndex === -1) {
+    return null;
+  }
+
+  const endIndex = startIndex + cleanTargetText.length;
+  
+  return { startIndex, endIndex };
+}; 

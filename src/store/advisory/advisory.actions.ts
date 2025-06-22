@@ -27,19 +27,14 @@ export const generateAdvisoryCommentsCall = async (documentContent: string): Pro
     const functions = getFunctions();
     const requestAdvisoryComments = httpsCallable(functions, 'requestAdvisoryComments');
     
-    logger.debug('📤 Sending document content for advisory analysis:', {
-      length: documentContent.length,
-      preview: documentContent.substring(0, 100)
-    });
-    
     const result = await requestAdvisoryComments({ documentContent });
     const data = result.data as AdvisoryCommentsResponse[];
-    
+
     if (!Array.isArray(data)) {
       logger.warning('Invalid advisory comments response format:', data);
       return [];
     }
-    
+
     // Transform API response to AdvisoryComment format with validation
     const validComments: AdvisoryComment[] = [];
     
@@ -50,10 +45,6 @@ export const generateAdvisoryCommentsCall = async (documentContent: string): Pro
       
       // Validate that we found the text
       if (startIndex === -1) {
-        logger.warning(`❌ Could not find text in document for comment ${index}:`, {
-          searchText: comment.originalText,
-          documentLength: documentContent.length
-        });
         return;
       }
       
@@ -62,21 +53,8 @@ export const generateAdvisoryCommentsCall = async (documentContent: string): Pro
       const matches = actualText === comment.originalText;
       
       if (!matches) {
-        logger.warning(`❌ Text extraction mismatch for comment ${index}:`, {
-          expected: comment.originalText,
-          actual: actualText,
-          startIndex,
-          endIndex,
-          documentLength: documentContent.length
-        });
         return;
       }
-      
-      logger.debug(`✅ Text position found for comment ${index}:`, {
-        text: `${comment.originalText.substring(0, 50)}...`,
-        startIndex,
-        endIndex
-      });
       
       validComments.push({
         id: `advisory-${Date.now()}-${index}`,
@@ -89,7 +67,7 @@ export const generateAdvisoryCommentsCall = async (documentContent: string): Pro
         dismissed: false,
       });
     });
-    
+
     return validComments;
   } catch (error) {
     logger.error('Error generating advisory comments:', error);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ADVISORY_CATEGORIES } from '../../constants/advisoryConstants';
 import { AdvisoryComment } from '../../types';
+import { logger } from '../../utils/logger';
 
 interface AdvisoryPopoverProps {
   comment: AdvisoryComment;
@@ -10,7 +11,19 @@ interface AdvisoryPopoverProps {
 
 const AdvisoryPopover = React.forwardRef<HTMLDivElement, AdvisoryPopoverProps>(
   ({ comment, onDismiss, style }, ref) => {
+    // Defensive check for comment validity
+    if (!comment || !comment.reason) {
+      logger.warning('AdvisoryPopover received invalid comment:', comment);
+      return null;
+    }
+    
     const category = ADVISORY_CATEGORIES[comment.reason];
+    
+    // Defensive check for category validity
+    if (!category) {
+      logger.warning('AdvisoryPopover: Unknown advisory category:', comment.reason);
+      return null;
+    }
     
     const handleDismiss = () => {
       onDismiss(comment.id);

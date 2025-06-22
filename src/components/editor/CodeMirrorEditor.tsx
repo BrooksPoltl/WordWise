@@ -22,7 +22,6 @@ import {
   createHarperLinterPlugin,
   harperDiagnostics,
 } from '../../utils/harperLinterSource';
-import { logger } from '../../utils/logger';
 import AdvisoryPopover from './AdvisoryPopover';
 import SuggestionPopover from './SuggestionPopover';
 
@@ -101,6 +100,10 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   
   // Advisory store integration
   const { comments, dismissComment } = useAdvisoryStore();
+  
+  // Use ref to access current comments in click handler to avoid stale closure
+  const commentsRef = useRef(comments);
+  commentsRef.current = comments;
 
   const analysisSessionRef = useRef<object | null>(null);
   const suggestionInteractionLock = useRef(false);
@@ -199,20 +202,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   // Update advisory decorations when advisory store changes
   useEffect(() => {
     if (viewRef.current && isEditorReady) {
-      logger.debug(`🎨 Updating advisory decorations with ${comments.length} comments:`, comments);
-      // Add enhanced debug logging
-      logger.debug(`📍 Advisory comments details:`, comments.map(c => ({
-        id: c.id,
-        startIndex: c.startIndex,
-        endIndex: c.endIndex,
-        reason: c.reason,
-        dismissed: c.dismissed,
-        originalText: c.originalText ? `${c.originalText.substring(0, 30)}...` : 'N/A'
-      })));
       dispatchAdvisoryUpdate(viewRef.current, comments);
-      logger.debug('✅ Advisory decoration dispatch completed');
-    } else {
-      logger.debug(`⚠️ Editor not ready for advisory decorations - viewRef: ${!!viewRef.current}, isReady: ${isEditorReady}`);
     }
   }, [comments, isEditorReady]);
 
@@ -259,6 +249,19 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     }
   }, [suggestionStore, activeSuggestion]);
 
+  // Clear activeAdvisoryComment if it no longer exists in the store
+  useEffect(() => {
+    if (activeAdvisoryComment) {
+      // Check if the active advisory comment still exists
+      const stillExists = comments.some(c => c.id === activeAdvisoryComment.id);
+      
+      if (!stillExists) {
+        setActiveAdvisoryComment(null); // Clear stale advisory comment
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comments]); // Only run when comments change, not when activeAdvisoryComment changes
+
   // This effect synchronizes the editor content with the `initialContent` prop.
   // It's crucial for scenarios where the document is loaded asynchronously.
   useEffect(() => {
@@ -295,10 +298,12 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       Prec.high(EditorView.domEventHandlers({
         click: (event: MouseEvent, view: EditorView) => {
           const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+          const currentComments = commentsRef.current; // Use ref to get current comments
+          
           if (pos === null) return;
 
           // Check for advisory comment at position first
-          const advisoryComment = findAdvisoryCommentAtPosition(comments, pos);
+          const advisoryComment = findAdvisoryCommentAtPosition(currentComments, pos);
           if (advisoryComment) {
             event.preventDefault();
             event.stopPropagation();

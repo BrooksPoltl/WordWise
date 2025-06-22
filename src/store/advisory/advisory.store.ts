@@ -13,19 +13,21 @@ const initialState: AdvisoryState = {
 export const useAdvisoryStore = create<AdvisoryStore>((set, get) => ({
   ...initialState,
 
-  setComments: (comments) => 
+  setComments: (comments) => {
     set({ 
       comments, 
       lastAnalysisTimestamp: Date.now(),
       error: null 
-    }),
+    });
+  },
 
-  clearComments: () => 
-    set({ comments: [] }),
+  clearComments: () => {
+    set({ comments: [] });
+  },
 
   dismissComment: (commentId) =>
-    set(state => ({
-      comments: state.comments.map(comment =>
+    set((state: AdvisoryState) => ({
+      comments: state.comments.map((comment) =>
         comment.id === commentId
           ? { ...comment, dismissed: true }
           : comment
@@ -43,26 +45,19 @@ export const useAdvisoryStore = create<AdvisoryStore>((set, get) => ({
     
     // Don't refresh if already loading
     if (currentState.isLoading) {
-      logger.debug('Advisory comment refresh already in progress');
       return;
     }
 
     // Don't refresh if content is too short
     if (!documentContent || documentContent.trim().length < 50) {
-      logger.debug('Document content too short for advisory analysis');
-      set({ comments: [], error: null });
       return;
     }
 
     try {
       set({ isLoading: true, error: null });
       
-      // Clear existing comments before generating new ones
-      set(prevState => ({ ...prevState, comments: [] }));
-      
+      // Keep existing comments visible until new ones are ready
       const comments = await generateAdvisoryCommentsCall(documentContent);
-      
-      logger.debug(`📝 Generated ${comments.length} advisory comments:`, comments);
       
       set({ 
         comments,
@@ -70,14 +65,12 @@ export const useAdvisoryStore = create<AdvisoryStore>((set, get) => ({
         error: null,
         lastAnalysisTimestamp: Date.now()
       });
-      
-      logger.debug(`✅ Advisory comments set in store: ${comments.length} comments`);
     } catch (error) {
       logger.error('Failed to refresh advisory comments:', error);
       set({ 
         isLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to generate advisory comments',
-        comments: [] 
+        error: error instanceof Error ? error.message : 'Failed to generate advisory comments'
+        // Keep existing comments on error instead of clearing them
       });
     }
   },
