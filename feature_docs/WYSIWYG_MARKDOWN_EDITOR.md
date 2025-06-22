@@ -1,30 +1,93 @@
-# WYSIWYG Markdown Editor Enhancement
+# Enhanced Markdown Editor
 
 ## Executive Summary
 
-**WYSIWYG Markdown Editor Enhancement**
-
-Transform WordWise's basic CodeMirror editor into a modern, dual-mode document editor that combines the power of markdown with intuitive WYSIWYG editing. Users can seamlessly toggle between raw markdown and visual editing modes while maintaining mobile-first responsive design and deep integration with existing AI features.
+This document outlines the plan to enhance WordWise's CodeMirror editor with a powerful and intuitive toolbar for inserting markdown syntax. This enhancement focuses on improving the user experience for our target audience—Product Managers and Software Engineers—by providing quick access to common formatting options without requiring them to manually type markdown. This approach prioritizes simplicity and efficiency over a full WYSIWYG implementation.
 
 **Key Features:**
-- **Dual-Mode Editing**: Toggle between raw markdown and WYSIWYG views
-- **Visual Formatting**: Click Bold to see **bold text**, not `**bold**` syntax  
-- **Mobile-First Design**: Responsive toolbar, touch-friendly interactions
-- **AI Integration**: Tone detection overlay, enhanced spell checking with visual indicators
-- **Business Document Focus**: Optimized for Product Managers and Software Engineers
-- **Elegant & Minimal**: Word-like functionality with clean, modern interface
+- **Markdown Toolbar**: A responsive toolbar with buttons to insert markdown syntax for standard formatting.
+- **Core Formatting**: Support for bold, italics, headers, lists, links, blockquotes, and tables.
+- **Mobile-First Design**: A responsive toolbar that works seamlessly on all devices.
+- **AI Integration**: Retains all existing AI-powered suggestions and analysis features within the raw markdown context.
 
 **Technical Approach:**
-- Enhance existing CodeMirror setup with custom text decorations and markText API
-- Implement bidirectional conversion between markdown source and visual rendering
-- Create responsive toolbar system with mobile collapse/expand behavior
-- Integrate AI suggestions directly into the visual editing experience
+- Extend the existing CodeMirror 6 setup.
+- Create a library of editor commands in `src/utils/editorCommands.ts` that use the CodeMirror `dispatch` API to programmatically insert or modify markdown syntax.
+- Build a responsive toolbar component (`src/components/editor/ResponsiveToolbar.tsx`) that utilizes these commands.
 
 **Impact:**
-- Dramatically improved user experience for business document creation
-- Reduced learning curve for non-technical users
-- Enhanced mobile editing capabilities
-- Better integration of AI features with visual context
+- Streamlined document creation for users who prefer markdown but want GUI shortcuts.
+- Maintains the speed and simplicity of a raw markdown editor.
+- Solid foundation for adding more complex markdown-based features.
+
+---
+
+## Detailed Task Breakdown
+
+| Priority | Task Description | Implementation Details | Code Pointers | Dependencies | Status |
+|----------|------------------|----------------------|---------------|--------------|--------|
+| **P0** | **Toolbar & Core Commands** | | | | |
+| P0 | Implement Responsive Toolbar | Create a toolbar that adapts to different screen sizes. | `src/components/editor/ResponsiveToolbar.tsx` | CodeMirror 6 | ✅ Done |
+| P0 | Implement Toolbar Commands for Bold/Italic | Add `toggleMark` command for `**` and `*` syntax. Add buttons to the toolbar. | `src/utils/editorCommands.ts`, `ResponsiveToolbar.tsx` | Toolbar | ✅ Done |
+| P0 | Implement Toolbar Commands for Headers (H1-H3) | Add `toggleHeader` command for `#`, `##`, `###` syntax. Add buttons to the toolbar. | `src/utils/editorCommands.ts`, `ResponsiveToolbar.tsx` | Toolbar | ✅ Done |
+| **P1** | **Additional Formatting Support** | | | | |
+| P1 | Implement Toolbar Command for Links | Add `toggleLink` command. Prompt user for URL and wrap selection in `[text](url)` syntax. Add button to toolbar. | `src/utils/editorCommands.ts`, `ResponsiveToolbar.tsx` | Toolbar | ⏳ Next Up |
+| P1 | Implement Toolbar Command for Tables | Add `insertTable` command. Prompt user for rows/columns and insert a markdown table template. Add button to toolbar. | `src/utils/editorCommands.ts`, `ResponsiveToolbar.tsx` | Toolbar | ⏳ Next Up |
+| P2 | Implement Toolbar Command for Lists (Unordered/Ordered) | Add commands to toggle bullet (`-`) and numbered (`1.`) list items on selected lines. | `src/utils/editorCommands.ts`, `ResponsiveToolbar.tsx` | Toolbar | 📝 Planned |
+| P2 | Implement Toolbar Command for Blockquotes | Add command to toggle blockquote (`>`) syntax on selected lines. | `src/utils/editorCommands.ts`, `ResponsiveToolbar.tsx` | Toolbar | 📝 Planned |
+| P2 | Implement Toolbar Command for Code (Inline/Block) | Add commands to wrap selection in backticks (`` ` ``) or triple-backticks (```` ``` ````). | `src/utils/editorCommands.ts`, `ResponsiveToolbar.tsx` | Toolbar | 📝 Planned |
+| **Cancelled** | **WYSIWYG Features** | | | | |
+| N/A | Create WYSIWYG text decoration system | *Removed due to strategy pivot to pure markdown.* | `src/extensions/WysiwygDecorations.ts` | - | ❌ Cancelled |
+| N/A | Build markdown parser for visual rendering | *Removed due to strategy pivot to pure markdown.* | `src/utils/markdownParser.ts` | - |
+| N/A | Implement mode toggle functionality | *Removed due to strategy pivot to pure markdown.* | `src/components/editor/ModeToggle.tsx`, `src/store/editor/` | - | ❌ Cancelled |
+
+---
+
+## Technical Architecture Details
+
+The editor enhancement is built directly on top of CodeMirror 6, leveraging its powerful API to programmatically manipulate the document's content. The core of this functionality resides in a set of command functions.
+
+### Editor Commands (`editorCommands.ts`)
+
+A central file, `src/utils/editorCommands.ts`, exports functions that take an `EditorView` instance and apply specific markdown formatting. These functions use the `view.dispatch` method with `changes` to insert text or wrap selections.
+
+- `toggleMark(view, mark)`: Wraps/unwraps a selection with a given mark (e.g., `*` for italics).
+- `toggleHeader(view, level)`: Adds/removes header syntax (`#`) at the start of a line.
+- `toggleLink(view)`: Prompts for a URL and wraps the selection in markdown link syntax.
+- `insertTable(view)`: Inserts a markdown table template at the cursor position.
+
+**Example Command:**
+```typescript
+// src/utils/editorCommands.ts
+export const toggleMark = (view: EditorView | null, mark: string) => {
+    if (!view) return;
+
+    const { state, dispatch } = view;
+    const { from, to } = state.selection.main;
+    const selection = state.doc.sliceString(from, to);
+    
+    // Check if the selection is already wrapped with the mark
+    const isMarked = selection.startsWith(mark) && selection.endsWith(mark);
+    
+    let change;
+    if (isMarked) {
+        // Unwrap the mark
+        const newSelection = selection.slice(mark.length, selection.length - mark.length);
+        change = { from, to, insert: newSelection };
+    } else {
+        // Wrap with the mark
+        change = { from, to, insert: `${mark}${selection}${mark}` };
+    }
+    
+    dispatch({ changes: change });
+};
+```
+
+### Responsive Toolbar (`ResponsiveToolbar.tsx`)
+
+The UI component, `src/components/editor/ResponsiveToolbar.tsx`, consumes the `EditorView` instance passed down from the main editor component. It contains buttons that, when clicked, invoke the corresponding functions from `editorCommands.ts`, passing the active `EditorView`. This cleanly separates the UI from the editor logic.
+
+This architecture is simple, maintainable, and directly utilizes the CodeMirror API for all operations, ensuring stability and performance.
 
 ---
 
