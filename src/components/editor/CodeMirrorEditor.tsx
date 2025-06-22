@@ -5,18 +5,16 @@ import { EditorView, keymap } from '@codemirror/view';
 import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  createSuggestionDecorationExtension,
-  dispatchSuggestionUpdate
+    createSuggestionDecorationExtension,
+    dispatchSuggestionUpdate
 } from '../../extensions/SuggestionDecorations';
-import { WysiwygDecorations } from '../../extensions/WysiwygDecorations';
-import { useEditorStore } from '../../store/editor/editor.store';
 import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import { AnySuggestion, SuggestionStore } from '../../store/suggestion/suggestion.types';
 import { wordwiseTheme } from '../../themes/wordwiseTheme';
 import { GrammarSuggestion, SuggestionAction } from '../../types';
 import {
-  createHarperLinterPlugin,
-  harperDiagnostics,
+    createHarperLinterPlugin,
+    harperDiagnostics,
 } from '../../utils/harperLinterSource';
 import SuggestionPopover from './SuggestionPopover';
 
@@ -92,7 +90,6 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const { setSuggestions } = useSuggestionStore();
-  const editorMode = useEditorStore((state) => state.mode);
 
   const analysisSessionRef = useRef<object | null>(null);
   const suggestionInteractionLock = useRef(false);
@@ -307,10 +304,6 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       Prec.high(keymap.of(defaultKeymap)),
     ];
 
-    if (editorMode === 'wysiwyg') {
-      extensions.push(WysiwygDecorations());
-    }
-
     const startState = EditorState.create({
       doc: initialContent,
       extensions,
@@ -329,7 +322,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       viewRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialContent, placeholder, handleContentChange, findSuggestionAtPosStable, setSuggestionsWithSession, onViewReady, editorMode]); // refs accessed directly in click handler
+  }, [initialContent, placeholder, handleContentChange, findSuggestionAtPosStable, setSuggestionsWithSession, onViewReady]); // refs accessed directly in click handler
 
   // Handle suggestion actions
   const handleAcceptSuggestion = useCallback(

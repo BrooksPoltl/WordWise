@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { DOCUMENT_TYPES_BY_ROLE } from '../../constants/documentConstants';
-import ModeToggle from './ModeToggle';
 
 interface DocumentSettingsBarProps {
   onOpenContextModal: () => void;
@@ -20,14 +19,15 @@ const DocumentSettingsBar: React.FC<DocumentSettingsBarProps> = ({
 
   const getAvailableTypes = () => {
     let allTypes: string[] = [];
-    
     if (userRole === 'Product Manager') {
-      allTypes = DOCUMENT_TYPES_BY_ROLE['Product Manager'].map(type => type.name);
+      allTypes = DOCUMENT_TYPES_BY_ROLE['Product Manager'].map(
+        type => type.name,
+      );
     } else if (userRole === 'Software Engineer') {
-      allTypes = DOCUMENT_TYPES_BY_ROLE['Software Engineer'].map(type => type.name);
+      allTypes = DOCUMENT_TYPES_BY_ROLE['Software Engineer'].map(
+        type => type.name,
+      );
     }
-    
-    // Filter out the current document type
     return allTypes.filter(type => type !== currentDocumentType);
   };
 
@@ -35,17 +35,19 @@ const DocumentSettingsBar: React.FC<DocumentSettingsBarProps> = ({
 
   const handleSelect = async (type: string) => {
     setIsOpen(false);
-    
     try {
       await onDocumentTypeChange(type);
     } catch (error) {
-      // Error handling is done in parent component
+      // Error handling is in parent
     }
   };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -65,11 +67,23 @@ const DocumentSettingsBar: React.FC<DocumentSettingsBarProps> = ({
             className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
           >
             {currentDocumentType || 'Select Type'}
-            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            <svg
+              className="w-4 h-4 ml-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
           </button>
           {isOpen && availableTypes.length > 0 && (
             <div className="absolute mt-1 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-              {availableTypes.map((type: string) => (
+              {availableTypes.map(type => (
                 <button
                   key={type}
                   type="button"
@@ -97,7 +111,6 @@ const DocumentSettingsBar: React.FC<DocumentSettingsBarProps> = ({
           Context
         </button>
       </div>
-      <ModeToggle />
     </div>
   );
 };
