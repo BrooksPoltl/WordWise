@@ -97,26 +97,31 @@ export const createSuggestionDecorationExtension = (): Extension => [
     '.wordwise-suggestion-grammar': {
       textDecoration: 'underline wavy',
       textDecorationColor: '#ef4444',
+      backgroundColor: 'rgba(239, 68, 68, 0.1)',
       cursor: 'pointer',
     },
     '.wordwise-suggestion-clarity': {
       textDecoration: 'underline wavy',
       textDecorationColor: '#3b82f6',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
       cursor: 'pointer',
     },
     '.wordwise-suggestion-conciseness': {
       textDecoration: 'underline wavy',
       textDecorationColor: '#22c55e',
+      backgroundColor: 'rgba(34, 197, 94, 0.1)',
       cursor: 'pointer',
     },
     '.wordwise-suggestion-readability': {
       textDecoration: 'underline wavy',
       textDecorationColor: '#a855f7',
+      backgroundColor: 'rgba(168, 85, 247, 0.1)',
       cursor: 'pointer',
     },
     '.wordwise-suggestion-passive': {
       textDecoration: 'underline wavy',
       textDecorationColor: '#f97316',
+      backgroundColor: 'rgba(249, 115, 22, 0.1)',
       cursor: 'pointer',
     },
   }),

@@ -31,6 +31,11 @@ const convertDiagnosticToGrammarSuggestion = (
       word: '', // Will be populated from the actual text
       type: type || 'grammar',
       title: title || 'Grammar',
+      explanation: text, // Use the parsed text as explanation
+      actions: diagnostic.actions?.map(action => ({
+        type: 'replace' as const,
+        text: action.name,
+      })) || [],
       suggestions:
         diagnostic.actions?.map(action => ({
           id: action.name,
@@ -48,6 +53,11 @@ const convertDiagnosticToGrammarSuggestion = (
       word: '', // Will be populated from the actual text
       type: 'grammar',
       title: 'Grammar', // Default title for CodeMirror diagnostics
+      explanation: diagnostic.message, // Use the message as explanation
+      actions: diagnostic.actions?.map(action => ({
+        type: 'replace' as const,
+        text: action.name,
+      })) || [],
       suggestions:
         diagnostic.actions?.map(action => ({
           id: action.name,

@@ -5,6 +5,7 @@ import {
   SuggestionCategory,
 } from '../../store/suggestion/suggestion.types';
 import { BaseSuggestion, SuggestionAction, SuggestionType } from '../../types';
+import { logger } from '../../utils/logger';
 
 interface SuggestionPopoverProps {
   suggestion: AnySuggestion;
@@ -123,6 +124,15 @@ const SuggestionPopover = React.forwardRef<
   };
 
   const renderMessage = (s: BaseSuggestion) => {
+    logger.debug('renderMessage called with suggestion:', {
+      type: s.type,
+      explanation: s.explanation,
+      actions: s.actions,
+      hasActions: !!s.actions,
+      firstActionType: s.actions?.[0]?.type,
+      firstActionText: s.actions?.[0]?.type === 'replace' ? s.actions[0].text : undefined
+    });
+
     if (s.type === 'spelling' && s.actions?.[0]?.type === 'replace') {
       return (
         <span>
@@ -139,6 +149,12 @@ const SuggestionPopover = React.forwardRef<
     suggestion.actions?.[0].text
       ? suggestion.actions[0].text
       : 'Fix';
+
+  const shouldShowFixButton = 
+    'actions' in suggestion && 
+    suggestion.actions?.[0] && 
+    suggestion.actions[0].type !== 'remove' &&
+    suggestion.actions[0].text !== 'Ignore';
 
   return (
     <div
@@ -159,13 +175,15 @@ const SuggestionPopover = React.forwardRef<
       </div>
       <div className="text-gray-700 mb-4 ml-5">{renderMessage(suggestion)}</div>
       <div className="flex items-center gap-2 ml-5">
-        <button
-          type="button"
-          onClick={handleFix}
-          className={`px-4 py-1.5 text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${appearance.buttonBgColor} ${appearance.buttonHoverBgColor} ${appearance.buttonRingColor}`}
-        >
-          {fixButtonText}
-        </button>
+        {shouldShowFixButton && (
+          <button
+            type="button"
+            onClick={handleFix}
+            className={`px-4 py-1.5 text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${appearance.buttonBgColor} ${appearance.buttonHoverBgColor} ${appearance.buttonRingColor}`}
+          >
+            {fixButtonText}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => onIgnore(suggestion)}
