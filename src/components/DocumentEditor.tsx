@@ -9,7 +9,7 @@ import { useDocumentStore } from '../store/document/document.store';
 import { AdvisoryModal } from './editor/AdvisoryModal';
 import { DocumentCodeMirrorEditor } from './editor/DocumentCodeMirrorEditor';
 import DocumentSettingsBar from './editor/DocumentSettingsBar';
-import EditorHeader from './editor/EditorHeader';
+import { EditorHeader } from './editor/EditorHeader';
 import ResponsiveToolbar from './editor/ResponsiveToolbar';
 import UpdateContextModal from './editor/UpdateContextModal';
 
@@ -290,8 +290,6 @@ const DocumentEditor: React.FC = () => {
           <EditorHeader
             title={title}
             onTitleChange={handleTitleChange}
-            loading={storeLoading}
-            documentContent={currentDocument?.content || ''}
           />
           <DocumentSettingsBar
             onOpenContextModal={() => setIsContextModalOpen(true)}

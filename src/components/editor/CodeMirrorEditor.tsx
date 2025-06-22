@@ -5,17 +5,25 @@ import { EditorView, keymap } from '@codemirror/view';
 import { autoUpdate, offset, shift, useFloating } from '@floating-ui/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  createSuggestionDecorationExtension,
-  dispatchSuggestionUpdate
+    createAdvisoryDecorationExtension,
+    dispatchAdvisoryUpdate
+} from '../../extensions/AdvisoryDecorations';
+import {
+    createSuggestionDecorationExtension,
+    dispatchSuggestionUpdate
 } from '../../extensions/SuggestionDecorations';
+import { useAdvisoryAutoRefresh } from '../../hooks/useAdvisoryAutoRefresh';
+import { useAdvisoryStore } from '../../store/advisory';
 import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import { AnySuggestion, SuggestionStore } from '../../store/suggestion/suggestion.types';
 import { wordwiseTheme } from '../../themes/wordwiseTheme';
-import { GrammarSuggestion, SuggestionAction } from '../../types';
+import { AdvisoryComment, GrammarSuggestion, SuggestionAction } from '../../types';
+import { findAdvisoryCommentAtPosition } from '../../utils/advisoryComments';
 import {
-  createHarperLinterPlugin,
-  harperDiagnostics,
+    createHarperLinterPlugin,
+    harperDiagnostics,
 } from '../../utils/harperLinterSource';
+import AdvisoryPopover from './AdvisoryPopover';
 import SuggestionPopover from './SuggestionPopover';
 
 const convertDiagnosticToGrammarSuggestion = (
@@ -90,19 +98,49 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const { setSuggestions } = useSuggestionStore();
+  
+  // Advisory store integration
+  const { comments, dismissComment } = useAdvisoryStore();
 
   const analysisSessionRef = useRef<object | null>(null);
   const suggestionInteractionLock = useRef(false);
 
   const [activeSuggestion, setActiveSuggestion] =
     useState<AnySuggestion | null>(null);
+    
+  // Advisory state
+  const [activeAdvisoryComment, setActiveAdvisoryComment] =
+    useState<AdvisoryComment | null>(null);
 
+  // Advisory auto-refresh
+  useAdvisoryAutoRefresh(initialContent, { enabled: true });
+
+  // Floating UI for suggestions
   const { x, y, refs, strategy } = useFloating({
     open: !!activeSuggestion,
     onOpenChange: isOpen => {
       if (!isOpen) {
         setActiveSuggestion(null);
         suggestionInteractionLock.current = false;
+      }
+    },
+    placement: 'top',
+    strategy: 'fixed',
+    middleware: [offset(8), shift()],
+    whileElementsMounted: autoUpdate,
+  });
+
+  // Floating UI for advisory comments
+  const { 
+    x: advisoryX, 
+    y: advisoryY, 
+    refs: advisoryRefs, 
+    strategy: advisoryStrategy 
+  } = useFloating({
+    open: !!activeAdvisoryComment,
+    onOpenChange: isOpen => {
+      if (!isOpen) {
+        setActiveAdvisoryComment(null);
       }
     },
     placement: 'top',
@@ -157,6 +195,13 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     ) || null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array to keep it stable for editor - intentionally not including suggestionStore
+
+  // Update advisory decorations when advisory store changes
+  useEffect(() => {
+    if (viewRef.current) {
+      dispatchAdvisoryUpdate(viewRef.current, comments);
+    }
+  }, [comments]);
 
   // Update decorations when suggestion store changes
   useEffect(() => {
@@ -224,20 +269,50 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       EditorView.updateListener.of(update => {
         if (update.docChanged) {
           handleContentChange(update.state.doc.toString());
-          // Clear active suggestion on document changes to prevent stale positions
-          // This ensures we don't have stale popover positions
+          // Clear active suggestion and advisory on document changes
           setActiveSuggestion(null);
+          setActiveAdvisoryComment(null);
         }
       }),
       EditorView.contentAttributes.of({ placeholder: placeholder ?? '' }),
       createHarperLinterPlugin(setSuggestionsWithSession),
       harperDiagnostics,
       createSuggestionDecorationExtension(),
+      createAdvisoryDecorationExtension(),
       Prec.high(EditorView.domEventHandlers({
         click: (event: MouseEvent, view: EditorView) => {
           const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
           if (pos === null) return;
 
+          // Check for advisory comment at position first
+          const advisoryComment = findAdvisoryCommentAtPosition(comments, pos);
+          if (advisoryComment) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            advisoryRefs.setReference({
+              getBoundingClientRect: () => {
+                const rect = view.coordsAtPos(pos);
+                if (!rect) {
+                  return new DOMRect(0, 0, 0, 0);
+                }
+                return {
+                  width: rect.right - rect.left,
+                  height: rect.bottom - rect.top,
+                  x: rect.left,
+                  y: rect.top,
+                  top: rect.top,
+                  left: rect.left,
+                  right: rect.right,
+                  bottom: rect.bottom,
+                };
+              },
+            });
+            setActiveAdvisoryComment(advisoryComment);
+            return;
+          }
+
+          // Check for suggestion at position
           const storeSuggestion = findSuggestionAtPosStable(pos);
           if (storeSuggestion) {
             event.preventDefault();
@@ -265,6 +340,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
             return;
           }
 
+          // Check for diagnostics
           const diagnostics = view.state.field(harperDiagnostics);
           const clickedDiagnostic = diagnostics.find(
             d => d.from <= pos && d.to >= pos,
@@ -298,7 +374,9 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
             return;
           } 
           
+          // Clear both suggestions and advisory comments
           setActiveSuggestion(null);
+          setActiveAdvisoryComment(null);
         },
       })),
       Prec.high(keymap.of(defaultKeymap)),
@@ -322,7 +400,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       viewRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialContent, placeholder, handleContentChange, findSuggestionAtPosStable, setSuggestionsWithSession, onViewReady]); // refs accessed directly in click handler
+  }, [initialContent, placeholder, handleContentChange, findSuggestionAtPosStable, setSuggestionsWithSession, onViewReady, comments]);
 
   // Handle suggestion actions
   const handleAcceptSuggestion = useCallback(
@@ -415,6 +493,12 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     setActiveSuggestion(null);
   }, []);
 
+  // Advisory comment handlers
+  const handleDismissAdvisoryComment = useCallback((commentId: string) => {
+    dismissComment(commentId);
+    setActiveAdvisoryComment(null);
+  }, [dismissComment]);
+
   return (
     <div className="relative w-full h-full">
       <div 
@@ -438,6 +522,19 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
             top: y ?? 0,
             left: x ?? 0,
             zIndex: 100,
+          }}
+        />
+      )}
+      {activeAdvisoryComment && (
+        <AdvisoryPopover
+          ref={advisoryRefs.setFloating as React.Ref<HTMLDivElement>}
+          comment={activeAdvisoryComment}
+          onDismiss={handleDismissAdvisoryComment}
+          style={{
+            position: advisoryStrategy,
+            top: advisoryY ?? 0,
+            left: advisoryX ?? 0,
+            zIndex: 101,
           }}
         />
       )}

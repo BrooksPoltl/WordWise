@@ -182,4 +182,16 @@ export interface OnboardingContent {
   };
 }
 
+// Advisory comment types for inline advisory comments
+export interface AdvisoryComment {
+  id: string;
+  type: 'anchored' | 'document-level';
+  originalText: string;
+  explanation: string;
+  startIndex: number;
+  endIndex: number;
+  reason: 'Strengthen a Claim' | 'Define a Key Term/Acronym' | 'Improve Structural Flow' | 'Add a Clear Call to Action' | 'Acknowledge Alternatives';
+  dismissed?: boolean;
+}
+
 

@@ -1,47 +1,62 @@
 import React from 'react';
-import { AIAdvisorySuggestion } from '../../types';
+import { ADVISORY_CATEGORIES } from '../../constants/advisoryConstants';
+import { AdvisoryComment } from '../../types';
 
 interface AdvisoryCardProps {
-  suggestion: AIAdvisorySuggestion;
-  onDismiss: (suggestionId: string) => void;
+  comment: AdvisoryComment;
+  onDismiss: (commentId: string) => void;
 }
 
-export const AdvisoryCard: React.FC<AdvisoryCardProps> = ({
-  suggestion,
-  onDismiss,
-}) => {
+const AdvisoryCard: React.FC<AdvisoryCardProps> = ({ comment, onDismiss }) => {
+  const category = ADVISORY_CATEGORIES[comment.reason];
+  
   const handleDismiss = () => {
-    onDismiss(suggestion.id);
+    onDismiss(comment.id);
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-      {/* Original Text */}
-      <div className="mb-3">
-        <h4 className="text-sm font-medium text-gray-900 mb-2">Text:</h4>
-        <div className="bg-gray-50 rounded-md p-3 border-l-4 border-blue-400">
-          <p className="text-sm text-gray-700 italic">&ldquo;{suggestion.originalText}&rdquo;</p>
+    <div className="bg-white border rounded-lg p-4 shadow-sm">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center">
+          <span
+            className="h-3 w-3 rounded-full mr-2 flex-shrink-0"
+            style={{ backgroundColor: category.color }}
+          />
+          <h4 className="font-semibold text-gray-800 text-sm">
+            {category.label}
+          </h4>
         </div>
-      </div>
-
-      {/* Advisory Explanation */}
-      <div className="mb-4">
-        <h4 className="text-sm font-medium text-gray-900 mb-2">Suggestion:</h4>
-        <p className="text-sm text-gray-700 leading-relaxed">
-          {suggestion.explanation}
-        </p>
-      </div>
-
-      {/* Action Button */}
-      <div className="flex justify-end">
         <button
           type="button"
           onClick={handleDismiss}
-          className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+          className="text-gray-400 hover:text-gray-600 ml-2 flex-shrink-0"
+          aria-label="Dismiss advisory comment"
         >
-          Dismiss
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
         </button>
+      </div>
+      
+      {comment.originalText && (
+        <div className="mb-3">
+          <div className="text-xs text-gray-500 mb-1">Selected text:</div>
+          <div className="bg-gray-50 rounded px-2 py-1 text-sm font-mono text-gray-700 border-l-2" 
+               style={{ borderLeftColor: category.color }}>
+            &ldquo;{comment.originalText}&rdquo;
+          </div>
+        </div>
+      )}
+      
+      <div className="text-gray-700 text-sm leading-relaxed">
+        {comment.explanation}
+      </div>
+      
+      <div className="mt-3 text-xs text-gray-500">
+        {category.description}
       </div>
     </div>
   );
-}; 
+};
+
+export default AdvisoryCard; 

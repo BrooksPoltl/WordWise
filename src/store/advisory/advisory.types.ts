@@ -1,17 +1,19 @@
-import { AIAdvisorySuggestion } from '../../types';
+import { AdvisoryComment } from '../../types';
 
 export interface AdvisoryState {
-  isOpen: boolean;
+  comments: AdvisoryComment[];
   isLoading: boolean;
-  suggestions: AIAdvisorySuggestion[];
   error: string | null;
+  lastAnalysisTimestamp: number | null;
 }
 
 export interface AdvisoryActions {
-  requestSuggestions: (documentContent: string) => Promise<void>;
-  dismissSuggestion: (suggestionId: string) => void;
-  closeModal: () => void;
-  openModal: () => void;
+  setComments: (comments: AdvisoryComment[]) => void;
+  clearComments: () => void;
+  dismissComment: (commentId: string) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  refreshComments: (documentContent: string) => Promise<void>;
 }
 
-export type AdvisoryStore = AdvisoryState & AdvisoryActions; 
+export interface AdvisoryStore extends AdvisoryState, AdvisoryActions {} 
