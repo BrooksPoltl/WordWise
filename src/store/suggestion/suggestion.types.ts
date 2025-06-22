@@ -18,15 +18,15 @@ export const SUGGESTION_CATEGORIES = {
   },
   clarity: {
     label: 'Clarity',
-    color: '#8b5cf6', // Violet
+    color: '#3b82f6', // Blue-500
   },
   conciseness: {
     label: 'Conciseness',
-    color: '#06b6d4', // Cyan
+    color: '#22c55e', // Green-500
   },
   readability: {
     label: 'Readability',
-    color: '#10b981', // Emerald
+    color: '#a855f7', // Purple-500
   },
   passive: {
     label: 'Passive Voice',

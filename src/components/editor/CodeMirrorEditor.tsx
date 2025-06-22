@@ -15,7 +15,6 @@ import { GrammarSuggestion, SuggestionAction } from '../../types';
 import {
   createHarperLinterPlugin,
   harperDiagnostics,
-  harperLintDeco
 } from '../../utils/harperLinterSource';
 import SuggestionPopover from './SuggestionPopover';
 
@@ -23,14 +22,14 @@ const convertDiagnosticToGrammarSuggestion = (
   diagnostic: Diagnostic,
 ): GrammarSuggestion => {
   try {
-    const { title, text } = JSON.parse(diagnostic.message);
+    const { title, text, type } = JSON.parse(diagnostic.message);
     return {
       id: `${diagnostic.from}-${diagnostic.to}-${text}`,
       text,
       startOffset: diagnostic.from,
       endOffset: diagnostic.to,
       word: '', // Will be populated from the actual text
-      type: 'grammar',
+      type: type || 'grammar',
       title: title || 'Grammar',
       suggestions:
         diagnostic.actions?.map(action => ({
@@ -201,7 +200,6 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       }),
       EditorView.contentAttributes.of({ placeholder: placeholder ?? '' }),
       createHarperLinterPlugin(setSuggestionsWithSession),
-      harperLintDeco,
       harperDiagnostics,
       createSuggestionDecorationExtension(),
       Prec.high(EditorView.domEventHandlers({

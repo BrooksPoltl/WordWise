@@ -1,11 +1,9 @@
 import { Diagnostic } from '@codemirror/lint';
 import { StateEffect, StateField } from '@codemirror/state';
 import {
-  Decoration,
-  DecorationSet,
   EditorView,
   ViewPlugin,
-  ViewUpdate,
+  ViewUpdate
 } from '@codemirror/view';
 import type { SuggestionState } from '../store/suggestion/suggestion.types';
 import {
@@ -97,6 +95,7 @@ export const createHarperLinterPlugin = (onSuggestionsUpdate: (suggestions: Sugg
                 message: JSON.stringify({
                   title: lint.lint_kind(),
                   text: lint.message(),
+                  type: lint.lint_kind().toLowerCase(),
                 }),
                 actions: [
                   ...lint.suggestions().map(s => ({
@@ -123,26 +122,3 @@ export const createHarperLinterPlugin = (onSuggestionsUpdate: (suggestions: Sugg
       };
     },
   );
-
-const suggestionUnderline = Decoration.mark({
-  class: 'wordwise-lint-warning',
-});
-export const harperLintDeco = StateField.define<DecorationSet>({
-  create() {
-    return Decoration.none;
-  },
-  update(value, tr) {
-    const diagnostics = tr.state.field(harperDiagnostics);
-    let newValue = value.map(tr.changes);
-
-    const builder = [];
-    for (const d of diagnostics) {
-      if (d.from < d.to) {
-        builder.push(suggestionUnderline.range(d.from, d.to));
-      }
-    }
-    newValue = Decoration.set(builder, true);
-    return newValue;
-  },
-  provide: f => EditorView.decorations.from(f),
-}); 

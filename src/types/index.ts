@@ -115,7 +115,7 @@ export interface DocumentUpdatePayload {
 
 // All suggestion types now inherit from BaseSuggestion and have consistent properties
 export interface ClaritySuggestion extends BaseSuggestion {
-  type: 'weasel_word';
+  type: 'style';
 }
 
 export interface ConcisenessSuggestion extends BaseSuggestion {

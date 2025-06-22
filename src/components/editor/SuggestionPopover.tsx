@@ -2,8 +2,9 @@ import React from 'react';
 import {
   AnySuggestion,
   SUGGESTION_CATEGORIES,
+  SuggestionCategory,
 } from '../../store/suggestion/suggestion.types';
-import { BaseSuggestion, SuggestionAction } from '../../types';
+import { BaseSuggestion, SuggestionAction, SuggestionType } from '../../types';
 
 interface SuggestionPopoverProps {
   suggestion: AnySuggestion;
@@ -12,8 +13,45 @@ interface SuggestionPopoverProps {
   style: React.CSSProperties;
 }
 
+const mapSuggestionTypeToCategory = (
+  type: SuggestionType | string,
+): SuggestionCategory => {
+  const normalizedType = type.toLowerCase().replace(/\s+/g, '');
+  
+  switch (normalizedType) {
+    case 'style':
+    case 'weasel_word':
+    case 'capitalization':
+    case 'wordchoice':
+    case 'word_choice':
+    case 'enhancement':
+    case 'miscellaneous':
+      return 'clarity';
+    case 'conciseness':
+    case 'repetition':
+    case 'redundancy':
+      return 'conciseness';
+    case 'readability':
+      return 'readability';
+    case 'passive':
+      return 'passive';
+    case 'spelling':
+    case 'grammar':
+    default:
+      return 'grammar';
+  }
+};
+
+const normalizeDisplayTitle = (title: string): string => {
+  const normalized = title.toLowerCase().replace(/\s+/g, '');
+  if (normalized === 'wordchoice') {
+    return 'Word Choice';
+  }
+  return title;
+};
+
 const appearanceMap: {
-  [key: string]: {
+  [key in SuggestionCategory]: {
     color: string;
     bgColor: string;
     borderColor: string;
@@ -30,37 +68,29 @@ const appearanceMap: {
     buttonHoverBgColor: 'hover:bg-red-600',
     buttonRingColor: 'focus:ring-red-500',
   },
-  spelling: {
-    color: '#ef4444', // red-500
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    buttonBgColor: 'bg-red-500',
-    buttonHoverBgColor: 'hover:bg-red-600',
-    buttonRingColor: 'focus:ring-red-500',
-  },
   clarity: {
     color: SUGGESTION_CATEGORIES.clarity.color,
-    bgColor: 'bg-violet-50',
-    borderColor: 'border-violet-200',
-    buttonBgColor: 'bg-violet-500',
-    buttonHoverBgColor: 'hover:bg-violet-600',
-    buttonRingColor: 'focus:ring-violet-500',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+    buttonBgColor: 'bg-blue-500',
+    buttonHoverBgColor: 'hover:bg-blue-600',
+    buttonRingColor: 'focus:ring-blue-500',
   },
   conciseness: {
     color: SUGGESTION_CATEGORIES.conciseness.color,
-    bgColor: 'bg-cyan-50',
-    borderColor: 'border-cyan-200',
-    buttonBgColor: 'bg-cyan-500',
-    buttonHoverBgColor: 'hover:bg-cyan-600',
-    buttonRingColor: 'focus:ring-cyan-500',
+    bgColor: 'bg-green-50',
+    borderColor: 'border-green-200',
+    buttonBgColor: 'bg-green-500',
+    buttonHoverBgColor: 'hover:bg-green-600',
+    buttonRingColor: 'focus:ring-green-500',
   },
   readability: {
     color: SUGGESTION_CATEGORIES.readability.color,
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
-    buttonBgColor: 'bg-emerald-500',
-    buttonHoverBgColor: 'hover:bg-emerald-600',
-    buttonRingColor: 'focus:ring-emerald-500',
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-200',
+    buttonBgColor: 'bg-purple-500',
+    buttonHoverBgColor: 'hover:bg-purple-600',
+    buttonRingColor: 'focus:ring-purple-500',
   },
   passive: {
     color: SUGGESTION_CATEGORIES.passive.color,
@@ -72,17 +102,16 @@ const appearanceMap: {
   },
 };
 
-const getSuggestionAppearance = (
-  type: AnySuggestion['type'],
-) => appearanceMap[type] || appearanceMap.spelling; // Default to spelling
+const getSuggestionAppearance = (type: AnySuggestion['type']) => {
+  const category = mapSuggestionTypeToCategory(type);
+  return appearanceMap[category];
+};
 
 const SuggestionPopover = React.forwardRef<
   HTMLDivElement,
   SuggestionPopoverProps
 >(({ suggestion, onAccept, onIgnore, style }, ref) => {
-  const appearance = getSuggestionAppearance(
-    suggestion.type,
-  );
+  const appearance = getSuggestionAppearance(suggestion.type);
 
   const handleFix = () => {
     const primaryAction =
@@ -125,7 +154,7 @@ const SuggestionPopover = React.forwardRef<
           style={{ backgroundColor: appearance.color }}
         />
         <h3 id="suggestion-title" className="font-semibold text-gray-800">
-          {suggestion.title}
+          {normalizeDisplayTitle(suggestion.title)}
         </h3>
       </div>
       <div className="text-gray-700 mb-4 ml-5">{renderMessage(suggestion)}</div>

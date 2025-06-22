@@ -8,9 +8,9 @@ const mapSuggestionTypeToCategory = (type: SuggestionType): string => {
   switch (type) {
     case 'spelling':
     case 'grammar':
-    case 'style':
       return 'grammar';
     case 'weasel_word':
+    case 'style':
       return 'clarity';
     case 'conciseness':
       return 'conciseness';
@@ -28,9 +28,9 @@ const getSuggestionCssClass = (type: SuggestionType): string => {
   switch (type) {
     case 'spelling':
     case 'grammar':
-    case 'style':
       return 'wordwise-suggestion-grammar';
     case 'weasel_word':
+    case 'style':
       return 'wordwise-suggestion-clarity';
     case 'conciseness':
       return 'wordwise-suggestion-conciseness';
@@ -101,17 +101,17 @@ export const createSuggestionDecorationExtension = (): Extension => [
     },
     '.wordwise-suggestion-clarity': {
       textDecoration: 'underline wavy',
-      textDecorationColor: '#8b5cf6',
+      textDecorationColor: '#3b82f6',
       cursor: 'pointer',
     },
     '.wordwise-suggestion-conciseness': {
       textDecoration: 'underline wavy',
-      textDecorationColor: '#06b6d4',
+      textDecorationColor: '#22c55e',
       cursor: 'pointer',
     },
     '.wordwise-suggestion-readability': {
       textDecoration: 'underline wavy',
-      textDecorationColor: '#10b981',
+      textDecorationColor: '#a855f7',
       cursor: 'pointer',
     },
     '.wordwise-suggestion-passive': {

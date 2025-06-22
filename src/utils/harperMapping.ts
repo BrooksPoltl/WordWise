@@ -5,32 +5,37 @@ import { BaseSuggestion, GrammarSuggestion, SuggestionAction } from '../types';
  * Maps Harper lint kinds to our internal suggestion categories
  */
 export const mapHarperLintKind = (lintKind: string): BaseSuggestion['type'] => {
-  const kind = lintKind.toLowerCase();
-  
-  // Grammar-related lints
-  if (kind.includes('spelling') || 
-      kind.includes('grammar') || 
-      kind.includes('punctuation') || 
-      kind.includes('casing') || 
-      kind.includes('compounding') || 
-      kind.includes('regional') || 
-      kind.includes('formatting')) {
-    return 'grammar';
+  const kind = lintKind.toLowerCase().replace(/_/g, ' '); // Normalize to space-separated words
+
+  // Style and Word Choice Lints (Clarity - Blue)
+  if (kind.includes('style') || kind.includes('word choice') || kind.includes('capitalization') || kind.includes('miscellaneous')) {
+    return 'style';
   }
-  
-  // Conciseness-related lints
-  if (kind.includes('redundancy') || 
-      kind.includes('repetition')) {
+
+  // Conciseness-related lints (Green)
+  if (kind.includes('redundancy') || kind.includes('repetition')) {
     return 'conciseness';
   }
-  
-  // Readability-related lints
+
+  // Readability-related lints (Purple)
   if (kind.includes('readability')) {
     return 'readability';
   }
-  
-  // Clarity-related lints (everything else)
-  return 'weasel_word'; // Using weasel_word as the clarity type
+
+  // Grammar-related lints (Red)
+  if (
+    kind.includes('spelling') ||
+    kind.includes('grammar') ||
+    kind.includes('punctuation') ||
+    kind.includes('compounding') ||
+    kind.includes('regional') ||
+    kind.includes('formatting')
+  ) {
+    return 'grammar';
+  }
+
+  // Fallback for any unhandled cases to a generic style suggestion
+  return 'style';
 };
 
 /**
@@ -116,8 +121,8 @@ export const convertToTypedSuggestions = (suggestions: BaseSuggestion[]) => {
     }));
     
   const claritySuggestions = suggestions
-    .filter(s => s.type === 'weasel_word')
-    .map(s => ({ ...s, type: 'weasel_word' as const }));
+    .filter(s => s.type === 'style')
+    .map(s => ({ ...s, type: 'style' as const }));
     
   const concisenessSuggestions = suggestions
     .filter(s => s.type === 'conciseness')
