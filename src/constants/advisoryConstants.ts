@@ -4,29 +4,32 @@ export const ADVISORY_AUTO_REFRESH_DELAY = 2000; // 2 seconds for responsive fee
 export const ADVISORY_CATEGORIES = {
   'Strengthen a Claim': {
     label: 'Strengthen a Claim',
-    color: '#8b5cf6', // Purple-500
-    description: 'Add data points, statistics, or concrete examples to support claims'
+    description: 'Add data, statistics, or concrete examples to support your claims.',
+    color: 'amber'
   },
   'Define a Key Term/Acronym': {
     label: 'Define a Key Term/Acronym',
-    color: '#06b6d4', // Cyan-500
-    description: 'Define specialized jargon or acronyms for clarity'
+    description: 'Clarify technical terms or acronyms for better understanding.',
+    color: 'amber'
   },
   'Improve Structural Flow': {
     label: 'Improve Structural Flow',
-    color: '#10b981', // Emerald-500
-    description: 'Break up dense paragraphs or improve organization'
+    description: 'Break down complex paragraphs and improve document organization.',
+    color: 'amber'
   },
   'Add a Clear Call to Action': {
     label: 'Add a Clear Call to Action',
-    color: '#f59e0b', // Amber-500
-    description: 'Guide readers on next steps or conclusions'
+    description: 'Guide readers on what to do next with clear action items.',
+    color: 'amber'
   },
   'Acknowledge Alternatives': {
     label: 'Acknowledge Alternatives',
-    color: '#ef4444', // Red-500
-    description: 'Consider mentioning other options to strengthen your case'
-  },
-} as const;
+    description: 'Consider and mention alternative approaches or solutions.',
+    color: 'amber'
+  }
+};
 
-export type AdvisoryCategory = keyof typeof ADVISORY_CATEGORIES; 
+export type AdvisoryCategory = keyof typeof ADVISORY_CATEGORIES;
+
+// Minimum content length for advisory analysis (100 characters)
+export const ADVISORY_MIN_CONTENT_LENGTH = 100; 

@@ -1,5 +1,6 @@
 import { EditorView } from '@codemirror/view';
 import React, { useCallback, useEffect, useState } from 'react';
+import { ADVISORY_MIN_CONTENT_LENGTH } from '../../constants/advisoryConstants';
 import { useAdvisoryAutoRefresh } from '../../hooks/useAdvisoryAutoRefresh';
 import { useAutoSave } from '../../hooks/useAutoSave';
 import { useAdvisoryStore } from '../../store/advisory';
@@ -25,17 +26,15 @@ export const DocumentCodeMirrorEditor: React.FC<DocumentCodeMirrorEditorProps> =
 
     // Clear comments when document changes
     useEffect(() => {
-        if (currentDocument) {
-            clearComments(); // Clear advisory comments from previous document
-        }
-    }, [currentDocument?.id, clearComments]); // Only depend on document ID, not the whole object
+        clearComments(); // Clear advisory comments from previous document
+    }, [currentDocument?.id, clearComments]); // Only depend on document ID change
     
     const { debouncedSave } = useAutoSave(currentDocument?.id || '');
     
     // Advisory auto-refresh integration - now uses the actual current content
     useAdvisoryAutoRefresh(currentContent, currentDocument?.id || '', { 
       enabled: true,
-      minContentLength: 50 
+      minContentLength: ADVISORY_MIN_CONTENT_LENGTH 
     });
 
     const handleChange = useCallback((content: string) => {

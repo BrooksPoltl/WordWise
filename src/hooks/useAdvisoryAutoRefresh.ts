@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { ADVISORY_AUTO_REFRESH_DELAY } from '../constants/advisoryConstants';
+import { ADVISORY_AUTO_REFRESH_DELAY, ADVISORY_MIN_CONTENT_LENGTH } from '../constants/advisoryConstants';
 import { useAdvisoryStore } from '../store/advisory';
 import { debounce } from '../utils/debounce';
 
@@ -15,7 +15,7 @@ export const useAdvisoryAutoRefresh = (
 ) => {
   const { 
     enabled = true, 
-    minContentLength = 50 
+    minContentLength = ADVISORY_MIN_CONTENT_LENGTH 
   } = options;
   
   const { refreshComments } = useAdvisoryStore();
