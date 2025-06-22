@@ -78,12 +78,12 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   );
 
   // Race-condition-safe suggestion setter
-  const setSuggestionsWithSession = useCallback((suggestions: any) => {
+  const setSuggestionsWithSession = useCallback((suggestions: Parameters<SuggestionStore['setSuggestions']>[0] | ((setter: (results: Parameters<SuggestionStore['setSuggestions']>[0]) => void) => void)) => {
     const currentSession = {};
     analysisSessionRef.current = currentSession;
     
     // Create a wrapper that checks session validity
-    const sessionAwareSetter = (results: any) => {
+    const sessionAwareSetter = (results: Parameters<SuggestionStore['setSuggestions']>[0]) => {
       // Only update if this is still the current session
       if (analysisSessionRef.current === currentSession) {
         setSuggestions(results);
@@ -93,11 +93,11 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     
     // If suggestions is a function (callback style), wrap it
     if (typeof suggestions === 'function') {
-      return suggestions(sessionAwareSetter);
-    } else {
-      // Direct call
-      sessionAwareSetter(suggestions);
+      suggestions(sessionAwareSetter);
+      return;
     }
+    // Direct call
+    sessionAwareSetter(suggestions);
   }, [setSuggestions]);
 
   // Find suggestion at a given position - create a stable version for the editor
@@ -167,6 +167,9 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
       EditorView.updateListener.of(update => {
         if (update.docChanged) {
           handleContentChange(update.state.doc.toString());
+          // Clear active suggestion on document changes to prevent stale positions
+          // This ensures we don't have stale popover positions
+          setActiveSuggestion(null);
         }
       }),
       EditorView.contentAttributes.of({ placeholder: placeholder ?? '' }),
