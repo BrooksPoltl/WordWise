@@ -8,8 +8,11 @@ let linterInstance: harper.WorkerLinter | null = null;
 const ignoredLints = new Set<string>();
 
 const getLintId = (lint: harper.Lint) => {
-  const span = lint.span();
-  return `${span.start}-${span.end}-${lint.message()}`;
+  const problemText = lint.get_problem_text ? lint.get_problem_text().trim() : '';
+  const lintKind = lint.lint_kind();
+  // Use problem text + lint kind instead of position + message for more stable IDs
+  // Trim whitespace to avoid issues with leading/trailing spaces
+  return `${problemText}-${lintKind}`;
 };
 
 export const ignoreLint = (lint: harper.Lint) => {

@@ -36,15 +36,15 @@ const convertDiagnosticToGrammarSuggestion = (
       startOffset: diagnostic.from,
       endOffset: diagnostic.to,
       word: '', // Will be populated from the actual text
-      type: type || 'grammar',
+      type: (type || 'grammar') as GrammarSuggestion['type'],
       title: title || 'Grammar',
       explanation: text, // Use the parsed text as explanation
-      actions: diagnostic.actions?.map(action => ({
+      actions: diagnostic.actions?.filter(action => action.name !== 'Ignore').map(action => ({
         type: 'replace' as const,
         text: action.name,
       })) || [],
       suggestions:
-        diagnostic.actions?.map(action => ({
+        diagnostic.actions?.filter(action => action.name !== 'Ignore').map(action => ({
           id: action.name,
           text: action.name,
         })) || [],
@@ -58,15 +58,15 @@ const convertDiagnosticToGrammarSuggestion = (
       startOffset: diagnostic.from,
       endOffset: diagnostic.to,
       word: '', // Will be populated from the actual text
-      type: 'grammar',
+      type: 'grammar' as GrammarSuggestion['type'],
       title: 'Grammar', // Default title for CodeMirror diagnostics
       explanation: diagnostic.message, // Use the message as explanation
-      actions: diagnostic.actions?.map(action => ({
+      actions: diagnostic.actions?.filter(action => action.name !== 'Ignore').map(action => ({
         type: 'replace' as const,
         text: action.name,
       })) || [],
       suggestions:
-        diagnostic.actions?.map(action => ({
+        diagnostic.actions?.filter(action => action.name !== 'Ignore').map(action => ({
           id: action.name,
           text: action.name,
         })) || [],
@@ -496,7 +496,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   const handleIgnoreSuggestion = useCallback((suggestion: AnySuggestion) => {
     if (!viewRef.current) return;
 
-    // Handle legacy grammar suggestions with ignore action
+    // Handle Harper grammar suggestions with ignore action
     if ('raw' in suggestion) {
       const grammarSuggestion = suggestion as GrammarSuggestion;
       const ignoreAction = grammarSuggestion.raw.actions?.find(
