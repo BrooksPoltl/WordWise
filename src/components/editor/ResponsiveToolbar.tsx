@@ -1,21 +1,27 @@
 import { EditorView } from '@codemirror/view';
 import { Menu } from 'lucide-react';
 import React, { useState } from 'react';
+import { TONE_EMOJI_MAP } from '../../constants/editorConstants';
+import { Tone } from '../../types';
 import {
-  insertCodeBlock,
-  insertTable,
-  toggleHeader,
-  toggleInlineCode,
-  toggleLink,
-  toggleMark,
+    insertCodeBlock,
+    insertTable,
+    toggleHeader,
+    toggleInlineCode,
+    toggleLink,
+    toggleMark,
 } from '../../utils/editorCommands';
 import FormattingButtons from './FormattingButtons';
 
 interface ResponsiveToolbarProps {
     editorView: EditorView | null;
+    detectedTone?: Tone | null;
 }
 
-const ResponsiveToolbar: React.FC<ResponsiveToolbarProps> = ({ editorView }) => {
+const ResponsiveToolbar: React.FC<ResponsiveToolbarProps> = ({ 
+  editorView, 
+  detectedTone 
+}) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const handleBold = () => {
@@ -89,7 +95,15 @@ const ResponsiveToolbar: React.FC<ResponsiveToolbarProps> = ({ editorView }) => 
       </div>
 
       <div>
-        <span className="text-sm font-medium text-gray-500">Markdown</span>
+        <div className="flex items-center space-x-3">
+          {detectedTone && (
+            <div className="flex items-center space-x-1 text-sm text-gray-600">
+              <span>{TONE_EMOJI_MAP[detectedTone]}</span>
+              <span>{detectedTone}</span>
+            </div>
+          )}
+          <span className="text-sm font-medium text-gray-500">Markdown</span>
+        </div>
       </div>
 
       {isMobileMenuOpen && (

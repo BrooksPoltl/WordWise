@@ -1,13 +1,10 @@
 import React from 'react';
-import { TONE_EMOJI_MAP } from '../../constants/editorConstants';
 import { useAdvisoryStore } from '../../store/advisory';
-import { Tone } from '../../types';
 
 interface EditorHeaderProps {
   title: string;
   onTitleChange: (title: string) => void;
   loading: boolean;
-  detectedTone: Tone | null;
   documentContent: string;
 }
 
@@ -15,7 +12,6 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
   title,
   onTitleChange,
   loading,
-  detectedTone,
   documentContent,
 }) => {
   const { requestSuggestions, openModal, suggestions, isLoading: advisoryLoading } = useAdvisoryStore();
@@ -48,12 +44,6 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
           <div className="flex items-center space-x-1">
             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600" />
             <span>Saving...</span>
-          </div>
-        )}
-        {detectedTone && (
-          <div className="flex items-center space-x-1">
-            <span>{TONE_EMOJI_MAP[detectedTone]}</span>
-            <span>{detectedTone}</span>
           </div>
         )}
         <div className="flex items-center space-x-2">

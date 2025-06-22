@@ -5,10 +5,34 @@ import { toneAnalyzer } from '../utils/toneAnalyzer';
 
 export const useToneAnalysis = () => {
   const [detectedTone, setDetectedTone] = useState<Tone | null>(null);
-  const [isFetching, setIsFetching] = useState(false);
   const toneTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isFetchingRef = useRef(false);
+  const setDetectedToneRef = useRef(setDetectedTone);
 
-  // Detect tone from text
+  // Keep ref updated with latest setter
+  setDetectedToneRef.current = setDetectedTone;
+
+  // Immediate tone analysis (no debounce) for initial loads
+  const detectToneImmediate = useCallback(
+    async (text: string) => {
+      if (isFetchingRef.current || !text.trim()) {
+        return;
+      }
+
+      isFetchingRef.current = true;
+      try {
+        const tone = await toneAnalyzer.analyzeTone(text);
+        setDetectedToneRef.current(tone);
+      } catch (error) {
+        console.error('Tone detection failed:', error);
+      } finally {
+        isFetchingRef.current = false;
+      }
+    },
+    [], // Empty dependency array to keep the function stable
+  );
+
+  // Debounced tone analysis for real-time editing
   const detectTone = useCallback(
     (text: string) => {
       if (toneTimeoutRef.current) {
@@ -16,28 +40,27 @@ export const useToneAnalysis = () => {
       }
 
       toneTimeoutRef.current = setTimeout(async () => {
-        if (isFetching || !text.trim()) {
+        if (isFetchingRef.current || !text.trim()) {
           return;
         }
 
-        setIsFetching(true);
+        isFetchingRef.current = true;
         try {
           const tone = await toneAnalyzer.analyzeTone(text);
-          setDetectedTone(tone);
+          setDetectedToneRef.current(tone);
         } catch (error) {
           console.error('Tone detection failed:', error);
         } finally {
-          setIsFetching(false);
+          isFetchingRef.current = false;
         }
       }, EDITOR_CONFIG.TONE_ANALYSIS_DELAY);
     },
-    [isFetching],
+    [], // Empty dependency array to keep the function stable
   );
-
-
 
   return {
     detectedTone,
     detectTone,
+    detectToneImmediate,
   };
 }; 

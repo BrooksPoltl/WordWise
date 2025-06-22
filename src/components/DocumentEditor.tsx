@@ -2,6 +2,7 @@ import { EditorView } from '@codemirror/view';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EDITOR_CONFIG } from '../constants/editorConstants';
+import { useToneAnalysis } from '../hooks/useToneAnalysis';
 import { useAuthStore } from '../store/auth/auth.store';
 import { autoSaveDocument } from '../store/document/document.actions';
 import { useDocumentStore } from '../store/document/document.store';
@@ -26,6 +27,9 @@ const DocumentEditor: React.FC = () => {
     updateDocument,
   } = useDocumentStore();
 
+  // Add tone analysis hook
+  const { detectedTone, detectTone, detectToneImmediate } = useToneAnalysis();
+
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -34,6 +38,7 @@ const DocumentEditor: React.FC = () => {
   const [isContextModalOpen, setIsContextModalOpen] = useState(false);
   const [isComponentLoading, setIsComponentLoading] = useState(true);
   const [editorView, setEditorView] = useState<EditorView | null>(null);
+  const initialToneAnalysisRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (documentId) {
@@ -51,6 +56,17 @@ const DocumentEditor: React.FC = () => {
       setTitle(currentDocument.title);
     }
   }, [currentDocument]);
+
+  // Trigger tone analysis for existing content when document loads
+  useEffect(() => {
+    if (currentDocument?.id && 
+        currentDocument.content && 
+        currentDocument.content.trim() &&
+        initialToneAnalysisRef.current !== currentDocument.id) {
+      initialToneAnalysisRef.current = currentDocument.id;
+      detectToneImmediate(currentDocument.content);
+    }
+  }, [currentDocument, detectToneImmediate]);
 
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);
@@ -275,7 +291,6 @@ const DocumentEditor: React.FC = () => {
             title={title}
             onTitleChange={handleTitleChange}
             loading={storeLoading}
-            detectedTone={null}
             documentContent={currentDocument?.content || ''}
           />
           <DocumentSettingsBar
@@ -285,8 +300,11 @@ const DocumentEditor: React.FC = () => {
             onDocumentTypeChange={handleDocumentTypeChange}
           />
           <div className="bg-white rounded-lg shadow-lg overflow-hidden h-full">
-            {editorView && <ResponsiveToolbar editorView={editorView} />}
-            <DocumentCodeMirrorEditor onViewReady={setEditorView} />
+            {editorView && <ResponsiveToolbar editorView={editorView} detectedTone={detectedTone} />}
+            <DocumentCodeMirrorEditor 
+              onViewReady={setEditorView} 
+              onContentChange={detectTone}
+            />
           </div>
         </div>
         <UpdateContextModal
