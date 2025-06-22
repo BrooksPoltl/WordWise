@@ -53,6 +53,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
   const viewRef = useRef<EditorView | null>(null);
   const { setSuggestions } = useSuggestionStore();
   const analysisSessionRef = useRef<object | null>(null); // Track current analysis session
+  const suggestionInteractionLock = useRef(false);
 
   const [activeSuggestion, setActiveSuggestion] =
     useState<AnySuggestion | null>(null);
@@ -62,6 +63,7 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
     onOpenChange: isOpen => {
       if (!isOpen) {
         setActiveSuggestion(null);
+        suggestionInteractionLock.current = false;
       }
     },
     placement: 'top',
@@ -138,6 +140,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
   // Clear activeSuggestion if it no longer exists in the store
   useEffect(() => {
+    if (suggestionInteractionLock.current) return;
+
     if (activeSuggestion) {
       // Get all current suggestions from store
       const { grammar, clarity, conciseness, readability, passive } = suggestionStore;
@@ -185,6 +189,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
           const storeSuggestion = findSuggestionAtPosStable(pos);
           if (storeSuggestion) {
             event.preventDefault();
+            event.stopPropagation();
+            suggestionInteractionLock.current = true;
             refs.setReference({
               getBoundingClientRect: () => {
                 const rect = view.coordsAtPos(pos);
@@ -214,6 +220,8 @@ const CodeMirrorEditor: React.FC<CodeMirrorEditorProps> = ({
 
           if (clickedDiagnostic) {
             event.preventDefault();
+            event.stopPropagation();
+            suggestionInteractionLock.current = true;
             const suggestion = convertDiagnosticToGrammarSuggestion(clickedDiagnostic);
 
             refs.setReference({
