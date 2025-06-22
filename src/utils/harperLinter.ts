@@ -15,7 +15,6 @@ const getLintId = (lint: harper.Lint) => {
 export const ignoreLint = (lint: harper.Lint) => {
   const id = getLintId(lint);
   ignoredLints.add(id);
-
 };
 
 export const isLintIgnored = (lint: harper.Lint) => {
@@ -34,19 +33,15 @@ export const getLinter = async (): Promise<harper.WorkerLinter | null> => {
   }
 
   try {
-
+    // Use the built-in binary from harper.js instead of creating BinaryModule manually
     const linter = new harper.WorkerLinter({
-      binary: new harper.BinaryModule(
-        'https://cdn.jsdelivr.net/npm/harper.js/dist/harper_wasm_bg.wasm',
-      ),
-      dialect: harper.Dialect.American,
+      binary: harper.binary,
     });
 
     await linter.setLintConfig(harperLinterRules);
     
 
     linterInstance = linter;
-    logger.success('Harper linter singleton initialized successfully.');
     return linterInstance;
   } catch (e) {
     logger.error('Failed to initialize Harper linter.', e);
@@ -59,13 +54,14 @@ export const reconfigureLinter = async (newConfig: harper.LintConfig) => {
 
   if (linter) {
     await linter.setLintConfig(newConfig);
-
   }
 };
 
 export type {
   Lint as HarperLint,
-  LintConfig as HarperLintConfig, Suggestion as HarperSuggestion, WorkerLinter as HarperWorkerLinter
+  LintConfig as HarperLintConfig,
+  Suggestion as HarperSuggestion,
+  WorkerLinter as HarperWorkerLinter
 } from 'harper.js';
 
 export const { Lint } = harper;
@@ -77,7 +73,6 @@ export const runHarperAnalysis = async (text: string): Promise<harper.Lint[]> =>
   try {
     const linter = await getLinter();
     if (!linter) {
-      logger.warning('Harper linter not available');
       return [];
     }
     
