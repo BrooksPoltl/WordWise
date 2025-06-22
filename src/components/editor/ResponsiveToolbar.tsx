@@ -4,12 +4,12 @@ import React, { useState } from 'react';
 import { TONE_EMOJI_MAP } from '../../constants/editorConstants';
 import { Tone } from '../../types';
 import {
-    insertCodeBlock,
-    insertTable,
-    toggleHeader,
-    toggleInlineCode,
-    toggleLink,
-    toggleMark,
+  insertCodeBlock,
+  insertTable,
+  toggleHeader,
+  toggleInlineCode,
+  toggleLink,
+  toggleMark,
 } from '../../utils/editorCommands';
 import FormattingButtons from './FormattingButtons';
 
