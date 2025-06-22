@@ -47,12 +47,17 @@ export const useAdvisoryAutoRefresh = (
     };
   }, [enabled, minContentLength, refreshComments]);
 
-  // Handle content changes
+  // Handle content changes and initial load
   useEffect(() => {
-    // Skip the first initialization
+    // Skip the first initialization only if content is empty
     if (!isInitializedRef.current) {
       isInitializedRef.current = true;
       previousContentRef.current = documentContent;
+      
+      // If we have substantial content on initial load, generate advisory comments immediately
+      if (documentContent && documentContent.trim().length >= minContentLength) {
+        refreshComments(documentContent);
+      }
       return;
     }
 
@@ -61,7 +66,7 @@ export const useAdvisoryAutoRefresh = (
       debouncedRefreshRef.current(documentContent);
       previousContentRef.current = documentContent;
     }
-  }, [documentContent]);
+  }, [documentContent, refreshComments, minContentLength]);
 
   // Manual refresh function
   const manualRefresh = useCallback(() => {

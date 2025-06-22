@@ -1,5 +1,5 @@
 // Advisory comment constants
-export const ADVISORY_AUTO_REFRESH_DELAY = 5000; // 5 seconds
+export const ADVISORY_AUTO_REFRESH_DELAY = 2000; // 2 seconds for responsive feedback
 
 export const ADVISORY_CATEGORIES = {
   'Strengthen a Claim': {
