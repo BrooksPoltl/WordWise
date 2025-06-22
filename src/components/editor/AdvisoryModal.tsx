@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ADVISORY_CATEGORIES } from '../../constants/advisoryConstants';
 import { useAdvisoryStore } from '../../store/advisory';
+import { useDocumentStore } from '../../store/document/document.store';
 
 interface AdvisoryModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface AdvisoryModalProps {
 
 export const AdvisoryModal: React.FC<AdvisoryModalProps> = ({ isOpen, onClose }) => {
   const { comments, dismissComment, dismissCommentPermanently } = useAdvisoryStore();
+  const { currentDocument } = useDocumentStore();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Filter to only visible (non-dismissed) comments
@@ -29,7 +31,7 @@ export const AdvisoryModal: React.FC<AdvisoryModalProps> = ({ isOpen, onClose })
     }
   }, [isOpen, visibleComments.length, onClose]);
 
-  if (!isOpen || !currentComment) {
+  if (!isOpen || !currentComment || !currentDocument) {
     return null;
   }
 
@@ -60,7 +62,7 @@ export const AdvisoryModal: React.FC<AdvisoryModalProps> = ({ isOpen, onClose })
   };
 
   const handleDismissPermanent = () => {
-    dismissCommentPermanently(currentComment);
+    dismissCommentPermanently(currentComment, currentDocument.id);
     // Auto-advance to next comment or close if this was the last
     if (currentIndex >= visibleComments.length - 1) {
       if (currentIndex > 0) {

@@ -10,6 +10,7 @@ export interface UseAdvisoryAutoRefreshOptions {
 
 export const useAdvisoryAutoRefresh = (
   documentContent: string,
+  documentId: string,
   options: UseAdvisoryAutoRefreshOptions = {}
 ) => {
   const { 
@@ -27,7 +28,7 @@ export const useAdvisoryAutoRefresh = (
   // Initialize the debounced function once
   useEffect(() => {
     const refreshFunction = (content: string) => {
-      if (!enabled) {
+      if (!enabled || !documentId) {
         return;
       }
 
@@ -35,7 +36,7 @@ export const useAdvisoryAutoRefresh = (
         return;
       }
 
-      refreshComments(content);
+      refreshComments(content, documentId);
     };
 
     debouncedRefreshRef.current = debounce(refreshFunction, ADVISORY_AUTO_REFRESH_DELAY);
@@ -45,10 +46,15 @@ export const useAdvisoryAutoRefresh = (
       debouncedRefreshRef.current?.cancel();
       debouncedRefreshRef.current = null;
     };
-  }, [enabled, minContentLength, refreshComments]);
+  }, [enabled, minContentLength, refreshComments, documentId]);
 
   // Handle content changes and initial load
   useEffect(() => {
+    // Skip if no documentId
+    if (!documentId) {
+      return;
+    }
+
     // Skip the first initialization only if content is empty
     if (!isInitializedRef.current) {
       isInitializedRef.current = true;
@@ -56,7 +62,7 @@ export const useAdvisoryAutoRefresh = (
       
       // If we have substantial content on initial load, generate advisory comments immediately
       if (documentContent && documentContent.trim().length >= minContentLength) {
-        refreshComments(documentContent);
+        refreshComments(documentContent, documentId);
       }
       return;
     }
@@ -66,16 +72,16 @@ export const useAdvisoryAutoRefresh = (
       debouncedRefreshRef.current(documentContent);
       previousContentRef.current = documentContent;
     }
-  }, [documentContent, refreshComments, minContentLength]);
+  }, [documentContent, refreshComments, minContentLength, documentId]);
 
   // Manual refresh function
   const manualRefresh = useCallback(() => {
-    if (!enabled) {
+    if (!enabled || !documentId) {
       return;
     }
 
-    refreshComments(documentContent);
-  }, [enabled, documentContent, refreshComments]);
+    refreshComments(documentContent, documentId);
+  }, [enabled, documentContent, refreshComments, documentId]);
 
   return {
     manualRefresh,

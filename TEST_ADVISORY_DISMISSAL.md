@@ -1,12 +1,18 @@
-# Advisory Comment Management Test
+# Advisory Comment Management Test - Document-Level Storage
 
-## New Features Implemented
+## ✅ Document-Level Dismissed Hashes
 
-### 1. Hash-Based Permanent Dismissal
-- Each advisory comment is now hashed based on its **full sentence** content + category
-- OpenAI returns complete sentences instead of text snippets for reliable matching
-- Users can permanently dismiss comments for specific sentence + category combinations
-- Dismissed comments will never appear again for that exact sentence and category
+### **🎯 Key Improvement: Document-Specific Dismissals**
+Comments are now dismissed **per document** rather than globally. This means:
+- Dismissing a comment in Document A won't affect Document B
+- Each document maintains its own dismissal history
+- Better organization and user control
+
+### 1. Hash-Based Permanent Dismissal (Document-Level)
+- Each advisory comment is hashed based on its **full sentence** content + category
+- Dismissed hashes are stored per document ID: `Record<documentId, Set<hashes>>`
+- Users can permanently dismiss comments for specific sentence + category combinations within a document
+- Dismissed comments will never appear again for that exact sentence and category **in that specific document**
 
 ### 2. Modal View for Comments
 - New "View Comments" button appears when advisory comments are available
@@ -16,96 +22,145 @@
   - AI suggestion/explanation
   - Category information
   - Navigation controls
-  - Dismissal options
+  - Document-specific dismissal options
 
-### 3. Two Dismissal Options
-- **Skip This Time**: Hides comment temporarily (will reappear on next analysis)
-- **Never Show Again**: Permanently dismisses this sentence + category combination
+### 3. Two Dismissal Options (Document-Scoped)
+- **Skip This Time**: Hides comment temporarily (will reappear on next analysis in this document)
+- **Never Show Again**: Permanently dismisses this sentence + category combination **for this document only**
 
 ## Recent Improvements
 
-### 🎯 Sentence-Based Matching
-**Problem Solved**: OpenAI was returning inconsistent text snippets, making hash-based dismissal unreliable.
+### 🗂️ Document-Level Storage Architecture
+**Problem Solved**: Global dismissals were affecting all documents, which wasn't user-friendly.
 
-**Solution**: Updated OpenAI prompts to return complete sentences from the document:
-- Backend now requests full sentences instead of text snippets
-- Frontend maps `sentence` field to `originalText` for consistency
-- Hash function works with complete sentences for reliable matching
-- Position finding uses exact sentence matching in document content
+**Solution**: Implemented document-scoped dismissed hash storage:
+
+```typescript
+// Before: Global dismissals
+dismissedHashes: Set<string>
+
+// After: Document-specific dismissals  
+dismissedHashesByDocument: Record<string, Set<string>>
+```
 
 ### 🔧 Technical Changes Made
-1. **OpenAI Prompts**: All 5 category prompts now ask for complete sentences
-2. **Response Mapping**: Backend maps `sentence` → `originalText` in advisory actions
-3. **Type Safety**: Added proper TypeScript interfaces and validation
-4. **Hash Reliability**: Full sentences provide consistent hash generation
+1. **Store Structure**: Changed from single Set to Record mapping documentId → Set<hashes>
+2. **Function Signatures**: All advisory functions now require `documentId` parameter
+3. **Persistence**: localStorage stores dismissed hashes per document
+4. **Filtering**: Comments filtered based on current document's dismissed hashes only
+
+### 📊 Storage Structure
+```json
+{
+  "advisory-store": {
+    "state": {
+      "dismissedHashesByDocument": {
+        "doc-123": ["a1b2c3", "d4e5f6"],
+        "doc-456": ["g7h8i9", "j0k1l2"],
+        "doc-789": ["m3n4o5"]
+      }
+    }
+  }
+}
+```
 
 ## Testing Instructions
 
-1. **Generate Comments**: Type substantial content (50+ characters) and wait 2 seconds for auto-refresh
-2. **Verify Sentences**: Check that advisory comments highlight complete sentences, not fragments
-3. **View Inline**: Click on yellow highlighted text to see popover with full sentence context
-4. **View in Modal**: Click "View Comments" button in header to see modal interface
-5. **Test Navigation**: Use Previous/Next buttons to navigate through comments
-6. **Test Temporary Dismissal**: Click "Skip This Time" - comment disappears but may return
-7. **Test Permanent Dismissal**: Click "Never Show Again" - comment permanently removed
-8. **Verify Persistence**: Edit the same sentence again - permanently dismissed comments should not reappear
+1. **Create Multiple Documents**: Have at least 2 documents with similar content
+2. **Generate Comments**: Type substantial content (50+ characters) and wait 2 seconds for auto-refresh
+3. **Verify Document Isolation**: 
+   - Dismiss a comment in Document A
+   - Switch to Document B with similar content
+   - Verify the same comment type still appears in Document B
+4. **Test Permanent Dismissal**: Click "Never Show Again" in Document A
+5. **Verify Persistence**: 
+   - Refresh the page
+   - Return to Document A - dismissed comment should not reappear
+   - Check Document B - comment should still be available
+6. **Cross-Document Verification**: Same sentence + category should be independently dismissible per document
 
 ## Implementation Details
 
-### Sentence-Based Hash Function
-- Combines normalized `sentence.toLowerCase() + "::" + category`
-- Uses multiplication-based hash (no bitwise operators for linting compliance)
-- Returns base-36 string for compact storage
-- Full sentences provide consistent, reliable hashing
+### Document-Scoped Hash Function
+- Same hash algorithm: `sentence.toLowerCase() + "::" + category`
+- Storage per document: `dismissedHashesByDocument[documentId].add(hash)`
+- Filtering per document: Only checks current document's dismissed hashes
 
-### OpenAI Integration
-- 5 concurrent requests (one per advisory category)
-- Each prompt specifically asks for complete sentences
-- Response validation ensures sentences exist in document
-- Graceful fallback for malformed responses
+### Updated Function Signatures
+```typescript
+// All functions now require documentId
+setComments(comments: AdvisoryComment[], documentId: string)
+dismissCommentPermanently(comment: AdvisoryComment, documentId: string)
+refreshComments(documentContent: string, documentId: string)
+useAdvisoryAutoRefresh(content: string, documentId: string, options?)
+```
 
-### Store Updates
-- Added `dismissedHashes` Set to advisory state
-- New `dismissCommentPermanently` action with sentence-based hashing
-- Automatic filtering of dismissed comments on `setComments`
-- Type-safe handling of OpenAI response format
-
-### UI Components
-- Enhanced `AdvisoryModal` with navigation and dismissal options
-- Updated `EditorHeader` with comment count badge and modal trigger
-- Maintained consistent yellow theme throughout
-- Full sentence display in modal for better context
+### Persistence Logic
+```typescript
+partialize: (state) => ({ 
+  dismissedHashesByDocument: Object.fromEntries(
+    Object.entries(state.dismissedHashesByDocument).map(([docId, hashes]) => [
+      docId,
+      Array.from(hashes) // Set → Array for JSON
+    ])
+  )
+}),
+onRehydrateStorage: () => (state) => {
+  // Convert Arrays back to Sets for each document
+  const rehydratedHashes = {};
+  Object.entries(state.dismissedHashesByDocument).forEach(([docId, hashes]) => {
+    rehydratedHashes[docId] = new Set(hashes); // Array → Set
+  });
+  return { ...state, dismissedHashesByDocument: rehydratedHashes };
+}
+```
 
 ## Test Scenarios
 
-### Scenario 1: Sentence-Based Dismissal
-1. Get advisory comments on sentence: "This approach is good for our use case."
-2. Permanently dismiss "Strengthen Claims" suggestion
-3. Edit to: "This approach is really good for our use case."
-4. Verify "Strengthen Claims" doesn't appear (same core sentence)
+### Scenario 1: Document Isolation
+1. **Document A**: Get advisory comment on "This approach is good."
+2. **Document A**: Permanently dismiss "Strengthen Claims" suggestion
+3. **Document B**: Write same sentence: "This approach is good."
+4. **Document B**: Verify "Strengthen Claims" still appears (different document)
+5. **Document A**: Verify "Strengthen Claims" doesn't appear (dismissed)
 
-### Scenario 2: Category-Specific Dismissal
-1. Get comments on: "We should consider this technical approach carefully."
-2. Dismiss "Define Terms" for the sentence containing "technical approach"
-3. Write new sentence: "The technical approach requires more analysis."
-4. Verify "Define Terms" still appears (different sentence)
-5. Verify other categories still work for original sentence
+### Scenario 2: Cross-Document Independence
+1. **Document A**: Dismiss "Define Terms" for sentence containing "API"
+2. **Document B**: Write sentence with "API"
+3. **Document B**: Verify "Define Terms" still appears for "API"
+4. **Document B**: Dismiss "Strengthen Claims" for different sentence
+5. **Document A**: Verify only "Define Terms" is dismissed, "Strengthen Claims" still works
 
-### Scenario 3: Full Sentence Context
-1. Generate advisory comments on a paragraph
-2. Verify each comment shows a complete, grammatically correct sentence
-3. Check that sentences can be found exactly in the document
-4. Confirm no partial phrases or fragments are highlighted
+### Scenario 3: Persistence Per Document
+1. **Document A**: Dismiss multiple comments permanently
+2. **Document B**: Dismiss different comments permanently  
+3. **Refresh page**
+4. **Document A**: Verify only A's dismissals persist
+5. **Document B**: Verify only B's dismissals persist
+6. **Create Document C**: Verify no dismissals (clean slate)
 
 ## Expected Behavior
 
+✅ **Document Isolation**: Dismissals in one document don't affect others
+✅ **Independent History**: Each document maintains its own dismissal record
+✅ **Persistent Storage**: Document-specific dismissals survive page refreshes
+✅ **Clean New Documents**: New documents start with no dismissals
 ✅ **Full Sentences**: OpenAI returns complete sentences, not snippets
-✅ **Reliable Hashing**: Consistent hash generation from full sentences
-✅ **Exact Matching**: Sentences found precisely in document content
-✅ **Modal Interface**: Clean one-by-one comment review with full context
-✅ **Permanent Dismissal**: Hash-based filtering prevents re-showing dismissed sentences
-✅ **Temporary Dismissal**: Comments hidden until next analysis
-✅ **Navigation**: Smooth previous/next with auto-advance on dismissal
-✅ **Performance**: Fast hash lookups, concurrent API requests
+✅ **Reliable Hashing**: Consistent hash generation from full sentences per document
+✅ **Modal Interface**: Clean one-by-one comment review with document context
+✅ **Performance**: Fast hash lookups per document, concurrent API requests
 ✅ **Type Safety**: Full TypeScript compliance with proper validation
-✅ **UI Consistency**: Yellow theme matches existing design 
+✅ **UI Consistency**: Yellow theme matches existing design
+
+### localStorage Structure
+```
+advisory-store: {
+  dismissedHashesByDocument: {
+    "doc-abc123": ["hash1", "hash2", "hash3"],
+    "doc-def456": ["hash4", "hash5"], 
+    "doc-ghi789": ["hash6"]
+  }
+}
+```
+
+Each document ID maps to an array of dismissed comment hashes, providing complete isolation between documents while maintaining persistence across browser sessions. 

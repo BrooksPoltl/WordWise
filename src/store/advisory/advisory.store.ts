@@ -7,7 +7,7 @@ import { AdvisoryState, AdvisoryStore } from './advisory.types';
 
 const initialState: AdvisoryState = {
   comments: [],
-  dismissedHashes: new Set<string>(),
+  dismissedHashesByDocument: {},
   isLoading: false,
   error: null,
   lastAnalysisTimestamp: null,
@@ -18,11 +18,16 @@ export const useAdvisoryStore = create<AdvisoryStore>()(
     (set, get) => ({
       ...initialState,
 
-      setComments: (comments) => {
-        const { dismissedHashes } = get();
-        // Ensure dismissedHashes is a Set
-        const hashesSet = dismissedHashes instanceof Set ? dismissedHashes : new Set(Array.isArray(dismissedHashes) ? dismissedHashes : []);
-        // Filter out comments that have been permanently dismissed
+      setComments: (comments, documentId) => {
+        const { dismissedHashesByDocument } = get();
+        // Get dismissed hashes for this specific document
+        const documentDismissedHashes = dismissedHashesByDocument[documentId] || new Set<string>();
+        // Ensure it's a Set (in case of rehydration issues)
+        const hashesSet = documentDismissedHashes instanceof Set 
+          ? documentDismissedHashes 
+          : new Set(Array.isArray(documentDismissedHashes) ? documentDismissedHashes : []);
+        
+        // Filter out comments that have been permanently dismissed for this document
         const filteredComments = filterDismissedComments(comments, hashesSet);
         
         set({ 
@@ -45,16 +50,25 @@ export const useAdvisoryStore = create<AdvisoryStore>()(
           ),
         })),
 
-      dismissCommentPermanently: (comment) => {
-        const { dismissedHashes } = get();
+      dismissCommentPermanently: (comment, documentId) => {
+        const { dismissedHashesByDocument } = get();
         const hash = createAdvisoryHash(comment.originalText, comment.reason);
-        // Ensure dismissedHashes is a Set
-        const hashesSet = dismissedHashes instanceof Set ? dismissedHashes : new Set(Array.isArray(dismissedHashes) ? dismissedHashes : []);
+        
+        // Get existing dismissed hashes for this document
+        const existingHashes = dismissedHashesByDocument[documentId] || new Set<string>();
+        const hashesSet = existingHashes instanceof Set 
+          ? existingHashes 
+          : new Set(Array.isArray(existingHashes) ? existingHashes : []);
+        
+        // Add the new hash to this document's dismissed hashes
         const newDismissedHashes = new Set(hashesSet);
         newDismissedHashes.add(hash);
         
         set((state: AdvisoryState) => ({
-          dismissedHashes: newDismissedHashes,
+          dismissedHashesByDocument: {
+            ...state.dismissedHashesByDocument,
+            [documentId]: newDismissedHashes
+          },
           comments: state.comments.filter(c => c.id !== comment.id), // Remove from current comments
         }));
       },
@@ -65,7 +79,7 @@ export const useAdvisoryStore = create<AdvisoryStore>()(
       setError: (error) => 
         set({ error }),
 
-      refreshComments: async (documentContent: string) => {
+      refreshComments: async (documentContent: string, documentId: string) => {
         const currentState = get();
         
         // Don't refresh if already loading
@@ -84,9 +98,9 @@ export const useAdvisoryStore = create<AdvisoryStore>()(
           // Keep existing comments visible until new ones are ready
           const comments = await generateAdvisoryCommentsCall(documentContent);
           
-          // Use setComments to ensure proper filtering of dismissed hashes
+          // Use setComments to ensure proper filtering of dismissed hashes for this document
           const { setComments } = get();
-          setComments(comments);
+          setComments(comments, documentId);
           set({ isLoading: false });
         } catch (error) {
           logger.error('Failed to refresh advisory comments:', error);
@@ -101,15 +115,24 @@ export const useAdvisoryStore = create<AdvisoryStore>()(
     {
       name: 'advisory-store',
       partialize: (state) => ({ 
-        dismissedHashes: Array.from(state.dismissedHashes || []) // Convert Set to Array for JSON serialization
+        dismissedHashesByDocument: Object.fromEntries(
+          Object.entries(state.dismissedHashesByDocument || {}).map(([docId, hashes]) => [
+            docId,
+            Array.from(hashes instanceof Set ? hashes : [])
+          ])
+        )
       }),
       onRehydrateStorage: () => (state) => {
-        if (state) {
-          // Ensure dismissedHashes is always a Set after rehydration
-          const hashes = Array.isArray(state.dismissedHashes) ? state.dismissedHashes : [];
+        if (state && state.dismissedHashesByDocument) {
+          // Convert Arrays back to Sets for each document
+          const rehydratedHashes: Record<string, Set<string>> = {};
+          Object.entries(state.dismissedHashesByDocument).forEach(([docId, hashes]) => {
+            rehydratedHashes[docId] = new Set(Array.isArray(hashes) ? hashes : []);
+          });
+          
           return {
             ...state,
-            dismissedHashes: new Set(hashes)
+            dismissedHashesByDocument: rehydratedHashes
           };
         }
         return state;

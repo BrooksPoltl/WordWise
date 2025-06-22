@@ -21,8 +21,8 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleRequestAdvisory = async () => {
-    if (currentDocument?.content) {
-      await refreshComments(currentDocument.content);
+    if (currentDocument?.content && currentDocument?.id) {
+      await refreshComments(currentDocument.content, currentDocument.id);
     }
   };
 
