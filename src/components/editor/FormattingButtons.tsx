@@ -1,4 +1,4 @@
-import { Bold, Heading1, Heading2, Heading3, Italic, Link, Table } from 'lucide-react';
+import { Bold, Code, Heading1, Heading2, Heading3, Italic, Link, SquareCode, Table } from 'lucide-react';
 import React from 'react';
 
 interface FormattingButtonProps {
@@ -26,9 +26,21 @@ interface FormattingButtonsProps {
     onH3: () => void;
     onLink: () => void;
     onTable: () => void;
+    onInlineCode: () => void;
+    onCodeBlock: () => void;
 }
 
-const FormattingButtons: React.FC<FormattingButtonsProps> = ({ onBold, onItalic, onH1, onH2, onH3, onLink, onTable }) => (
+const FormattingButtons: React.FC<FormattingButtonsProps> = ({
+  onBold,
+  onItalic,
+  onH1,
+  onH2,
+  onH3,
+  onLink,
+  onTable,
+  onInlineCode,
+  onCodeBlock,
+}) => (
   <div className="flex items-center space-x-1">
     <FormattingButton onClick={onBold} aria-label="Bold">
       <Bold className="w-5 h-5" />
@@ -50,6 +62,12 @@ const FormattingButtons: React.FC<FormattingButtonsProps> = ({ onBold, onItalic,
     </FormattingButton>
     <FormattingButton onClick={onTable} aria-label="Insert Table">
         <Table className="w-5 h-5" />
+    </FormattingButton>
+    <FormattingButton onClick={onInlineCode} aria-label="Inline Code">
+        <Code className="w-5 h-5" />
+    </FormattingButton>
+    <FormattingButton onClick={onCodeBlock} aria-label="Insert Code Block">
+        <SquareCode className="w-5 h-5" />
     </FormattingButton>
   </div>
 );

@@ -89,4 +89,29 @@ export const insertTable = (view: EditorView | null) => {
 
   const { state, dispatch } = view;
   dispatch(state.replaceSelection(table));
+};
+
+export const toggleInlineCode = (view: EditorView | null) => {
+  toggleMark(view, '`');
+};
+
+export const insertCodeBlock = (view: EditorView | null) => {
+  if (!view) return;
+
+  const { state, dispatch } = view;
+  const { from, to } = state.selection.main;
+  const selection = state.doc.sliceString(from, to);
+  const placeholder = '...';
+
+  const language = prompt('Enter code language (e.g., javascript):', '');
+  
+  const codeBlock = `\`\`\`${language || ''}\n${selection || placeholder}\n\`\`\``;
+  const cursorPos = from + (language?.length || 0) + 4;
+
+  dispatch(
+    state.update({
+      changes: { from, to, insert: codeBlock },
+      selection: { anchor: cursorPos, head: cursorPos + (selection || placeholder).length },
+    }),
+  );
 }; 
