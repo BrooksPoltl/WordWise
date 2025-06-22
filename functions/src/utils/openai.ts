@@ -57,20 +57,21 @@ export async function generateAdvisoryComments(documentContent: string): Promise
       name: "Strengthen a Claim",
       prompt: `You are an expert writing assistant. Analyze the following document and identify opportunities to strengthen claims with data, statistics, or concrete examples.
 
-Find subjective statements, opinions, or claims made without sufficient proof. For each instance, suggest adding specific data points, statistics, or concrete examples.
-
-**CRITICAL WHITESPACE HANDLING:**
-The document text contains important whitespace, line breaks, and formatting. You MUST preserve the exact character positions.
+Find subjective statements, opinions, or claims made without sufficient proof. For each instance, provide the complete sentence containing the claim.
 
 **Output Format:**
 Return ONLY a valid JSON array. Each object must have this exact format:
 {
   "reason": "Strengthen a Claim",
-  "originalText": "<A unique, substantial snippet (minimum 20 characters) from the document>",
-  "explanation": "<Concise advice in second person, e.g., 'Consider adding a data point...'>"
+  "sentence": "<The complete sentence from the document that contains the claim>",
+  "explanation": "<Concise advice in second person, e.g., 'Consider adding a data point to support this claim...'>"
 }
 
-If no instances found, return: []
+**Important Guidelines:**
+- Return the full, complete sentence (not a snippet)
+- The sentence must appear exactly as written in the document
+- Focus on claims that would benefit from supporting evidence
+- If no instances found, return: []
 
 Document: ${JSON.stringify(documentContent)}`
     },
@@ -80,18 +81,19 @@ Document: ${JSON.stringify(documentContent)}`
 
 Find technical terms, industry jargon, or acronyms that haven't been defined and would benefit from clarification.
 
-**CRITICAL WHITESPACE HANDLING:**
-The document text contains important whitespace, line breaks, and formatting. You MUST preserve the exact character positions.
-
 **Output Format:**
 Return ONLY a valid JSON array. Each object must have this exact format:
 {
   "reason": "Define a Key Term/Acronym",
-  "originalText": "<A unique, substantial snippet (minimum 20 characters) from the document>",
-  "explanation": "<Concise advice in second person, e.g., 'Consider defining this term...'>"
+  "sentence": "<The complete sentence from the document that contains the undefined term>",
+  "explanation": "<Concise advice in second person, e.g., 'Consider defining this term for clarity...'>"
 }
 
-If no instances found, return: []
+**Important Guidelines:**
+- Return the full, complete sentence (not a snippet)
+- The sentence must appear exactly as written in the document
+- Focus on terms that would confuse readers unfamiliar with the domain
+- If no instances found, return: []
 
 Document: ${JSON.stringify(documentContent)}`
     },
@@ -101,18 +103,19 @@ Document: ${JSON.stringify(documentContent)}`
 
 Find paragraphs that are overly long, dense, or contain multiple disconnected ideas that should be broken into smaller, focused units.
 
-**CRITICAL WHITESPACE HANDLING:**
-The document text contains important whitespace, line breaks, and formatting. You MUST preserve the exact character positions.
-
 **Output Format:**
 Return ONLY a valid JSON array. Each object must have this exact format:
 {
   "reason": "Improve Structural Flow",
-  "originalText": "<A unique, substantial snippet (minimum 20 characters) from the document>",
+  "sentence": "<The complete sentence from the document that represents the flow issue>",
   "explanation": "<Concise advice in second person, e.g., 'Consider breaking this into smaller paragraphs...'>"
 }
 
-If no instances found, return: []
+**Important Guidelines:**
+- Return the full, complete sentence (not a snippet)
+- The sentence must appear exactly as written in the document
+- Focus on sentences that could be split or reorganized for better flow
+- If no instances found, return: []
 
 Document: ${JSON.stringify(documentContent)}`
     },
@@ -122,18 +125,19 @@ Document: ${JSON.stringify(documentContent)}`
 
 Find sections that describe problems or situations but don't guide the reader on next steps. Suggest adding concluding sentences or action items.
 
-**CRITICAL WHITESPACE HANDLING:**
-The document text contains important whitespace, line breaks, and formatting. You MUST preserve the exact character positions.
-
 **Output Format:**
 Return ONLY a valid JSON array. Each object must have this exact format:
 {
   "reason": "Add a Clear Call to Action",
-  "originalText": "<A unique, substantial snippet (minimum 20 characters) from the document>",
-  "explanation": "<Concise advice in second person, e.g., 'Consider adding a clear next step...'>"
+  "sentence": "<The complete sentence from the document that would benefit from a call to action>",
+  "explanation": "<Concise advice in second person, e.g., 'Consider adding a clear next step after this statement...'>"
 }
 
-If no instances found, return: []
+**Important Guidelines:**
+- Return the full, complete sentence (not a snippet)
+- The sentence must appear exactly as written in the document
+- Focus on sentences that present problems without solutions
+- If no instances found, return: []
 
 Document: ${JSON.stringify(documentContent)}`
     },
@@ -143,18 +147,19 @@ Document: ${JSON.stringify(documentContent)}`
 
 Find specific solutions or proposals that lack context about other options. Suggest mentioning alternatives that were considered.
 
-**CRITICAL WHITESPACE HANDLING:**
-The document text contains important whitespace, line breaks, and formatting. You MUST preserve the exact character positions.
-
 **Output Format:**
 Return ONLY a valid JSON array. Each object must have this exact format:
 {
   "reason": "Acknowledge Alternatives",
-  "originalText": "<A unique, substantial snippet (minimum 20 characters) from the document>",
-  "explanation": "<Concise advice in second person, e.g., 'Consider mentioning alternative approaches...'>"
+  "sentence": "<The complete sentence from the document that presents a solution without alternatives>",
+  "explanation": "<Concise advice in second person, e.g., 'Consider mentioning alternative approaches that were considered...'>"
 }
 
-If no instances found, return: []
+**Important Guidelines:**
+- Return the full, complete sentence (not a snippet)
+- The sentence must appear exactly as written in the document
+- Focus on sentences that present singular solutions
+- If no instances found, return: []
 
 Document: ${JSON.stringify(documentContent)}`
     }

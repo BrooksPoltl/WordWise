@@ -1,18 +1,20 @@
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../../config';
 import { AdvisoryComment } from '../../types';
+import { findTextPositionInDocument } from '../../utils/advisoryComments';
 import { logger } from '../../utils/logger';
 
-// Interface for Firebase function response
-interface AdvisoryCommentsResponse {
-  originalText: string;
-  explanation: string;
-  reason: string;
+interface OpenAISuggestion {
+  sentence?: string;
+  originalText?: string;
+  explanation?: string;
+  reason?: string;
 }
 
-// Type guard for valid reasons
 const isValidReason = (reason: string): reason is AdvisoryComment['reason'] => {
   const validReasons: AdvisoryComment['reason'][] = [
     'Strengthen a Claim',
-    'Define a Key Term/Acronym', 
+    'Define a Key Term/Acronym',
     'Improve Structural Flow',
     'Add a Clear Call to Action',
     'Acknowledge Alternatives'
@@ -20,67 +22,69 @@ const isValidReason = (reason: string): reason is AdvisoryComment['reason'] => {
   return validReasons.includes(reason as AdvisoryComment['reason']);
 };
 
-// Firebase function call to generate advisory comments
-export const generateAdvisoryCommentsCall = async (documentContent: string): Promise<AdvisoryComment[]> => {
+export const generateAdvisoryCommentsCall = async (
+  documentContent: string
+): Promise<AdvisoryComment[]> => {
   try {
-    const { getFunctions, httpsCallable } = await import('firebase/functions');
-    const functions = getFunctions();
-    const requestAdvisoryComments = httpsCallable(functions, 'requestAdvisoryComments');
+    logger.info('🔍 Requesting advisory comments for document content');
     
+    const requestAdvisoryComments = httpsCallable(functions, 'requestAdvisoryComments');
     const result = await requestAdvisoryComments({ documentContent });
-    const data = result.data as AdvisoryCommentsResponse[];
-
-    if (!Array.isArray(data)) {
-      logger.warning('Invalid advisory comments response format:', data);
+    
+    // The result.data contains the array of advisory suggestions from OpenAI
+    const suggestions = result.data as OpenAISuggestion[];
+    
+    if (!Array.isArray(suggestions)) {
+      logger.warning('Invalid response format from advisory comments function');
       return [];
     }
 
-    // Transform API response to AdvisoryComment format with validation
-    const validComments: AdvisoryComment[] = [];
-    
-    data.forEach((comment, index) => {
-      // Find the text position in the document content
-      const startIndex = documentContent.indexOf(comment.originalText);
-      const endIndex = startIndex !== -1 ? startIndex + comment.originalText.length : 0;
-      
-      // Validate that we found the text
-      if (startIndex === -1) {
-        logger.warning(`Could not find text in document for comment ${index}:`, {
-          searchText: comment.originalText?.substring(0, 50),
-          reason: comment.reason
-        });
-        return;
-      }
-      
-      // Double-check the match
-      const actualText = documentContent.slice(startIndex, endIndex);
-      const matches = actualText === comment.originalText;
-      
-      if (!matches) {
-        logger.warning(`Text extraction mismatch for comment ${index}:`, {
-          expected: comment.originalText?.substring(0, 50),
-          actual: actualText?.substring(0, 50),
-          reason: comment.reason
-        });
-        return;
-      }
-      
-      validComments.push({
-        id: `advisory-${Date.now()}-${index}`,
-        type: 'anchored' as const,
-        originalText: comment.originalText || '',
-        explanation: comment.explanation || '',
-        startIndex,
-        endIndex,
-        reason: isValidReason(comment.reason) ? comment.reason : 'Strengthen a Claim',
-        dismissed: false,
-      });
-    });
+    logger.info(`✅ Received ${suggestions.length} advisory suggestions from OpenAI`);
 
-    logger.info(`Generated ${validComments.length} advisory comments from ${data.length} API responses`);
-    return validComments;
+    // Process each suggestion and find its position in the document
+    const comments: AdvisoryComment[] = [];
+    
+    for (const suggestion of suggestions) {
+      try {
+        // OpenAI now returns 'sentence' field, map it to 'originalText'
+        const sentence = suggestion.sentence || suggestion.originalText || '';
+        
+        if (!sentence || !suggestion.explanation || !suggestion.reason || !isValidReason(suggestion.reason)) {
+          logger.warning('Skipping invalid suggestion:', suggestion);
+          // Skip this iteration instead of using continue
+        } else {
+          // Find the position of this sentence in the document
+          const position = findTextPositionInDocument(documentContent, sentence);
+          
+          if (!position || position.startIndex === -1) {
+            logger.warning(`Could not find sentence in document: "${sentence.substring(0, 50)}..."`);
+            // Skip this iteration instead of using continue
+          } else {
+            const comment: AdvisoryComment = {
+              id: `advisory-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              type: 'anchored',
+              originalText: sentence, // Map sentence to originalText
+              explanation: suggestion.explanation,
+              startIndex: position.startIndex,
+              endIndex: position.endIndex,
+              reason: suggestion.reason, // Now properly typed
+              dismissed: false,
+            };
+
+            comments.push(comment);
+            logger.debug(`✅ Processed advisory comment: ${comment.reason} at ${comment.startIndex}-${comment.endIndex}`);
+          }
+        }
+      } catch (error) {
+        logger.error('Error processing individual suggestion:', error, suggestion);
+        // Skip this suggestion and continue with others
+      }
+    }
+
+    logger.info(`🎯 Successfully processed ${comments.length} advisory comments`);
+    return comments;
   } catch (error) {
-    logger.error('Error generating advisory comments:', error);
-    throw error;
+    logger.error('Failed to generate advisory comments:', error);
+    throw new Error('Failed to generate advisory comments');
   }
 }; 
