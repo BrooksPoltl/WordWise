@@ -153,6 +153,7 @@ export const createDocument = async (
       const { documents } = get();
       set({
         documents: [createdDoc, ...documents],
+        currentDocument: createdDoc,
         loading: false,
       });
     }
