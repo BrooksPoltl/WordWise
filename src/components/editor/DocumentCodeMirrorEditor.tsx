@@ -1,7 +1,8 @@
 import { EditorView } from '@codemirror/view';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useAdvisoryAutoRefresh } from '../../hooks/useAdvisoryAutoRefresh';
 import { useAutoSave } from '../../hooks/useAutoSave';
+import { useAdvisoryStore } from '../../store/advisory';
 import { useDocumentStore } from '../../store/document/document.store';
 import { useSuggestionStore } from '../../store/suggestion/suggestion.store';
 import CodeMirrorEditor from './CodeMirrorEditor';
@@ -16,10 +17,18 @@ export const DocumentCodeMirrorEditor: React.FC<DocumentCodeMirrorEditorProps> =
   onContentChange 
 }) => {
     const { currentDocument } = useDocumentStore();
+    const { clearComments } = useAdvisoryStore();
     const suggestionStore = useSuggestionStore();
     
     // Track the current content state for advisory auto-refresh
     const [currentContent, setCurrentContent] = useState(currentDocument?.content || '');
+
+    // Clear comments when document changes
+    useEffect(() => {
+        if (currentDocument) {
+            clearComments(); // Clear advisory comments from previous document
+        }
+    }, [currentDocument?.id, clearComments]); // Only depend on document ID, not the whole object
     
     const { debouncedSave } = useAutoSave(currentDocument?.id || '');
     
