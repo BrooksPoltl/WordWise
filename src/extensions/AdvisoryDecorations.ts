@@ -1,12 +1,13 @@
 import { Extension, StateEffect, StateField } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView } from '@codemirror/view';
+import { CONTEXT_AWARE_CATEGORIES } from '../constants/advisoryConstants';
 import { AdvisoryComment } from '../types';
 
-// Get CSS class for advisory comments - using consistent yellow styling
-const getAdvisoryCssClass = (): string => 
-  // All advisory comments use the same yellow styling to match landing page
-  // and avoid conflicts with grammar feedback colors
-  'wordwise-advisory-comment';
+// Get CSS class for advisory comments based on category type
+const getAdvisoryCssClass = (reason: AdvisoryComment['reason']): string => {
+  const isContextAware = CONTEXT_AWARE_CATEGORIES.includes(reason);
+  return isContextAware ? 'wordwise-advisory-comment-blue' : 'wordwise-advisory-comment-amber';
+};
 
 // State effect to update advisory comments
 export const updateAdvisoryComments = StateEffect.define<{
@@ -43,7 +44,7 @@ export const advisoryDecorationField = StateField.define<DecorationSet>({
             return true;
           })
           .map(comment => {
-            const cssClass = getAdvisoryCssClass();
+            const cssClass = getAdvisoryCssClass(comment.reason);
             
             return Decoration.mark({
               class: cssClass,
@@ -67,9 +68,16 @@ export const advisoryDecorationField = StateField.define<DecorationSet>({
 export const createAdvisoryDecorationExtension = (): Extension => [
   advisoryDecorationField,
   EditorView.theme({
-    '.wordwise-advisory-comment': {
-      backgroundColor: 'rgba(245, 158, 11, 0.1)', // Amber/yellow background
-      borderBottom: '2px dotted #f59e0b', // Amber/yellow dotted border
+    // Blue styling for context-aware categories
+    '.wordwise-advisory-comment-blue': {
+      backgroundColor: 'rgba(59, 130, 246, 0.1)', // Blue background (blue-500 with opacity)
+      borderBottom: '2px dotted #3b82f6', // Blue dotted border (blue-500)
+      cursor: 'pointer',
+    },
+    // Amber styling for standard categories
+    '.wordwise-advisory-comment-amber': {
+      backgroundColor: 'rgba(245, 158, 11, 0.1)', // Amber background (amber-500 with opacity)
+      borderBottom: '2px dotted #f59e0b', // Amber dotted border (amber-500)
       cursor: 'pointer',
     },
   }),
