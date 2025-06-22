@@ -1,6 +1,4 @@
 // Advisory comment constants
-export const ADVISORY_AUTO_REFRESH_DELAY = 2000; // 2 seconds for responsive feedback
-
 export const ADVISORY_CATEGORIES = {
   // Context-aware categories (blue styling) - Priority 1
   'Implementation Feasibility': {

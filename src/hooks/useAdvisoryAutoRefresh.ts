@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { ADVISORY_AUTO_REFRESH_DELAY, ADVISORY_MIN_CONTENT_LENGTH } from '../constants/advisoryConstants';
+import { ADVISORY_MIN_CONTENT_LENGTH } from '../constants/advisoryConstants';
 import { useAdvisoryStore } from '../store/advisory';
-import { debounce } from '../utils/debounce';
 
 export interface UseAdvisoryAutoRefreshOptions {
   enabled?: boolean;
+  enableContentChangeRefresh?: boolean;
   minContentLength?: number;
 }
 
@@ -14,7 +14,8 @@ export const useAdvisoryAutoRefresh = (
   options: UseAdvisoryAutoRefreshOptions = {}
 ) => {
   const { 
-    enabled = true, 
+    enabled = true,
+    enableContentChangeRefresh = false,
     minContentLength = ADVISORY_MIN_CONTENT_LENGTH 
   } = options;
   
@@ -22,36 +23,10 @@ export const useAdvisoryAutoRefresh = (
   const previousContentRef = useRef<string>('');
   const isInitializedRef = useRef(false);
 
-  // Create a stable debounced refresh function using useRef
-  const debouncedRefreshRef = useRef<ReturnType<typeof debounce> | null>(null);
-
-  // Initialize the debounced function once
+  // Handle initial load
   useEffect(() => {
-    const refreshFunction = (content: string) => {
-      if (!enabled || !documentId) {
-        return;
-      }
-
-      if (content.trim().length < minContentLength) {
-        return;
-      }
-
-      refreshComments(content, documentId);
-    };
-
-    debouncedRefreshRef.current = debounce(refreshFunction, ADVISORY_AUTO_REFRESH_DELAY);
-
-    return () => {
-      // Cleanup on unmount
-      debouncedRefreshRef.current?.cancel();
-      debouncedRefreshRef.current = null;
-    };
-  }, [enabled, minContentLength, refreshComments, documentId]);
-
-  // Handle content changes and initial load
-  useEffect(() => {
-    // Skip if no documentId
-    if (!documentId) {
+    // Skip if no documentId or disabled
+    if (!enabled || !documentId) {
       return;
     }
 
@@ -67,14 +42,16 @@ export const useAdvisoryAutoRefresh = (
       return;
     }
 
-    // Only refresh if content actually changed and we have a debounced function
-    if (documentContent !== previousContentRef.current && debouncedRefreshRef.current) {
-      debouncedRefreshRef.current(documentContent);
-      previousContentRef.current = documentContent;
+    // Only refresh on content changes if enableContentChangeRefresh is true
+    if (enableContentChangeRefresh && documentContent !== previousContentRef.current) {
+      refreshComments(documentContent, documentId);
     }
-  }, [documentContent, refreshComments, minContentLength, documentId]);
+    
+    // Always update the previous content reference
+    previousContentRef.current = documentContent;
+  }, [documentContent, refreshComments, minContentLength, documentId, enabled, enableContentChangeRefresh]);
 
-  // Manual refresh function
+  // Manual refresh function - immediate, no debouncing needed
   const manualRefresh = useCallback(() => {
     if (!enabled || !documentId) {
       return;

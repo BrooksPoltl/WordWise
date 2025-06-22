@@ -31,9 +31,10 @@ export const DocumentCodeMirrorEditor: React.FC<DocumentCodeMirrorEditorProps> =
     
     const { debouncedSave } = useAutoSave(currentDocument?.id || '');
     
-    // Advisory auto-refresh integration - now uses the actual current content
+    // Advisory auto-refresh integration - only on initial document load, not on typing
     useAdvisoryAutoRefresh(currentContent, currentDocument?.id || '', { 
-      enabled: true,
+      enabled: true, // Enable initial load
+      // enableContentChangeRefresh defaults to false - no typing-based refresh
       minContentLength: ADVISORY_MIN_CONTENT_LENGTH 
     });
 
