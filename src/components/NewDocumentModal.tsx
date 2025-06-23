@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { DOCUMENT_TYPES_BY_ROLE, DocumentType, NEW_DOCUMENT_TEXT } from '../constants/documentConstants';
 import { UserRole } from '../constants/userConstants';
 import { useAuthStore } from '../store/auth/auth.store';
@@ -55,20 +56,44 @@ export const NewDocumentModal: React.FC<NewDocumentModalProps> = ({
 
   const documentTypes: DocumentType[] = user?.role ? DOCUMENT_TYPES_BY_ROLE[user.role as UserRole] || [] : [];
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  };
+
+  const handleBackdropKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      handleClose();
+    }
+  };
+
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+  const modalContent = (
+    <div 
+      className="fixed inset-0 w-screen h-screen bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh' }}
+      onClick={handleBackdropClick}
+      onKeyDown={handleBackdropKeyDown}
+      role="presentation"
+      tabIndex={-1}
+    >
+      <div 
+        className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-white/50"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200/60 bg-white/90 backdrop-blur-sm rounded-t-lg">
+          <h2 id="modal-title" className="text-xl font-semibold text-gray-900">
             {NEW_DOCUMENT_TEXT.MODAL_TITLE}
           </h2>
           <button
             type="button"
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors text-2xl leading-none"
+            className="text-gray-400 hover:text-gray-600 transition-colors text-2xl leading-none p-1 rounded hover:bg-gray-100"
           >
             ×
           </button>
@@ -87,7 +112,7 @@ export const NewDocumentModal: React.FC<NewDocumentModalProps> = ({
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               placeholder={NEW_DOCUMENT_TEXT.TITLE_PLACEHOLDER}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/90 backdrop-blur-sm"
             />
           </div>
 
@@ -104,7 +129,7 @@ export const NewDocumentModal: React.FC<NewDocumentModalProps> = ({
               value={formData.context}
               onChange={(e) => setFormData(prev => ({ ...prev, context: e.target.value }))}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-vertical bg-white/90 backdrop-blur-sm"
               placeholder="e.g., This is a feature spec for our new user dashboard redesign project..."
             />
           </div>
@@ -120,9 +145,9 @@ export const NewDocumentModal: React.FC<NewDocumentModalProps> = ({
                   <button
                     key={docType.name}
                     type="button"
-                    className={`relative p-4 border rounded-lg cursor-pointer transition-all hover:border-blue-300 hover:shadow-sm text-left ${
+                    className={`relative p-4 border rounded-lg cursor-pointer transition-all hover:border-blue-300 hover:shadow-sm text-left bg-white/80 backdrop-blur-sm ${
                       selectedDocumentType === docType.name
-                        ? 'border-blue-500 bg-blue-50'
+                        ? 'border-blue-500 bg-blue-50/80'
                         : 'border-gray-200'
                     }`}
                     onClick={() => setSelectedDocumentType(
@@ -155,18 +180,18 @@ export const NewDocumentModal: React.FC<NewDocumentModalProps> = ({
           )}
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200/60">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white/90 border border-gray-300 rounded-md hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 backdrop-blur-sm"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 border border-transparent rounded-md hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md"
             >
               {loading ? 'Creating...' : NEW_DOCUMENT_TEXT.CREATE_BUTTON}
             </button>
@@ -175,4 +200,6 @@ export const NewDocumentModal: React.FC<NewDocumentModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }; 

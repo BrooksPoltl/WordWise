@@ -5,6 +5,7 @@ import {
     useInteractions,
 } from '@floating-ui/react';
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { usePassiveRewrite } from '../../hooks/usePassiveRewrite';
 import { SUGGESTION_CATEGORIES } from '../../store/suggestion/suggestion.types';
 import { PassiveSuggestion } from '../../types';
@@ -44,10 +45,10 @@ const PassiveSuggestionPopover = React.forwardRef<
     }
   }, [suggestion, hasRewrite, hasTriggeredRewrite, isLoading, rewriteSentence]);
 
-  return (
+  const popoverContent = (
     <div
       ref={ref}
-      className="absolute z-10 w-64 max-w-xs rounded-md border border-gray-200 bg-white p-3 shadow-lg border-t-4"
+      className="absolute z-[110] w-64 max-w-xs rounded-md border border-gray-200 bg-white p-3 shadow-lg border-t-4"
       style={{ ...style, borderColor: SUGGESTION_CATEGORIES.passive.color }}
       {...getFloatingProps()}
     >
@@ -116,6 +117,8 @@ const PassiveSuggestionPopover = React.forwardRef<
       )}
     </div>
   );
+
+  return createPortal(popoverContent, document.body);
 });
 
 PassiveSuggestionPopover.displayName = 'PassiveSuggestionPopover';

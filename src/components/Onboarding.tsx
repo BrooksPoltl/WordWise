@@ -64,8 +64,14 @@ const Onboarding: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-6 md:p-8">
+    <div className="min-h-screen relative bg-gradient-to-br from-blue-100 via-white to-purple-100 flex items-center justify-center p-4 overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-10 z-0" />
+      <div className="absolute top-20 right-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob z-0" />
+      <div className="absolute top-40 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000 z-0" />
+      <div className="absolute bottom-20 right-1/3 w-60 h-60 bg-indigo-300 rounded-full mix-blend-multiply filter blur-xl opacity-25 animate-blob animation-delay-4000 z-0" />
+      
+      <div className="relative w-full max-w-2xl bg-white/95 backdrop-blur-sm rounded-xl shadow-xl p-6 md:p-8 border border-white/60 z-10">
         <div className="text-center mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
             {ONBOARDING_TEXT.TITLE}
@@ -89,8 +95,8 @@ const Onboarding: React.FC = () => {
                   onClick={() => setSelectedRole(role)}
                   className={`p-4 rounded-lg border-2 text-left transition-all duration-200 hover:shadow-md min-h-[4rem] flex items-center ${
                     selectedRole === role
-                      ? 'border-blue-500 bg-blue-50 text-blue-900'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                      ? 'border-blue-500 bg-blue-50/90 text-blue-900 backdrop-blur-sm shadow-sm'
+                      : 'border-gray-200 bg-white/90 text-gray-700 hover:border-gray-300 backdrop-blur-sm'
                   }`}
                 >
                   <div className="font-medium text-sm md:text-base">{role}</div>
@@ -111,7 +117,7 @@ const Onboarding: React.FC = () => {
               value={persona}
               onChange={(e) => setPersona(e.target.value)}
               placeholder="e.g., I'm a product manager at a fintech startup focused on mobile payment solutions for small businesses..."
-              className="w-full h-32 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm md:text-base"
+              className="w-full h-32 p-4 border border-gray-300/60 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm md:text-base bg-white/90 backdrop-blur-sm shadow-sm"
               maxLength={1000}
             />
             <div className="flex justify-between items-center mt-2">
@@ -123,7 +129,7 @@ const Onboarding: React.FC = () => {
 
           {/* Error Display */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="bg-red-50/90 backdrop-blur-sm border border-red-200/60 rounded-lg p-4 shadow-sm">
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
@@ -133,7 +139,7 @@ const Onboarding: React.FC = () => {
             <button
               type="submit"
               disabled={!selectedRole || isSubmitting || loading}
-              className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors text-sm md:text-base"
+              className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:from-blue-700 hover:to-purple-700 transition-all duration-200 text-sm md:text-base shadow-md"
             >
               {isSubmitting || loading ? (
                 <div className="flex items-center justify-center">
@@ -150,7 +156,7 @@ const Onboarding: React.FC = () => {
                 type="button"
                 onClick={handleSkipPersona}
                 disabled={isSubmitting || loading}
-                className="sm:w-auto bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
+                className="sm:w-auto bg-white/90 backdrop-blur-sm text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-white hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base border border-gray-300/60 shadow-sm"
               >
                 Skip for now
               </button>

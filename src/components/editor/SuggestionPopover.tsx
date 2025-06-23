@@ -1,8 +1,9 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import {
-  AnySuggestion,
-  SUGGESTION_CATEGORIES,
-  SuggestionCategory,
+    AnySuggestion,
+    SUGGESTION_CATEGORIES,
+    SuggestionCategory,
 } from '../../store/suggestion/suggestion.types';
 import { BaseSuggestion, SuggestionAction, SuggestionType } from '../../types';
 
@@ -147,11 +148,11 @@ const SuggestionPopover = React.forwardRef<
     suggestion.actions[0].type !== 'remove' &&
     suggestion.actions[0].text !== 'Ignore';
 
-  return (
+  const popoverContent = (
     <div
       ref={ref}
       style={style}
-      className={`rounded-lg border p-4 shadow-lg max-w-sm ${appearance.bgColor} ${appearance.borderColor}`}
+      className={`rounded-lg border p-4 shadow-lg max-w-sm z-[110] ${appearance.bgColor} ${appearance.borderColor}`}
       role="dialog"
       aria-labelledby="suggestion-title"
     >
@@ -185,6 +186,8 @@ const SuggestionPopover = React.forwardRef<
       </div>
     </div>
   );
+
+  return createPortal(popoverContent, document.body);
 });
 
 SuggestionPopover.displayName = 'SuggestionPopover';

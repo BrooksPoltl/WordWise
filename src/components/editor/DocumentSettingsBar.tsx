@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ADVISORY_MIN_CONTENT_LENGTH } from '../../constants/advisoryConstants';
 import { DOCUMENT_TYPES_BY_ROLE } from '../../constants/documentConstants';
 import { useAdvisoryStore } from '../../store/advisory';
@@ -23,6 +24,7 @@ const DocumentSettingsBar: React.FC<DocumentSettingsBarProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAdvisoryModalOpen, setIsAdvisoryModalOpen] = useState(false);
+  const [buttonPosition, setButtonPosition] = useState({ top: 0, left: 0, width: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Advisory functionality
@@ -53,6 +55,18 @@ const DocumentSettingsBar: React.FC<DocumentSettingsBarProps> = ({
     } catch (error) {
       // Error handling is in parent
     }
+  };
+
+  const handleToggleDropdown = () => {
+    if (!isOpen && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      setButtonPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+    setIsOpen(!isOpen);
   };
 
   // Advisory button handlers
@@ -98,28 +112,40 @@ const DocumentSettingsBar: React.FC<DocumentSettingsBarProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
+      if (!isOpen) return;
+
+      const target = event.target as Node;
+      
+      // Check if click is inside the dropdown button
+      if (dropdownRef.current && dropdownRef.current.contains(target)) {
+        return;
       }
+      
+      // Check if click is inside the dropdown content (which is now in a portal)
+      const dropdownContent = document.querySelector('[data-dropdown-content]');
+      if (dropdownContent && dropdownContent.contains(target)) {
+        return;
+      }
+      
+      // If click is outside both button and content, close dropdown
+      setIsOpen(false);
     };
+    
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [isOpen]);
 
   return (
     <>
-      <div className="flex items-center justify-between space-x-4 py-2">
+      <div className="flex items-center justify-between space-x-4 py-2 px-4 bg-white/95 backdrop-blur-sm border-b border-gray-200/60 shadow-sm">
         <div className="flex items-center space-x-4">
           <div className="relative" ref={dropdownRef}>
             <button
               type="button"
-              onClick={() => setIsOpen(!isOpen)}
-              className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
+              onClick={handleToggleDropdown}
+              className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center shadow-sm"
             >
               {currentDocumentType || 'Select Type'}
               <svg
@@ -136,32 +162,40 @@ const DocumentSettingsBar: React.FC<DocumentSettingsBarProps> = ({
                 />
               </svg>
             </button>
-            {isOpen && availableTypes.length > 0 && (
-              <div className="absolute mt-1 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-                {availableTypes.map(type => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => handleSelect(type)}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 first:rounded-t-md last:rounded-b-md"
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-            )}
-            {isOpen && availableTypes.length === 0 && (
-              <div className="absolute mt-1 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-                <div className="px-4 py-2 text-sm text-gray-500">
-                  No other types available
-                </div>
-              </div>
+            {isOpen && createPortal(
+              <div 
+                data-dropdown-content
+                className="fixed bg-white rounded-md shadow-xl z-[110] border border-gray-200"
+                style={{
+                  top: `${buttonPosition.top + 4}px`,
+                  left: `${buttonPosition.left}px`,
+                  minWidth: '192px'
+                }}
+              >
+                {availableTypes.length > 0 ? (
+                  availableTypes.map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => handleSelect(type)}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 first:rounded-t-md last:rounded-b-md"
+                    >
+                      {type}
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-2 text-sm text-gray-500">
+                    No other types available
+                  </div>
+                )}
+              </div>,
+              document.body
             )}
           </div>
           <button
             type="button"
             onClick={onOpenContextModal}
-            className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm"
           >
             Context
           </button>
@@ -175,7 +209,7 @@ const DocumentSettingsBar: React.FC<DocumentSettingsBarProps> = ({
               type="button"
               onClick={handleRequestAdvisory}
               disabled={!canRequestAdvisory}
-              className={`flex items-center px-3 py-1 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors ${
+              className={`flex items-center px-3 py-1 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm ${
                 canRequestAdvisory
                   ? 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
                   : 'text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed'
@@ -201,7 +235,7 @@ const DocumentSettingsBar: React.FC<DocumentSettingsBarProps> = ({
             
             {/* Tooltip for disabled state */}
             {!canRequestAdvisory && (
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-800 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-800 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-[110]">
                 {getTooltipText()}
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
               </div>
@@ -213,7 +247,7 @@ const DocumentSettingsBar: React.FC<DocumentSettingsBarProps> = ({
             type="button"
             onClick={() => setIsAdvisoryModalOpen(true)}
             disabled={visibleComments.length === 0}
-            className={`flex items-center px-3 py-1 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
+            className={`flex items-center px-3 py-1 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors shadow-sm ${
               visibleComments.length > 0
                 ? 'text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 focus:ring-amber-500'
                 : 'text-gray-400 bg-gray-100 border border-gray-200 cursor-not-allowed'

@@ -195,16 +195,22 @@ const DocumentEditor: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col min-h-screen relative bg-gradient-to-br from-blue-100 via-white to-purple-100 overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-10 z-0" />
+      <div className="absolute top-20 right-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob z-0" />
+      <div className="absolute top-40 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000 z-0" />
+      <div className="absolute bottom-10 right-1/3 w-60 h-60 bg-indigo-300 rounded-full mix-blend-multiply filter blur-xl opacity-25 animate-blob animation-delay-4000 z-0" />
+      
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="relative bg-white/85 backdrop-blur-sm shadow-sm border-b border-gray-200/50 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <button
                 type="button"
                 onClick={() => navigate('/dashboard')}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white/95 hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
               >
                 <svg
                   className="w-4 h-4 mr-2"
@@ -222,9 +228,14 @@ const DocumentEditor: React.FC = () => {
                 Back to Dashboard
               </button>
               <div className="h-6 w-px bg-gray-300" />
-              <h1 className="text-xl font-semibold text-gray-900">
-                AlignWrite Editor
-              </h1>
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center shadow-sm">
+                  <span className="text-white font-bold text-sm">A</span>
+                </div>
+                <h1 className="text-xl font-bold text-gray-900">
+                  AlignWrite Editor
+                </h1>
+              </div>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -234,9 +245,9 @@ const DocumentEditor: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center space-x-2 text-gray-700 px-2 py-2 rounded-md text-sm font-medium hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                  className="flex items-center space-x-2 text-gray-700 px-2 py-2 rounded-md text-sm font-medium bg-white/95 hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 z-40"
                 >
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-sm">
                     <span className="text-white text-sm font-medium">
                       {user.displayName
                         ? user.displayName.charAt(0).toUpperCase()
@@ -262,18 +273,18 @@ const DocumentEditor: React.FC = () => {
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
+                  <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-xl py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 border border-gray-200">
                     <button
                       type="button"
                       onClick={handleProfileClick}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100/90 transition-colors duration-200"
                     >
                       Profile
                     </button>
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100/90 transition-colors duration-200"
                       disabled={isLoggingOut}
                     >
                       {isLoggingOut ? 'Logging out...' : 'Logout'}
@@ -286,7 +297,7 @@ const DocumentEditor: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-grow overflow-auto p-4 md:p-6 lg:p-8">
+      <main className="relative flex-grow overflow-auto p-4 md:p-6 lg:p-8 z-10">
         <div className="max-w-4xl mx-auto h-full">
           <EditorHeader
             title={title}
@@ -299,7 +310,7 @@ const DocumentEditor: React.FC = () => {
             onDocumentTypeChange={handleDocumentTypeChange}
             currentContent={currentContent}
           />
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden h-full">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-xl overflow-hidden h-full border border-white/60">
             {editorView && <ResponsiveToolbar editorView={editorView} detectedTone={detectedTone} />}
             <DocumentCodeMirrorEditor 
               onViewReady={setEditorView} 

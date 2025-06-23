@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { ADVISORY_CATEGORIES, CONTEXT_AWARE_CATEGORIES } from '../../constants/advisoryConstants';
 import { AdvisoryComment } from '../../types';
 import { logger } from '../../utils/logger';
@@ -55,11 +56,11 @@ const AdvisoryPopover = React.forwardRef<HTMLDivElement, AdvisoryPopoverProps>(
       onDismiss(comment.id);
     };
 
-    return (
+    const popoverContent = (
       <div
         ref={ref}
         style={style}
-        className={`rounded-lg border shadow-lg max-w-sm ${colors.bg} ${colors.border} z-50`}
+        className={`rounded-lg border shadow-lg max-w-sm z-[110] ${colors.bg} ${colors.border}`}
         role="dialog"
         aria-labelledby="advisory-title"
       >
@@ -113,6 +114,8 @@ const AdvisoryPopover = React.forwardRef<HTMLDivElement, AdvisoryPopoverProps>(
         </div>
       </div>
     );
+
+    return createPortal(popoverContent, document.body);
   }
 );
 

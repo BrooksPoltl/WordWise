@@ -56,7 +56,7 @@ const SmartAnalysisCard: React.FC = () => {
   ];
 
   return (
-    <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+    <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white transition-all duration-300 hover:shadow-lg">
       <div className="relative z-10">
         <div className="flex items-center mb-3">
           <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center mr-3">

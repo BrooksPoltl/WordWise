@@ -104,14 +104,20 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen relative bg-gradient-to-br from-blue-100 via-white to-purple-100 overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0 bg-grid-pattern opacity-10 z-0" />
+      <div className="absolute top-20 right-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob z-0" />
+      <div className="absolute top-40 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000 z-0" />
+      <div className="absolute bottom-20 right-1/4 w-60 h-60 bg-indigo-300 rounded-full mix-blend-multiply filter blur-xl opacity-25 animate-blob animation-delay-4000 z-0" />
+      
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
+      <nav className="relative bg-white/85 backdrop-blur-sm shadow-sm border-b border-gray-200/50 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center shadow-md">
                   <span className="text-white font-bold text-xl">W</span>
                 </div>
               </div>
@@ -126,9 +132,9 @@ const Dashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center space-x-2 text-gray-700 px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                  className="flex items-center space-x-2 text-gray-700 px-3 py-2 rounded-md text-sm font-medium bg-white/95 hover:bg-white hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 z-40"
                 >
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-sm">
                     <span className="text-white text-sm font-medium">
                       {user.displayName
                         ? user.displayName.charAt(0).toUpperCase()
@@ -157,7 +163,7 @@ const Dashboard: React.FC = () => {
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none z-50 border border-gray-200">
                     <div className="py-1">
                       <div className="px-4 py-2 text-xs text-gray-500 border-b border-gray-100">
                         {user.email}
@@ -171,7 +177,7 @@ const Dashboard: React.FC = () => {
                       <button
                         type="button"
                         onClick={handleProfileClick}
-                        className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200"
+                        className="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100/90 transition-colors duration-200"
                       >
                         <svg
                           className="w-4 h-4 mr-3 text-gray-400"
@@ -193,7 +199,7 @@ const Dashboard: React.FC = () => {
                         type="button"
                         onClick={handleLogout}
                         disabled={loading}
-                        className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50/90 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <div className="flex items-center">
                           <svg
@@ -222,22 +228,22 @@ const Dashboard: React.FC = () => {
       </nav>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <main className="relative max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 z-10">
         <div className="space-y-6">
 
           {/* Feature Showcase Section */}
           <FeatureShowcaseSection />
 
           {/* Documents Section */}
-          <div className="bg-white shadow rounded-lg">
+          <div className="bg-white/95 backdrop-blur-sm shadow-xl rounded-lg border border-white/60">
             <div className="p-6">
               <div className="space-y-6">
                 {/* Quick Stats */}
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-                  <div className="bg-gray-50 overflow-hidden rounded-lg p-5">
+                  <div className="bg-white/90 backdrop-blur-sm overflow-hidden rounded-lg p-5 border border-white/40 shadow-sm">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center shadow-sm">
                           <svg
                             className="w-5 h-5 text-white"
                             fill="none"
@@ -266,10 +272,10 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 overflow-hidden rounded-lg p-5">
+                  <div className="bg-white/90 backdrop-blur-sm overflow-hidden rounded-lg p-5 border border-white/40 shadow-sm">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-sm">
                           <svg
                             className="w-5 h-5 text-white"
                             fill="none"
@@ -301,10 +307,10 @@ const Dashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 overflow-hidden rounded-lg p-5">
+                  <div className="bg-white/90 backdrop-blur-sm overflow-hidden rounded-lg p-5 border border-white/40 shadow-sm">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-violet-500 rounded-full flex items-center justify-center shadow-sm">
                           <svg
                             className="w-5 h-5 text-white"
                             fill="none"
